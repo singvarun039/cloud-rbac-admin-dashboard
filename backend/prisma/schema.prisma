@@ -51,7 +51,7 @@ model Role {
 
 model Permission {
   id          String   @id @default(cuid())
-  code        String   @unique
+  key         String   @unique @map("code")
   description String?
   createdAt   DateTime @default(now())
 
@@ -64,7 +64,7 @@ model UserRole {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  assignedAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("assignedAt")
 
   @@id([userId, roleId])
   @@index([roleId])
@@ -76,7 +76,7 @@ model RolePermission {
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  assignedAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("assignedAt")
 
   @@id([roleId, permissionId])
   @@index([permissionId])
@@ -88,11 +88,11 @@ model Session {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // SECURITY: Never store refresh tokens in plaintext. Only store hashes.
-  refreshTokenHash String @unique
-  userAgent    String?
-  ipAddress    String?
-  expiresAt    DateTime
-  revokedAt    DateTime?
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
 
   // Rotation traceability: points to the new session created during refresh.
   replacedBySessionId String?  @unique
