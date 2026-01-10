@@ -1,9 +1,11 @@
 import { Router } from "express";
-import { z } from "zod";
 import { prisma } from "../../db/prisma";
 import { authenticate } from "../../middlewares/authenticate";
 import { requirePermission } from "../../middlewares/requirePermission";
-import { fail, ok } from "../../utils/apiResponse";
+import { ok } from "../../utils/apiResponse";
+import { asyncHandler } from "../../middlewares/asyncHandler";
+import { validateQuery } from "../../middlewares/validate";
+import { AuditLogsListQuerySchema } from "../../validation/auditLogs.schema";
 
 export const auditLogsRouter = Router();
 
@@ -11,22 +13,10 @@ auditLogsRouter.get(
   "/",
   authenticate,
   requirePermission("audit.read"),
-  async (req, res) => {
-    const QuerySchema = z.object({
-      actorUserId: z.string().min(1).optional(),
-      action: z.string().min(1).optional(),
-      dateFrom: z.string().datetime().optional(),
-      dateTo: z.string().datetime().optional(),
-      page: z.coerce.number().int().min(1).default(1),
-      limit: z.coerce.number().int().min(1).max(100).default(20),
-    });
-
-    const parsed = QuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      return fail(res, 400, "VALIDATION_ERROR", "Invalid query params");
-    }
-
-    const { actorUserId, action, dateFrom, dateTo, page, limit } = parsed.data;
+  validateQuery(AuditLogsListQuerySchema),
+  asyncHandler(async (req, res) => {
+    const { actorUserId, action, dateFrom, dateTo, page, limit } =
+      req.query as any;
 
     const where: any = {};
     if (actorUserId) where.actorUserId = actorUserId;
@@ -65,16 +55,6 @@ auditLogsRouter.get(
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
-    return ok(
-      res,
-      {
-        items,
-        page,
-        limit,
-        total,
-        totalPages,
-      },
-      200
-    );
-  }
+    return ok(res, req, { items, page, limit, total, totalPages }, 200);
+  })
 );

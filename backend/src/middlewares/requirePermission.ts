@@ -1,14 +1,14 @@
 import type { Request, Response, NextFunction } from "express";
-import { fail } from "../utils/apiResponse";
+import { AppError } from "../errors/AppError";
 
 export function requirePermission(permissionKey: string) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {
-      return fail(res, 401, "UNAUTHORIZED", "Missing or invalid token");
+      throw AppError.unauthorized();
     }
 
     if (!req.user.permissions?.includes(permissionKey)) {
-      return fail(res, 403, "FORBIDDEN", "Insufficient permissions");
+      throw AppError.forbidden();
     }
 
     return next();

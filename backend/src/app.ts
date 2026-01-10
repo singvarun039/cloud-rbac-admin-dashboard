@@ -8,7 +8,7 @@ import { rolesRouter } from "./modules/roles/roles.routes";
 import { requestId } from "./middlewares/requestId";
 import { requestLogger } from "./middlewares/requestLogger";
 import { errorHandler } from "./middlewares/errorHandler";
-import { fail } from "./utils/apiResponse";
+import { AppError } from "./errors/AppError";
 import { auditLogsRouter } from "./modules/auditLogs/auditLogs.routes";
 
 export function createApp() {
@@ -32,14 +32,9 @@ export function createApp() {
   app.use("/users", usersRouter);
   app.use("/roles", rolesRouter);
 
-  // JSON 404s (still includes X-Request-Id via requestId middleware)
-  app.use((req, res) => {
-    return fail(
-      res,
-      404,
-      "NOT_FOUND",
-      `Route not found: ${req.method} ${req.path}`
-    );
+  // 404 handler (must be after routes, before error handler)
+  app.use((req) => {
+    throw AppError.notFound(`Route not found: ${req.method} ${req.path}`);
   });
 
   // Centralized error handler (must be last)

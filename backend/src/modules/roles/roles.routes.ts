@@ -1,10 +1,22 @@
 import { Router } from "express";
-import { z } from "zod";
 import { prisma } from "../../db/prisma";
 import { authenticate } from "../../middlewares/authenticate";
 import { requirePermission } from "../../middlewares/requirePermission";
-import { fail, ok } from "../../utils/apiResponse";
+import { ok } from "../../utils/apiResponse";
 import { writeAuditLog } from "../../services/auditLog.service";
+import { asyncHandler } from "../../middlewares/asyncHandler";
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from "../../middlewares/validate";
+import {
+  AssignRoleBodySchema,
+  RolesListQuerySchema,
+  RoleIdParamSchema,
+  UpdateRolePermissionsBodySchema,
+} from "../../validation/roles.schema";
+import { AppError } from "../../errors/AppError";
 
 export const rolesRouter = Router();
 
@@ -12,38 +24,49 @@ rolesRouter.get(
   "/",
   authenticate,
   requirePermission("roles.read"),
-  async (_req, res) => {
-    const roles = await prisma.role.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+  validateQuery(RolesListQuerySchema),
+  asyncHandler(async (req, res) => {
+    const { page, limit, search } = req.query as any;
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search), mode: "insensitive" } },
+        { description: { contains: String(search), mode: "insensitive" } },
+      ];
+    }
 
-    return ok(res, { roles }, 200);
-  }
+    const skip = (page - 1) * limit;
+
+    const [total, roles] = await prisma.$transaction([
+      prisma.role.count({ where }),
+      prisma.role.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    return ok(res, req, { roles, page, limit, total, totalPages }, 200);
+  })
 );
-
-const AssignRoleSchema = z.object({
-  userId: z.string().min(1),
-  roleId: z.string().min(1),
-});
 
 rolesRouter.post(
   "/assign",
   authenticate,
   requirePermission("roles.write"),
-  async (req, res) => {
-    const parsed = AssignRoleSchema.safeParse(req.body ?? {});
-    if (!parsed.success) {
-      return fail(res, 400, "VALIDATION_ERROR", "Invalid request body");
-    }
-
-    const { userId, roleId } = parsed.data;
+  validateBody(AssignRoleBodySchema),
+  asyncHandler(async (req, res) => {
+    const { userId, roleId } = req.body as any;
 
     const [user, role] = await Promise.all([
       prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
@@ -53,8 +76,8 @@ rolesRouter.post(
       }),
     ]);
 
-    if (!user) return fail(res, 404, "NOT_FOUND", "User not found");
-    if (!role) return fail(res, 404, "NOT_FOUND", "Role not found");
+    if (!user) throw AppError.notFound("User not found");
+    if (!role) throw AppError.notFound("Role not found");
 
     try {
       await prisma.userRole.create({
@@ -72,31 +95,22 @@ rolesRouter.post(
       meta: { roleId: role.id, roleName: role.name },
     });
 
-    return ok(res, { success: true }, 200);
-  }
+    return ok(res, req, { success: true }, 200);
+  })
 );
-
-const UpdateRolePermissionsSchema = z.object({
-  permissionKeys: z.array(z.string().min(1)).max(500).default([]),
-});
 
 rolesRouter.put(
   "/:roleId/permissions",
   authenticate,
   requirePermission("roles.write"),
-  async (req, res) => {
-    const roleId = String(req.params.roleId ?? "").trim();
-    if (!roleId) {
-      return fail(res, 400, "VALIDATION_ERROR", "Role id is required");
-    }
+  validateParams(RoleIdParamSchema),
+  validateBody(UpdateRolePermissionsBodySchema),
+  asyncHandler(async (req, res) => {
+    const roleId = (req.params as any).roleId as string;
 
-    const parsed = UpdateRolePermissionsSchema.safeParse(req.body ?? {});
-    if (!parsed.success) {
-      return fail(res, 400, "VALIDATION_ERROR", "Invalid request body");
-    }
-
+    const { permissionKeys } = req.body as { permissionKeys: string[] };
     const desiredKeys = Array.from(
-      new Set(parsed.data.permissionKeys.map((k) => k.trim()).filter(Boolean))
+      new Set((permissionKeys ?? []).map((k) => k.trim()).filter(Boolean))
     );
 
     const role = await prisma.role.findUnique({
@@ -112,7 +126,7 @@ rolesRouter.put(
       },
     });
 
-    if (!role) return fail(res, 404, "NOT_FOUND", "Role not found");
+    if (!role) throw AppError.notFound("Role not found");
 
     const existingKeys = role.permissions.map((rp) => rp.permission.key);
     const addedKeys = desiredKeys.filter((k) => !existingKeys.includes(k));
@@ -162,6 +176,7 @@ rolesRouter.put(
 
     return ok(
       res,
+      req,
       {
         roleId,
         permissionKeys: desiredKeys,
@@ -170,5 +185,5 @@ rolesRouter.put(
       },
       200
     );
-  }
+  })
 );

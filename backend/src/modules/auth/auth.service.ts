@@ -65,7 +65,12 @@ export class AuthService {
 
   static async refresh(refreshToken: string, meta: SessionMeta = {}) {
     // 1) Verify signature/expiry first (cheap reject before DB).
-    const payload = verifyRefreshToken(refreshToken);
+    let payload: { sub: string };
+    try {
+      payload = verifyRefreshToken(refreshToken) as { sub: string };
+    } catch {
+      return null;
+    }
 
     // 2) Hash incoming token to match DB row (no plaintext comparisons).
     const refreshTokenHash = hashRefreshToken(refreshToken);

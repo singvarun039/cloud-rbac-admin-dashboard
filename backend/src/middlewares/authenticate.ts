@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { fail } from "../utils/apiResponse";
+import { AppError } from "../errors/AppError";
 import { verifyAccessToken } from "../utils/jwt";
 import {
   fetchUserWithRolesAndPermissions,
@@ -8,13 +8,13 @@ import {
 
 export async function authenticate(
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) {
   const auth = req.headers.authorization;
 
   if (!auth?.startsWith("Bearer ")) {
-    return fail(res, 401, "UNAUTHORIZED", "Missing or invalid token");
+    return next(AppError.unauthorized());
   }
 
   const token = auth.slice("Bearer ".length).trim();
@@ -28,15 +28,15 @@ export async function authenticate(
 
     // NOTE: This codebase models "ACTIVE" via boolean `isActive`.
     if (!user || user.isActive !== true) {
-      return fail(res, 401, "UNAUTHORIZED", "Missing or invalid token");
+      return next(AppError.unauthorized());
     }
 
     const permissions = computeEffectivePermissionKeys(user);
     const name =
       [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
     req.user = { id: user.id, email: user.email, name, permissions };
-    next();
+    return next();
   } catch {
-    return fail(res, 401, "UNAUTHORIZED", "Missing or invalid token");
+    return next(AppError.unauthorized());
   }
 }
