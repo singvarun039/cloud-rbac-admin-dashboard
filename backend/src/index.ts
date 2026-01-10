@@ -1,8 +1,9 @@
 import { createApp } from "./app";
 import { env } from "./config/env";
+import { logger } from "./lib/logger";
 
 const app = createApp();
 
 app.listen(env.PORT, () => {
-  console.log(`API running on http://localhost:${env.PORT}`);
+  logger.info({ port: env.PORT }, "server_listening");
 });

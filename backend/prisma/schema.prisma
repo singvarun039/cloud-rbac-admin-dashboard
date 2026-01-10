@@ -6,23 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum AuditAction {
-  AUTH_LOGIN
-  AUTH_LOGOUT
-  USER_CREATE
-  USER_UPDATE
-  USER_DELETE
-  ROLE_CREATE
-  ROLE_UPDATE
-  ROLE_DELETE
-  PERMISSION_CREATE
-  PERMISSION_DELETE
-  ROLE_ASSIGN
-  ROLE_UNASSIGN
-  PERMISSION_ASSIGN
-  PERMISSION_UNASSIGN
-}
-
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -107,20 +90,25 @@ model Session {
 }
 
 model AuditLog {
-  id       String      @id @default(cuid())
-  action   AuditAction
-  entity   String?
-  entityId String?
-  metadata Json?
+  id String @id @default(uuid())
 
-  actorId String?
-  actor   User?   @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  actorUserId String?
+  actor       User?   @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  action     String
+  entityType String
+  entityId   String?
+  meta       Json?
+
+  requestId String
 
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
 
   @@index([action])
-  @@index([actorId])
+  @@index([actorUserId])
+  @@index([requestId])
   @@index([createdAt])
+  @@index([entityType, entityId])
 }

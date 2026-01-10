@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
 import { fail, ok } from "../../utils/apiResponse";
+import { writeAuditLog } from "../../services/auditLog.service";
 
 export class AuthController {
   static async login(req: Request, res: Response) {
@@ -24,8 +25,30 @@ export class AuthController {
     );
 
     if (!result) {
+      // Optional: login failure audit (no actor)
+      await writeAuditLog({
+        req,
+        action: "LOGIN_FAILURE",
+        entityType: "Auth",
+        entityId: null,
+        actorUserId: null,
+        meta: {
+          email: String(email ?? "")
+            .trim()
+            .toLowerCase(),
+        },
+      });
       return fail(res, 401, "INVALID_CREDENTIALS", "Invalid email or password");
     }
+
+    await writeAuditLog({
+      req,
+      action: "LOGIN_SUCCESS",
+      entityType: "User",
+      entityId: result.user.id,
+      actorUserId: result.user.id,
+      meta: { email: result.user.email },
+    });
 
     return ok(res, result, 200);
   }
