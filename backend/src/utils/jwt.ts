@@ -26,8 +26,15 @@ export function verifyAccessToken(token: string): JwtPayload {
   return { sub: decoded.sub };
 }
 
-export function signRefreshToken(userId: string): { token: string; expiresAt: Date } {
-  const payload: RefreshJwtPayload = { sub: userId, jti: randomUUID(), typ: "refresh" };
+export function signRefreshToken(userId: string): {
+  token: string;
+  expiresAt: Date;
+} {
+  const payload: RefreshJwtPayload = {
+    sub: userId,
+    jti: randomUUID(),
+    typ: "refresh",
+  };
   const expiresIn = env.REFRESH_TOKEN_TTL as jwt.SignOptions["expiresIn"];
   const token = jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn });
 

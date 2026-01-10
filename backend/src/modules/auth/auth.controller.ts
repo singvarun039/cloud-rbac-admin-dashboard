@@ -7,13 +7,21 @@ export class AuthController {
     const { email, password } = req.body ?? {};
 
     if (!email || !password) {
-      return fail(res, 400, "VALIDATION_ERROR", "Email and password are required");
+      return fail(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Email and password are required"
+      );
     }
 
     const userAgent = req.get("user-agent") ?? null;
     const ipAddress = req.ip ?? null;
 
-    const result = await AuthService.login({ email, password }, { userAgent, ipAddress });
+    const result = await AuthService.login(
+      { email, password },
+      { userAgent, ipAddress }
+    );
 
     if (!result) {
       return fail(res, 401, "INVALID_CREDENTIALS", "Invalid email or password");
@@ -32,7 +40,10 @@ export class AuthController {
     const userAgent = req.get("user-agent") ?? null;
     const ipAddress = req.ip ?? null;
 
-    const result = await AuthService.refresh(refreshToken, { userAgent, ipAddress });
+    const result = await AuthService.refresh(refreshToken, {
+      userAgent,
+      ipAddress,
+    });
 
     if (!result) {
       return fail(res, 401, "INVALID_REFRESH_TOKEN", "Invalid refresh token");
@@ -57,7 +68,7 @@ export class AuthController {
       return fail(res, 401, "UNAUTHORIZED", "Missing or invalid token");
     }
 
-    const { id, email, name } = req.user;
-    return ok(res, { user: { id, email, name } }, 200);
+    const { id, email, name, permissions } = req.user;
+    return ok(res, { user: { id, email, name }, permissions }, 200);
   }
 }

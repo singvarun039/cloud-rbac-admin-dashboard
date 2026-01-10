@@ -4,6 +4,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import healthRoutes from "./routes/health";
 import { authRouter } from "./modules/auth/auth.routes";
+import { usersRouter } from "./modules/users/users.routes";
+import { rolesRouter } from "./modules/roles/roles.routes";
 
 export function createApp() {
   const app = express();
@@ -15,6 +17,12 @@ export function createApp() {
 
   app.use("/api", healthRoutes);
   app.use("/api/auth", authRouter);
+  app.use("/api/users", usersRouter);
+  app.use("/api/roles", rolesRouter);
+
+  // Back-compat / convenience aliases (optional):
+  app.use("/users", usersRouter);
+  app.use("/roles", rolesRouter);
 
   return app;
 }

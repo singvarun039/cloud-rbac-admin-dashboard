@@ -1,6 +1,10 @@
 import { prisma } from "../../db/prisma";
 import { verifyPassword } from "../../utils/password";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt";
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "../../utils/jwt";
 import { hashRefreshToken } from "../../utils/refreshToken";
 
 type LoginInput = { email: string; password: string };
@@ -49,7 +53,8 @@ export class AuthService {
       },
     });
 
-    const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
+    const name =
+      [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
 
     return {
       accessToken,
@@ -91,7 +96,8 @@ export class AuthService {
           throw new Error("REFRESH_TOKEN_REUSED");
         }
 
-        const { token: newRefreshToken, expiresAt: newExpiresAt } = signRefreshToken(payload.sub);
+        const { token: newRefreshToken, expiresAt: newExpiresAt } =
+          signRefreshToken(payload.sub);
         const newSession = await tx.session.create({
           data: {
             userId: payload.sub,
@@ -136,7 +142,13 @@ export class AuthService {
   static async getMe(userId: string) {
     return prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, firstName: true, lastName: true, isActive: true },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
+      },
     });
   }
 }

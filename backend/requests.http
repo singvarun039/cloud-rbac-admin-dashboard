@@ -1,0 +1,64 @@
+@baseUrl = http://localhost:3000
+
+### Health
+GET {{baseUrl}}/api/health
+
+### Login as ADMIN (seeded)
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@naxverse.local",
+  "password": "Admin@12345"
+}
+
+### Login as USER (seeded, read-only)
+# @name loginUser
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@naxverse.local",
+  "password": "User@12345"
+}
+
+### /users without token -> 401
+GET {{baseUrl}}/api/users
+
+### /users with invalid token -> 401
+GET {{baseUrl}}/api/users
+Authorization: Bearer not-a-real-token
+
+### /users with ADMIN token -> 200
+@adminToken = {{loginAdmin.response.body.data.accessToken}}
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+
+### /users with USER token -> 403
+@userToken = {{loginUser.response.body.data.accessToken}}
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{userToken}}
+
+### /auth/me returns permissions: string[]
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{adminToken}}
+
+### /roles requires roles.read (ADMIN: 200, USER: 200 because read-only includes roles.read)
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{adminToken}}
+
+GET {{baseUrl}}/api/roles
+Authorization: Bearer {{userToken}}
+
+### POST /users requires users.write (ADMIN: 201, USER: 403)
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "email": "new.user+naxverse.local@example.com",
+  "password": "SomePassword123",
+  "firstName": "New",
+  "lastName": "User"
+}

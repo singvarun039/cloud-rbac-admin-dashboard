@@ -5,7 +5,7 @@ declare global {
         id: string;
         email: string;
         name: string | null;
-        isActive: boolean;
+        permissions: string[];
       };
     }
   }

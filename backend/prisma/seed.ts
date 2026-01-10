@@ -24,7 +24,11 @@ async function main() {
   const email = "admin@naxverse.local";
   const password = "Admin@12345";
 
+  const userEmail = "user@naxverse.local";
+  const userPassword = "User@12345";
+
   const passwordHash = await hashPassword(password);
+  const userPasswordHash = await hashPassword(userPassword);
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -38,6 +42,28 @@ async function main() {
       passwordHash,
       isActive: true,
       firstName: "Admin",
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+    },
+  });
+
+  const readOnlyUser = await prisma.user.upsert({
+    where: { email: userEmail },
+    update: {
+      passwordHash: userPasswordHash,
+      isActive: true,
+      firstName: "User",
+    },
+    create: {
+      email: userEmail,
+      passwordHash: userPasswordHash,
+      isActive: true,
+      firstName: "User",
     },
     select: {
       id: true,
@@ -94,14 +120,25 @@ async function main() {
     skipDuplicates: true,
   });
 
+  await prisma.userRole.createMany({
+    data: [{ userId: readOnlyUser.id, roleId: userRole.id }],
+    skipDuplicates: true,
+  });
+
   console.log("✅ Seeded admin user:", user);
+  console.log("✅ Seeded read-only user:", readOnlyUser);
   console.log("✅ Seeded roles:", [adminRole.name, userRole.name]);
   console.log(
     "✅ Seeded permissions:",
     permissions.map((p) => p.key)
   );
   console.log("✅ Assigned ADMIN role to:", user.email);
+  console.log("✅ Assigned USER role to:", readOnlyUser.email);
   console.log("🔑 Login with:", { email, password });
+  console.log("🔑 Login (read-only) with:", {
+    email: userEmail,
+    password: userPassword,
+  });
 }
 
 main()
