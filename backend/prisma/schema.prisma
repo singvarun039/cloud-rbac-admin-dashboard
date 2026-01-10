@@ -87,16 +87,23 @@ model Session {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  refreshToken String    @unique
+  // SECURITY: Never store refresh tokens in plaintext. Only store hashes.
+  refreshTokenHash String @unique
   userAgent    String?
   ipAddress    String?
   expiresAt    DateTime
   revokedAt    DateTime?
 
+  // Rotation traceability: points to the new session created during refresh.
+  replacedBySessionId String?  @unique
+  replacedBySession   Session? @relation("SessionRotation", fields: [replacedBySessionId], references: [id])
+  replacedSession     Session? @relation("SessionRotation")
+
   createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model AuditLog {
