@@ -15,13 +15,19 @@ export default function Layout() {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const canReadUsers = permissions.includes("users.read");
+  const canReadRoles = permissions.includes("roles.read");
+  const canReadProjects = permissions.includes("projects.read");
+  const canReadAuditLogs = permissions.includes("audit.read");
 
   const visibleNavItems = useMemo(() => {
     return navItems.filter((item) => {
       if (item.to === "/users") return canReadUsers;
+      if (item.to === "/roles") return canReadRoles;
+      if (item.to === "/projects") return canReadProjects;
+      if (item.to === "/audit-logs") return canReadAuditLogs;
       return true;
     });
-  }, [canReadUsers]);
+  }, [canReadAuditLogs, canReadProjects, canReadRoles, canReadUsers]);
 
   async function onLogout() {
     if (loggingOut) return;
