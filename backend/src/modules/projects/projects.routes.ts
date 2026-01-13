@@ -119,10 +119,15 @@ projectsRouter.post(
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
         const target = (err.meta as any)?.target;
         if (Array.isArray(target) && target.includes("name")) {
-          throw AppError.conflict("Project name already exists", { field: "name" });
+          throw AppError.conflict("Project name already exists", {
+            field: "name",
+          });
         }
         throw AppError.conflict("Conflict", { target });
       }
@@ -196,10 +201,15 @@ projectsRouter.patch(
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
         const target = (err.meta as any)?.target;
         if (Array.isArray(target) && target.includes("name")) {
-          throw AppError.conflict("Project name already exists", { field: "name" });
+          throw AppError.conflict("Project name already exists", {
+            field: "name",
+          });
         }
         throw AppError.conflict("Conflict", { target });
       }

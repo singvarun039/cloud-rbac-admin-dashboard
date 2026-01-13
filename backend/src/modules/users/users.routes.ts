@@ -21,7 +21,10 @@ import {
 
 export const usersRouter = Router();
 
-function nameToFirstLast(name: string): { firstName: string; lastName: string | null } {
+function nameToFirstLast(name: string): {
+  firstName: string;
+  lastName: string | null;
+} {
   const normalized = name.trim().replace(/\s+/g, " ");
   const parts = normalized.split(" ");
 
@@ -40,7 +43,8 @@ function userToApi(user: {
   createdAt: Date;
   updatedAt?: Date;
 }) {
-  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
+  const name =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
   const status = user.isActive ? "ACTIVE" : "INACTIVE";
 
   return {
@@ -177,7 +181,8 @@ usersRouter.patch(
 
     const data: any = {};
     if (typeof input.email === "string") data.email = input.email;
-    if (typeof input.status === "string") data.isActive = input.status === "ACTIVE";
+    if (typeof input.status === "string")
+      data.isActive = input.status === "ACTIVE";
 
     if (typeof input.name === "string") {
       const parsedName = nameToFirstLast(input.name);

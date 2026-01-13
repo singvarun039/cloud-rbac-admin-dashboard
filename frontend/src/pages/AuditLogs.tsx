@@ -4,5 +4,5 @@ export default function AuditLogsPage() {
       <h1 className="page-title">Audit Logs</h1>
       <p className="muted">Placeholder page (Day 11)</p>
     </div>
-  )
+  );
 }

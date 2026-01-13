@@ -1,20 +1,27 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { clearAccessToken } from '../auth/token'
+import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { useAuth } from "../auth/useAuth";
 
 const navItems = [
-  { to: '/', label: 'Dashboard' },
-  { to: '/users', label: 'Users' },
-  { to: '/roles', label: 'Roles' },
-  { to: '/projects', label: 'Projects' },
-  { to: '/audit-logs', label: 'Audit Logs' },
-]
+  { to: "/", label: "Dashboard" },
+  { to: "/users", label: "Users" },
+  { to: "/roles", label: "Roles" },
+  { to: "/projects", label: "Projects" },
+  { to: "/audit-logs", label: "Audit Logs" },
+];
 
 export default function Layout() {
-  const navigate = useNavigate()
+  const { logout } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  function onLogout() {
-    clearAccessToken()
-    navigate('/login', { replace: true })
+  async function onLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   return (
@@ -26,9 +33,9 @@ export default function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === '/'}
+              end={item.to === "/"}
               className={({ isActive }) =>
-                isActive ? 'nav-link nav-link-active' : 'nav-link'
+                isActive ? "nav-link nav-link-active" : "nav-link"
               }
             >
               {item.label}
@@ -40,8 +47,13 @@ export default function Layout() {
       <div className="main">
         <header className="topbar">
           <div className="topbar-title">Cloud-Ready RBAC Admin Dashboard</div>
-          <button className="btn" onClick={onLogout} type="button">
-            Logout
+          <button
+            className="btn"
+            onClick={onLogout}
+            type="button"
+            disabled={loggingOut}
+          >
+            {loggingOut ? "Logging out…" : "Logout"}
           </button>
         </header>
 
@@ -50,5 +62,5 @@ export default function Layout() {
         </main>
       </div>
     </div>
-  )
+  );
 }
