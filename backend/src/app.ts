@@ -6,6 +6,7 @@ import { authRouter } from "./modules/auth/auth.routes";
 import { usersRouter } from "./modules/users/users.routes";
 import { rolesRouter } from "./modules/roles/roles.routes";
 import { permissionsRouter } from "./modules/permissions/permissions.routes";
+import { projectsRouter } from "./modules/projects/projects.routes";
 import { requestId } from "./middlewares/requestId";
 import { requestLogger } from "./middlewares/requestLogger";
 import { errorHandler } from "./middlewares/errorHandler";
@@ -28,6 +29,7 @@ export function createApp() {
   app.use("/api/users", usersRouter);
   app.use("/api/roles", rolesRouter);
   app.use("/api/permissions", permissionsRouter);
+  app.use("/api/projects", projectsRouter);
   app.use("/api/audit-logs", auditLogsRouter);
 
   // Back-compat / convenience aliases (optional):

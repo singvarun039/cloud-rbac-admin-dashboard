@@ -19,6 +19,7 @@ model User {
   roles     UserRole[]
   sessions  Session[]
   auditLogs AuditLog[] @relation("ActorAuditLogs")
+  projects  Project[]
 }
 
 model Role {
@@ -111,4 +112,20 @@ model AuditLog {
   @@index([requestId])
   @@index([createdAt])
   @@index([entityType, entityId])
+}
+
+model Project {
+  id         String   @id @default(cuid())
+  name       String
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([name])
+  @@index([createdAt])
+  @@index([ownerId])
 }
