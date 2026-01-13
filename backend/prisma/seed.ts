@@ -14,8 +14,6 @@ const PERMISSION_KEYS = [
 
 const READ_ONLY_PERMISSION_KEYS = new Set<string>([
   "users.read",
-  "roles.read",
-  "permissions.read",
   "projects.read",
   "audit.read",
 ]);

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../../db/prisma";
+import { Prisma } from "@prisma/client";
 import { authenticate } from "../../middlewares/authenticate";
 import { requirePermission } from "../../middlewares/requirePermission";
 import { ok } from "../../utils/apiResponse";
@@ -12,13 +13,40 @@ import {
 } from "../../middlewares/validate";
 import {
   AssignRoleBodySchema,
+  CreateRoleBodySchema,
+  PatchRoleBodySchema,
+  PatchRoleParamsSchema,
   RolesListQuerySchema,
-  RoleIdParamSchema,
-  UpdateRolePermissionsBodySchema,
+  RoleIdOrIdParamSchema,
+  ReplaceRolePermissionsBodySchema,
 } from "../../validation/roles.schema";
 import { AppError } from "../../errors/AppError";
 
 export const rolesRouter = Router();
+
+function roleToApi(role: {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  permissions?: Array<{ permission: { id: string; key: string } }>;
+}) {
+  return {
+    id: role.id,
+    name: role.name,
+    description: role.description,
+    createdAt: role.createdAt,
+    updatedAt: role.updatedAt,
+    ...(role.permissions
+      ? {
+          permissions: role.permissions
+            .map((rp) => rp.permission)
+            .sort((a, b) => a.key.localeCompare(b.key)),
+        }
+      : {}),
+  };
+}
 
 rolesRouter.get(
   "/",
@@ -41,7 +69,7 @@ rolesRouter.get(
       prisma.role.count({ where }),
       prisma.role.findMany({
         where,
-        orderBy: { createdAt: "desc" },
+        orderBy: { name: "asc" },
         skip,
         take: limit,
         select: {
@@ -50,13 +78,156 @@ rolesRouter.get(
           description: true,
           createdAt: true,
           updatedAt: true,
+          permissions: {
+            select: {
+              permission: { select: { id: true, key: true } },
+            },
+            orderBy: { permission: { key: "asc" } },
+          },
         },
       }),
     ]);
 
     const totalPages = Math.max(1, Math.ceil(total / limit));
 
-    return ok(res, req, { roles, page, limit, total, totalPages }, 200);
+    const items = roles.map((r) => roleToApi(r));
+    return ok(res, req, { roles: items, page, limit, total, totalPages }, 200);
+  })
+);
+
+rolesRouter.post(
+  "/",
+  authenticate,
+  requirePermission("roles.write"),
+  validateBody(CreateRoleBodySchema),
+  asyncHandler(async (req, res) => {
+    const { name, description } = req.body as {
+      name: string;
+      description?: string;
+    };
+
+    let role;
+    try {
+      role = await prisma.role.create({
+        data: {
+          name,
+          description:
+            typeof description === "string" && description.trim() === ""
+              ? null
+              : description,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        const target = (err.meta as any)?.target;
+        if (Array.isArray(target) && target.includes("name")) {
+          throw AppError.conflict("Role name already exists", { field: "name" });
+        }
+        throw AppError.conflict("Conflict", { target });
+      }
+      throw err;
+    }
+
+    await writeAuditLog({
+      req,
+      action: "ROLE_CREATED",
+      entityType: "ROLE",
+      entityId: role.id,
+      meta: { name: role.name, description: role.description },
+    });
+
+    return ok(res, req, { role: roleToApi(role) }, 201);
+  })
+);
+
+rolesRouter.patch(
+  "/:id",
+  authenticate,
+  requirePermission("roles.write"),
+  validateParams(PatchRoleParamsSchema),
+  validateBody(PatchRoleBodySchema),
+  asyncHandler(async (req, res) => {
+    const roleId = (req.params as any).id as string;
+    const input = req.body as { name?: string; description?: string };
+
+    const before = await prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!before) {
+      throw AppError.notFound("Role not found");
+    }
+
+    const data: { name?: string; description?: string | null } = {};
+    if (typeof input.name === "string") data.name = input.name;
+    if (typeof input.description === "string") {
+      data.description = input.description.trim() === "" ? null : input.description;
+    }
+
+    let role;
+    try {
+      role = await prisma.role.update({
+        where: { id: roleId },
+        data,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        const target = (err.meta as any)?.target;
+        if (Array.isArray(target) && target.includes("name")) {
+          throw AppError.conflict("Role name already exists", { field: "name" });
+        }
+        throw AppError.conflict("Conflict", { target });
+      }
+      throw err;
+    }
+
+    const changes: Record<
+      string,
+      { from: string | null; to: string | null }
+    > = {};
+
+    if (typeof input.name === "string" && before.name !== role.name) {
+      changes.name = { from: before.name, to: role.name };
+    }
+
+    if (typeof input.description === "string") {
+      const beforeDesc = before.description ?? null;
+      const afterDesc = role.description ?? null;
+      if (beforeDesc !== afterDesc) {
+        changes.description = { from: beforeDesc, to: afterDesc };
+      }
+    }
+
+    await writeAuditLog({
+      req,
+      action: "ROLE_UPDATED",
+      entityType: "ROLE",
+      entityId: role.id,
+      meta: { changes: Object.keys(changes).length > 0 ? changes : {} },
+    });
+
+    return ok(res, req, { role: roleToApi(role) }, 200);
   })
 );
 
@@ -99,91 +270,144 @@ rolesRouter.post(
   })
 );
 
-rolesRouter.put(
-  "/:roleId/permissions",
-  authenticate,
-  requirePermission("roles.write"),
-  validateParams(RoleIdParamSchema),
-  validateBody(UpdateRolePermissionsBodySchema),
-  asyncHandler(async (req, res) => {
-    const roleId = (req.params as any).roleId as string;
+async function replaceRolePermissions(req: any, res: any) {
+  const roleId = (req.params as any).id ?? (req.params as any).roleId;
+  const input = req.body as { permissionKeys?: string[]; permissionIds?: string[] };
 
-    const { permissionKeys } = req.body as { permissionKeys: string[] };
-    const desiredKeys = Array.from(
-      new Set((permissionKeys ?? []).map((k) => k.trim()).filter(Boolean))
-    );
-
-    const role = await prisma.role.findUnique({
+  const result = await prisma.$transaction(async (tx) => {
+    const role = await tx.role.findUnique({
       where: { id: roleId },
       select: {
         id: true,
         name: true,
         permissions: {
-          select: {
-            permission: { select: { id: true, key: true } },
-          },
+          select: { permission: { select: { id: true, key: true } } },
         },
       },
     });
 
     if (!role) throw AppError.notFound("Role not found");
 
-    const existingKeys = role.permissions.map((rp) => rp.permission.key);
-    const addedKeys = desiredKeys.filter((k) => !existingKeys.includes(k));
-    const removedKeys = existingKeys.filter((k) => !desiredKeys.includes(k));
+    const existing = role.permissions.map((rp) => rp.permission);
+    const existingById = new Map(existing.map((p) => [p.id, p] as const));
+    const existingIds = new Set(existing.map((p) => p.id));
 
-    const permissions = await Promise.all(
-      desiredKeys.map((key) =>
-        prisma.permission.upsert({
-          where: { key },
-          update: {},
-          create: { key, description: key },
+    let desiredPermissions: Array<{ id: string; key: string }> = [];
+
+    if (Array.isArray(input.permissionKeys)) {
+      const desiredKeys = input.permissionKeys.map((k) => k.trim());
+
+      if (desiredKeys.length > 0) {
+        const found = await tx.permission.findMany({
+          where: { key: { in: desiredKeys } },
           select: { id: true, key: true },
-        })
-      )
-    );
-
-    const desiredPermissionIds = permissions.map((p) => p.id);
-
-    await prisma.$transaction(async (tx) => {
-      if (desiredPermissionIds.length === 0) {
-        await tx.rolePermission.deleteMany({ where: { roleId } });
-      } else {
-        await tx.rolePermission.deleteMany({
-          where: {
-            roleId,
-            permissionId: { notIn: desiredPermissionIds },
-          },
         });
-      }
 
+        const foundKeys = new Set(found.map((p) => p.key));
+        const invalidPermissionKeys = desiredKeys.filter((k) => !foundKeys.has(k));
+        if (invalidPermissionKeys.length > 0) {
+          throw AppError.validation({ invalidPermissionKeys });
+        }
+
+        desiredPermissions = found;
+      }
+    } else if (Array.isArray(input.permissionIds)) {
+      const desiredIds = input.permissionIds;
+
+      if (desiredIds.length > 0) {
+        const found = await tx.permission.findMany({
+          where: { id: { in: desiredIds } },
+          select: { id: true, key: true },
+        });
+
+        const foundIds = new Set(found.map((p) => p.id));
+        const invalidPermissionIds = desiredIds.filter((id) => !foundIds.has(id));
+        if (invalidPermissionIds.length > 0) {
+          throw AppError.validation({ invalidPermissionIds });
+        }
+
+        desiredPermissions = found;
+      }
+    } else {
+      // Should be unreachable due to Zod validation
+      throw AppError.validation({ message: "Provide permissionKeys or permissionIds" });
+    }
+
+    desiredPermissions = desiredPermissions.sort((a, b) => a.key.localeCompare(b.key));
+
+    const desiredIds = new Set(desiredPermissions.map((p) => p.id));
+    const addedPermissions = desiredPermissions.filter((p) => !existingIds.has(p.id));
+    const removedPermissions = existing.filter((p) => !desiredIds.has(p.id));
+
+    await tx.rolePermission.deleteMany({
+      where: {
+        roleId,
+        permissionId: { in: removedPermissions.map((p) => p.id) },
+      },
+    });
+
+    if (addedPermissions.length > 0) {
       await tx.rolePermission.createMany({
-        data: desiredPermissionIds.map((permissionId) => ({
-          roleId,
-          permissionId,
-        })),
+        data: addedPermissions.map((p) => ({ roleId, permissionId: p.id })),
         skipDuplicates: true,
       });
-    });
+    }
 
-    await writeAuditLog({
-      req,
-      action: "ROLE_PERMISSION_UPDATED",
-      entityType: "Role",
-      entityId: roleId,
-      meta: { roleName: role.name, addedKeys, removedKeys },
-    });
+    const finalPermissions = desiredPermissions;
 
-    return ok(
-      res,
-      req,
-      {
-        roleId,
-        permissionKeys: desiredKeys,
-        addedKeys,
-        removedKeys,
+    return {
+      role: { id: role.id, name: role.name },
+      addedKeys: addedPermissions.map((p) => p.key),
+      removedKeys: removedPermissions.map((p) => p.key),
+      finalPermissions,
+      existingById,
+    };
+  });
+
+  await writeAuditLog({
+    req,
+    action: "ROLE_PERMISSION_UPDATED",
+    entityType: "ROLE",
+    entityId: result.role.id,
+    meta: {
+      roleName: result.role.name,
+      added: result.addedKeys,
+      removed: result.removedKeys,
+      final: result.finalPermissions.map((p) => p.key),
+    },
+  });
+
+  return ok(
+    res,
+    req,
+    {
+      role: {
+        id: result.role.id,
+        name: result.role.name,
+        permissions: result.finalPermissions,
       },
-      200
-    );
-  })
+      addedKeys: result.addedKeys,
+      removedKeys: result.removedKeys,
+    },
+    200
+  );
+}
+
+rolesRouter.post(
+  "/:id/permissions",
+  authenticate,
+  requirePermission("roles.write"),
+  validateParams(RoleIdOrIdParamSchema),
+  validateBody(ReplaceRolePermissionsBodySchema),
+  asyncHandler(replaceRolePermissions)
+);
+
+// Back-compat: existing endpoint used PUT + :roleId param.
+rolesRouter.put(
+  "/:roleId/permissions",
+  authenticate,
+  requirePermission("roles.write"),
+  validateParams(RoleIdOrIdParamSchema),
+  validateBody(ReplaceRolePermissionsBodySchema),
+  asyncHandler(replaceRolePermissions)
 );
