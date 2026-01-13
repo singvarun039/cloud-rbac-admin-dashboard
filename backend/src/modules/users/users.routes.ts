@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../../db/prisma";
 import { authenticate } from "../../middlewares/authenticate";
 import { requirePermission } from "../../middlewares/requirePermission";
+import { AppError } from "../../errors/AppError";
 import { ok } from "../../utils/apiResponse";
 import { hashPassword } from "../../utils/password";
 import { writeAuditLog } from "../../services/auditLog.service";
@@ -11,22 +12,54 @@ import {
   validateParams,
   validateQuery,
 } from "../../middlewares/validate";
-import { ListQuerySchema } from "../../validation/list.schema";
 import {
   CreateUserBodySchema,
   UpdateUserBodySchema,
   UserIdParamSchema,
+  UsersListQuerySchema,
 } from "../../validation/users.schema";
 
 export const usersRouter = Router();
+
+function nameToFirstLast(name: string): { firstName: string; lastName: string | null } {
+  const normalized = name.trim().replace(/\s+/g, " ");
+  const parts = normalized.split(" ");
+
+  const firstName = parts[0] ?? "";
+  const lastName = parts.length > 1 ? parts.slice(1).join(" ") : null;
+
+  return { firstName, lastName };
+}
+
+function userToApi(user: {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+}) {
+  const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
+  const status = user.isActive ? "ACTIVE" : "INACTIVE";
+
+  return {
+    id: user.id,
+    email: user.email,
+    name,
+    status,
+    createdAt: user.createdAt,
+    ...(user.updatedAt ? { updatedAt: user.updatedAt } : {}),
+  };
+}
 
 usersRouter.get(
   "/",
   authenticate,
   requirePermission("users.read"),
-  validateQuery(ListQuerySchema),
+  validateQuery(UsersListQuerySchema),
   asyncHandler(async (req, res) => {
-    const { page, limit, search } = req.query as any;
+    const { page, limit, search, status } = req.query as any;
 
     const where: any = {};
     if (search) {
@@ -36,6 +69,9 @@ usersRouter.get(
         { lastName: { contains: String(search), mode: "insensitive" } },
       ];
     }
+
+    if (status === "ACTIVE") where.isActive = true;
+    if (status === "INACTIVE") where.isActive = false;
 
     const skip = (page - 1) * limit;
 
@@ -58,9 +94,10 @@ usersRouter.get(
       }),
     ]);
 
-    const totalPages = Math.max(1, Math.ceil(total / limit));
+    const items = users.map((u) => userToApi(u));
+    const hasNext = page * limit < total;
 
-    return ok(res, req, { users, page, limit, total, totalPages }, 200);
+    return ok(res, req, { items, meta: { page, limit, total, hasNext } }, 200);
   })
 );
 
@@ -70,17 +107,19 @@ usersRouter.post(
   requirePermission("users.write"),
   validateBody(CreateUserBodySchema),
   asyncHandler(async (req, res) => {
-    const { email, password, firstName, lastName } = req.body as any;
+    const { email, password, name, status } = req.body as any;
 
     const passwordHash = await hashPassword(password);
+    const parsedName = nameToFirstLast(String(name));
+    const isActive = status === "ACTIVE";
 
     const user = await prisma.user.create({
       data: {
         email,
         passwordHash,
-        firstName: firstName ?? null,
-        lastName: lastName ?? null,
-        isActive: true,
+        firstName: parsedName.firstName,
+        lastName: parsedName.lastName,
+        isActive,
       },
       select: {
         id: true,
@@ -89,23 +128,24 @@ usersRouter.post(
         lastName: true,
         isActive: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
 
     await writeAuditLog({
       req,
       action: "USER_CREATED",
-      entityType: "User",
+      entityType: "USER",
       entityId: user.id,
+      actorUserId: req.user?.id ?? null,
       meta: {
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isActive: user.isActive,
+        name: [user.firstName, user.lastName].filter(Boolean).join(" ") || null,
+        status: user.isActive ? "ACTIVE" : "INACTIVE",
       },
     });
 
-    return ok(res, req, { user }, 201);
+    return ok(res, req, { user: userToApi(user) }, 201);
   })
 );
 
@@ -118,17 +158,31 @@ usersRouter.patch(
   asyncHandler(async (req, res) => {
     const userId = (req.params as any).id as string;
     const input = req.body as any;
-    const updatedFields = Object.keys(input).filter((k) => k !== "password");
+    const before = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!before) {
+      throw AppError.notFound("User not found");
+    }
 
     const data: any = {};
     if (typeof input.email === "string") data.email = input.email;
-    if (typeof input.firstName !== "undefined")
-      data.firstName = input.firstName;
-    if (typeof input.lastName !== "undefined") data.lastName = input.lastName;
-    if (typeof input.isActive === "boolean") data.isActive = input.isActive;
-    if (typeof input.password === "string") {
-      data.passwordHash = await hashPassword(input.password);
-      updatedFields.push("password");
+    if (typeof input.status === "string") data.isActive = input.status === "ACTIVE";
+
+    if (typeof input.name === "string") {
+      const parsedName = nameToFirstLast(input.name);
+      data.firstName = parsedName.firstName;
+      data.lastName = parsedName.lastName;
     }
 
     const user = await prisma.user.update({
@@ -145,21 +199,42 @@ usersRouter.patch(
       },
     });
 
+    const changes: Record<string, { from: string | null; to: string | null }> =
+      {};
+    if (typeof input.email === "string" && input.email !== before.email) {
+      changes.email = { from: before.email, to: user.email };
+    }
+
+    if (typeof input.status === "string") {
+      const beforeStatus = before.isActive ? "ACTIVE" : "INACTIVE";
+      const afterStatus = user.isActive ? "ACTIVE" : "INACTIVE";
+      if (beforeStatus !== afterStatus) {
+        changes.status = { from: beforeStatus, to: afterStatus };
+      }
+    }
+
+    if (typeof input.name === "string") {
+      const beforeName =
+        [before.firstName, before.lastName].filter(Boolean).join(" ") || null;
+      const afterName =
+        [user.firstName, user.lastName].filter(Boolean).join(" ") || null;
+      if (beforeName !== afterName) {
+        changes.name = { from: beforeName, to: afterName };
+      }
+    }
+
     await writeAuditLog({
       req,
       action: "USER_UPDATED",
-      entityType: "User",
+      entityType: "USER",
       entityId: user.id,
+      actorUserId: req.user?.id ?? null,
       meta: {
-        updatedFields,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        isActive: user.isActive,
+        changes: Object.keys(changes).length > 0 ? changes : {},
       },
     });
 
-    return ok(res, req, { user }, 200);
+    return ok(res, req, { user: userToApi(user) }, 200);
   })
 );
 
@@ -171,17 +246,33 @@ usersRouter.delete(
   asyncHandler(async (req, res) => {
     const userId = (req.params as any).id as string;
 
-    const deleted = await prisma.user.delete({
+    const disabled = await prisma.user.update({
       where: { id: userId },
-      select: { id: true, email: true },
+      data: { isActive: false },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     await writeAuditLog({
       req,
       action: "USER_DELETED",
-      entityType: "User",
-      entityId: deleted.id,
-      meta: { email: deleted.email },
+      entityType: "USER",
+      entityId: disabled.id,
+      actorUserId: req.user?.id ?? null,
+      meta: {
+        email: disabled.email,
+        name:
+          [disabled.firstName, disabled.lastName].filter(Boolean).join(" ") ||
+          null,
+        status: disabled.isActive ? "ACTIVE" : "INACTIVE",
+      },
     });
 
     return ok(res, req, { success: true }, 200);
