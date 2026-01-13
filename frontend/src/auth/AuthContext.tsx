@@ -22,6 +22,7 @@ import {
 
 export type AuthContextValue = {
   user: MeUser | null;
+  permissions: string[];
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -105,10 +106,49 @@ function unwrapMeUser(payload: unknown): MeUser | null {
   return null;
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((x) => typeof x === "string");
+}
+
+function unwrapMeResponse(payload: unknown): {
+  user: MeUser | null;
+  permissions: string[];
+} {
+  const unwrapped = unwrapData<unknown>(payload);
+  const candidate = asRecord(unwrapped ?? payload);
+  if (!candidate) return { user: null, permissions: [] };
+
+  // Some callers may still provide an envelope-like shape after unwrapData()
+  // (e.g., { ok: true, data: { user, permissions } }). Prefer inner `data`
+  // if it contains `user` and/or `permissions`.
+  const innerData = asRecord(candidate.data);
+  const source =
+    innerData && ("user" in innerData || "permissions" in innerData)
+      ? innerData
+      : candidate;
+
+  // Backend /auth/me shape: { user: { id, email, name }, permissions: string[] }
+  const nestedUser = asRecord(source.user);
+  const user = unwrapMeUser(nestedUser ?? source);
+
+  const permissionsFromTop = source.permissions;
+  const permissionsFromNestedUser = nestedUser?.permissions;
+
+  const permissions =
+    (isStringArray(permissionsFromTop) ? permissionsFromTop : null) ??
+    (isStringArray(permissionsFromNestedUser)
+      ? permissionsFromNestedUser
+      : null) ??
+    [];
+
+  return { user, permissions };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<MeUser | null>(null);
+  const [permissionsState, setPermissionsState] = useState<string[]>([]);
   const [accessTokenState, setAccessTokenState] = useState<string | null>(() =>
     getAccessToken()
   );
@@ -144,10 +184,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     rehydrateInFlightRef.current = true;
     try {
       const meRes = await authApi.me();
-      const me = unwrapMeUser(meRes);
-      setUser(me);
+      const me = unwrapMeResponse(meRes);
+      setUser(me.user);
+      setPermissionsState(me.permissions);
 
-      if (!me) {
+      if (!me.user) {
         // Keep user nullable; do not clear tokens unless server says 401.
         return;
       }
@@ -161,8 +202,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearTokens();
         setAccessTokenState(null);
         setUser(null);
+        setPermissionsState([]);
       } else {
         setUser(null);
+        setPermissionsState([]);
       }
     } finally {
       rehydrateInFlightRef.current = false;
@@ -200,6 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTokens();
       setAccessTokenState(null);
       setUser(null);
+      setPermissionsState([]);
       navigate("/login", { replace: true });
     }
   }, [navigate]);
@@ -223,11 +267,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const meRes = await authApi.me();
-        const me = unwrapMeUser(meRes);
-        setUser(me);
+        const me = unwrapMeResponse(meRes);
+        setUser(me.user);
+        setPermissionsState(me.permissions);
       } catch {
         // keep user nullable for stability (e.g., transient network error)
         setUser(null);
+        setPermissionsState([]);
       }
 
       return { ok: true as const };
@@ -264,8 +310,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const meRes = await authApi.me();
-        const me = unwrapMeUser(meRes);
-        if (!cancelled) setUser(me);
+        const me = unwrapMeResponse(meRes);
+        if (!cancelled) {
+          setUser(me.user);
+          setPermissionsState(me.permissions);
+        }
       } catch (err) {
         const status = (err as { response?: { status?: number } })?.response
           ?.status;
@@ -274,9 +323,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!cancelled) {
             setAccessTokenState(null);
             setUser(null);
+            setPermissionsState([]);
           }
         } else {
-          if (!cancelled) setUser(null);
+          if (!cancelled) {
+            setUser(null);
+            setPermissionsState([]);
+          }
 
           // One-time delayed retry (helps with transient network errors)
           if (!bootRetryScheduledRef.current) {
@@ -322,6 +375,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      permissions: permissionsState,
       accessToken: accessTokenState,
       isAuthenticated,
       isLoading,
@@ -329,7 +383,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refresh,
     }),
-    [accessTokenState, isAuthenticated, isLoading, login, logout, refresh, user]
+    [
+      accessTokenState,
+      isAuthenticated,
+      isLoading,
+      login,
+      logout,
+      permissionsState,
+      refresh,
+      user,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

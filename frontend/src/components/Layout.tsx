@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 
 const navItems = [
@@ -11,8 +11,17 @@ const navItems = [
 ];
 
 export default function Layout() {
-  const { logout } = useAuth();
+  const { logout, permissions } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const canReadUsers = permissions.includes("users.read");
+
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter((item) => {
+      if (item.to === "/users") return canReadUsers;
+      return true;
+    });
+  }, [canReadUsers]);
 
   async function onLogout() {
     if (loggingOut) return;
@@ -29,7 +38,7 @@ export default function Layout() {
       <aside className="sidebar">
         <div className="sidebar-title">RBAC Admin</div>
         <nav className="nav">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
