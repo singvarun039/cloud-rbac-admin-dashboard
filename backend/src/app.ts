@@ -1,3 +1,4 @@
+import "./types/register";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -12,16 +13,60 @@ import { requestLogger } from "./middlewares/requestLogger";
 import { errorHandler } from "./middlewares/errorHandler";
 import { AppError } from "./errors/AppError";
 import { auditLogsRouter } from "./modules/auditLogs/auditLogs.routes";
+import { env } from "./config/env";
+
+function parseAllowedOrigins(value: string): string[] {
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export function createApp() {
   const app = express();
+
+  if (env.TRUST_PROXY) {
+    // Allows correct req.ip when running behind a reverse proxy.
+    app.set("trust proxy", 1);
+  }
 
   // Must run before everything (including 404s) so all responses have X-Request-Id.
   app.use(requestId);
   app.use(requestLogger);
 
-  app.use(helmet());
-  app.use(cors({ origin: true, credentials: true }));
+  app.use(
+    helmet({
+      // Keep baseline headers without breaking Vite/React dev.
+      contentSecurityPolicy: false,
+      frameguard: { action: "deny" },
+    })
+  );
+
+  const allowedOrigins = new Set<string>();
+  if (env.NODE_ENV !== "production") {
+    allowedOrigins.add("http://localhost:5173");
+  }
+  for (const origin of parseAllowedOrigins(env.FRONTEND_ORIGIN)) {
+    allowedOrigins.add(origin);
+  }
+
+  const corsOptions: cors.CorsOptions = {
+    origin: (origin, callback) => {
+      // Non-browser clients (curl, server-to-server) often omit Origin.
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.has(origin)) return callback(null, true);
+      // Disallowed origins: do not set CORS headers (browser blocks).
+      return callback(null, false);
+    },
+    credentials: false,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Authorization", "Content-Type", "X-Request-Id"],
+    optionsSuccessStatus: 204,
+  };
+
+  // Must be before routes so preflight OPTIONS succeeds.
+  app.use(cors(corsOptions));
+  app.options(/.*/, cors(corsOptions));
   app.use(express.json({ limit: "1mb" }));
 
   app.use("/api", healthRoutes);
