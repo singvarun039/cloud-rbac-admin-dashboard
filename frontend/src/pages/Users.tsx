@@ -299,8 +299,8 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-9 w-20" />
+                        <Skeleton className="h-9 w-24" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -347,6 +347,7 @@ export default function UsersPage() {
                             size="sm"
                             type="button"
                             onClick={() => onOpenEdit(u)}
+                            className="h-9 min-w-20"
                           >
                             Edit
                           </Button>
@@ -355,6 +356,7 @@ export default function UsersPage() {
                             size="sm"
                             type="button"
                             onClick={() => void onDelete(u)}
+                            className="h-9 min-w-24"
                           >
                             Deactivate
                           </Button>

@@ -240,8 +240,8 @@ export default function RolesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Skeleton className="h-8 w-16" />
-                        <Skeleton className="h-8 w-36" />
+                        <Skeleton className="h-9 w-20" />
+                        <Skeleton className="h-9 w-36" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -284,6 +284,7 @@ export default function RolesPage() {
                             size="sm"
                             type="button"
                             onClick={() => onOpenEdit(r)}
+                            className="h-9 min-w-20"
                           >
                             Edit
                           </Button>
@@ -292,6 +293,7 @@ export default function RolesPage() {
                             size="sm"
                             type="button"
                             onClick={() => onOpenAssign(r)}
+                            className="h-9 min-w-36"
                           >
                             Assign Permissions
                           </Button>
