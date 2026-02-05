@@ -6,6 +6,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { toast } from "../components/ui/use-toast";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export default function LoginPage() {
         setError(result.error);
         return;
       }
+      toast.success("Signed in");
       navigate(redirectTo, { replace: true });
     } finally {
       setLoading(false);

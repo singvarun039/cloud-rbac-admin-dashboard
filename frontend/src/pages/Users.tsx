@@ -15,6 +15,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
+import { toast } from "../components/ui/use-toast";
 import {
   Table,
   TableBody,
@@ -188,8 +189,11 @@ export default function UsersPage() {
           void fetchUsers();
         }
         setSuccess("User deactivated.");
+        toast.success("User deactivated");
       } catch (err) {
-        setError(getApiErrorMessage(err, "Failed to deactivate user."));
+        const msg = getApiErrorMessage(err, "Failed to deactivate user.");
+        setError(msg);
+        toast.error("Action failed", { description: msg });
       }
     },
     [canWriteUsers, fetchUsers, page, users.length],
@@ -410,8 +414,12 @@ export default function UsersPage() {
           setPage(1);
           await fetchUsers();
           setSuccess("User created.");
+          toast.success("User created");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <EditUserModal
@@ -423,8 +431,12 @@ export default function UsersPage() {
           onCloseEdit();
           await fetchUsers();
           setSuccess("User updated.");
+          toast.success("User updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
     </div>
   );

@@ -15,6 +15,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Skeleton } from "../components/ui/skeleton";
+import { toast } from "../components/ui/use-toast";
 import {
   Table,
   TableBody,
@@ -321,8 +322,12 @@ export default function RolesPage() {
           setCreateOpen(false);
           await fetchRoles();
           setSuccess("Role created.");
+          toast.success("Role created");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <RoleModal
@@ -335,8 +340,12 @@ export default function RolesPage() {
           onCloseEdit();
           await fetchRoles();
           setSuccess("Role updated.");
+          toast.success("Role updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <AssignPermissionsModal
@@ -349,8 +358,12 @@ export default function RolesPage() {
           onCloseAssign();
           await fetchRoles();
           setSuccess("Role permissions updated.");
+          toast.success("Permissions updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
     </div>
   );
