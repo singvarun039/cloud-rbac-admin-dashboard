@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AxiosError } from "axios";
 import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
+import { getApiErrorMessage } from "../api/client";
 import {
   createUser,
   deleteUser,
@@ -35,7 +35,7 @@ function NotAuthorized() {
     <div className="page">
       <h1 className="page-title">Users</h1>
       <div className="card">
-        <div className="card-title">Not authorized</div>
+        <div className="card-title">Forbidden (403)</div>
         <div className="muted">You don’t have permission to view users.</div>
       </div>
     </div>
@@ -86,7 +86,7 @@ export default function UsersPage() {
             search,
             status,
           },
-          { signal: opts?.signal }
+          { signal: opts?.signal },
         );
 
         if (fetchSeqRef.current !== seq) return;
@@ -96,16 +96,12 @@ export default function UsersPage() {
       } catch (err) {
         if (isCanceledError(err)) return;
         if (fetchSeqRef.current !== seq) return;
-        const msg =
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          (err as Error)?.message ||
-          "Failed to load users.";
-        setError(msg);
+        setError(getApiErrorMessage(err, "Failed to load users."));
       } finally {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
     },
-    [canReadUsers, limit, page, search, status]
+    [canReadUsers, limit, page, search, status],
   );
 
   useEffect(() => {
@@ -148,7 +144,7 @@ export default function UsersPage() {
       setSuccess(null);
 
       const ok = window.confirm(
-        `Deactivate user "${u.email}"? You can re-enable later by editing status.`
+        `Deactivate user "${u.email}"? You can re-enable later by editing status.`,
       );
       if (!ok) return;
 
@@ -163,14 +159,10 @@ export default function UsersPage() {
         }
         setSuccess("User deactivated.");
       } catch (err) {
-        const msg =
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          (err as Error)?.message ||
-          "Failed to deactivate user.";
-        setError(msg);
+        setError(getApiErrorMessage(err, "Failed to deactivate user."));
       }
     },
-    [canWriteUsers, fetchUsers, page, users.length]
+    [canWriteUsers, fetchUsers, page, users.length],
   );
 
   if (!canReadUsers) {
@@ -413,10 +405,7 @@ function CreateUserModal(props: {
       if (isConflictError(err)) {
         setConflictError("Email already exists.");
       } else {
-        onError(
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-            "Failed to create user."
-        );
+        onError(getApiErrorMessage(err, "Failed to create user."));
       }
     } finally {
       setSubmitting(false);
@@ -551,10 +540,7 @@ function EditUserModal(props: {
       if (isConflictError(err)) {
         setConflictError("Email already exists.");
       } else {
-        onError(
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-            "Failed to update user."
-        );
+        onError(getApiErrorMessage(err, "Failed to update user."));
       }
     } finally {
       setSubmitting(false);

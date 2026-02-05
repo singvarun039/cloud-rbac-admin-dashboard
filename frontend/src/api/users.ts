@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { ApiEnvelope } from "../types/api";
+import { unwrapData, type ApiEnvelope } from "../types/api";
 
 export type UserStatus = "ACTIVE" | "INACTIVE";
 
@@ -9,6 +9,7 @@ export type User = {
   email: string;
   status: UserStatus;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type UsersResponse = {
@@ -43,22 +44,59 @@ function isUsersResponse(value: unknown): value is UsersResponse {
   );
 }
 
-function unwrapUsersResponse(payload: unknown): UsersResponse {
-  // Backend may return either { data, meta } or an envelope { data: { data, meta } }
-  if (isUsersResponse(payload)) return payload;
+function isUsersListData(value: unknown): value is {
+  items: User[];
+  meta: UsersResponse["meta"];
+} {
+  if (!value || typeof value !== "object") return false;
+  return "items" in value && "meta" in value;
+}
 
-  const envelope = payload as ApiEnvelope<unknown>;
-  if (envelope && typeof envelope === "object") {
-    const inner = envelope.data;
-    if (isUsersResponse(inner)) return inner;
+function getUsersFormatErrorMessage(payload: unknown): string {
+  const record = asRecord(payload);
+  const error = record?.error;
+  const errorMessage =
+    error && typeof error === "object" && error !== null && "message" in error
+      ? (error as { message?: unknown }).message
+      : undefined;
+
+  if (typeof errorMessage === "string" && errorMessage.trim()) {
+    return errorMessage;
   }
 
-  throw new Error("Unexpected users list response format");
+  const message = record?.message;
+  if (typeof message === "string" && message.trim()) {
+    return message;
+  }
+
+  return "Failed to load users.";
+}
+
+function unwrapUsersResponse(payload: unknown): UsersResponse {
+  // Accept:
+  // - { data, meta } (legacy / normalized)
+  // - { items, meta }
+  // - envelope: { ok: true, data: { items, meta } }
+  // - envelope: { data: { items, meta } }
+  const unwrapped = unwrapData<unknown>(payload) ?? payload;
+
+  if (isUsersResponse(unwrapped)) return unwrapped;
+
+  if (isUsersListData(unwrapped)) {
+    return {
+      data: unwrapped.items,
+      meta: unwrapped.meta,
+    };
+  }
+
+  // Defensive: only throw a helpful message when items/meta are missing.
+  const msg = getUsersFormatErrorMessage(payload);
+  throw new Error(msg);
 }
 
 export async function getUsers(
   params: GetUsersParams,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal },
 ): Promise<UsersResponse> {
   const query: Record<string, unknown> = {
     page: params.page,
@@ -107,7 +145,7 @@ export async function createUser(payload: CreateUserRequest): Promise<User> {
 
 export async function updateUser(
   id: string,
-  payload: UpdateUserRequest
+  payload: UpdateUserRequest,
 ): Promise<User> {
   const res = await api.patch(`/api/users/${id}`, payload);
   const body = res.data as unknown;

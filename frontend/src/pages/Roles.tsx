@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AxiosError } from "axios";
 import { useAuth } from "../auth/useAuth";
 import { getRoles, type Role } from "../api/roles";
+import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
 
@@ -15,7 +15,7 @@ function NotAuthorized() {
     <div className="page">
       <h1 className="page-title">Roles</h1>
       <div className="card">
-        <div className="card-title">Not authorized</div>
+        <div className="card-title">Forbidden (403)</div>
         <div className="muted">You don’t have permission to view roles.</div>
       </div>
     </div>
@@ -30,8 +30,8 @@ function permissionCountLabel(role: Role): string {
     typeof countFromArray === "number"
       ? countFromArray
       : typeof role.permissionCount === "number"
-      ? role.permissionCount
-      : 0;
+        ? role.permissionCount
+        : 0;
   return `${count} permissions`;
 }
 
@@ -76,23 +76,19 @@ export default function RolesPage() {
       try {
         const res = await getRoles(
           { page: 1, limit: 100, search: debouncedSearch },
-          { signal: opts?.signal }
+          { signal: opts?.signal },
         );
         if (fetchSeqRef.current !== seq) return;
         setRoles(res.data);
       } catch (err) {
         if (isCanceledError(err)) return;
         if (fetchSeqRef.current !== seq) return;
-        const msg =
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          (err as Error)?.message ||
-          "Failed to load roles.";
-        setError(msg);
+        setError(getApiErrorMessage(err, "Failed to load roles."));
       } finally {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
     },
-    [canReadRoles, debouncedSearch]
+    [canReadRoles, debouncedSearch],
   );
 
   useEffect(() => {

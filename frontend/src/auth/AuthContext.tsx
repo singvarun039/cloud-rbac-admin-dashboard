@@ -72,24 +72,30 @@ function extractRefreshToken(payload: unknown): string | null {
   return typeof direct === "string" && direct.length > 0 ? direct : null;
 }
 
+type ApiErrorEnvelope = {
+  ok: false;
+  error: { code: string; message: string };
+  requestId: string;
+};
+
 function extractErrorMessage(err: unknown): string {
   const anyErr = err as {
-    message?: unknown;
     response?: {
       data?: unknown;
     };
   };
 
-  const data = asRecord(anyErr?.response?.data);
-  const messageFromApi = data?.message;
-  const errorFromApi = data?.error;
+  const data = anyErr?.response?.data;
+  const envelope = (data && typeof data === "object" ? data : null) as
+    | ApiErrorEnvelope
+    | null;
 
-  return (
-    (typeof messageFromApi === "string" ? messageFromApi : null) ||
-    (typeof errorFromApi === "string" ? errorFromApi : null) ||
-    (typeof anyErr?.message === "string" ? anyErr.message : null) ||
-    "Request failed."
-  );
+  const serverMessage = envelope?.error?.message;
+  if (typeof serverMessage === "string" && serverMessage.length > 0) {
+    return serverMessage;
+  }
+
+  return "Login failed. Please try again.";
 }
 
 function unwrapMeUser(payload: unknown): MeUser | null {

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AxiosError } from "axios";
 import Modal from "./Modal";
 import { getPermissions, type Permission } from "../api/permissions";
 import { replaceRolePermissions, type Role } from "../api/roles";
+import { getApiErrorMessage } from "../api/client";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -142,16 +142,12 @@ export default function AssignPermissionsModal(props: {
       } catch (err) {
         if (isCanceledError(err)) return;
         if (fetchSeqRef.current !== seq) return;
-        const msg =
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          (err as Error)?.message ||
-          "Failed to load permissions.";
-        setLoadError(msg);
+        setLoadError(getApiErrorMessage(err, "Failed to load permissions."));
       } finally {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
     },
-    [canReadPermissions, open]
+    [canReadPermissions, open],
   );
 
   useEffect(() => {
@@ -226,10 +222,7 @@ export default function AssignPermissionsModal(props: {
       await replaceRolePermissions(role.id, { permissionIds: selectedIds });
       await onSuccess();
     } catch (err) {
-      onError(
-        (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          "Failed to update role permissions."
-      );
+      onError(getApiErrorMessage(err, "Failed to update role permissions."));
     } finally {
       setSubmitting(false);
     }
@@ -257,7 +250,7 @@ export default function AssignPermissionsModal(props: {
 
       {!canReadPermissions ? (
         <div className="card" style={{ marginTop: 10 }}>
-          <div className="card-title">Not authorized</div>
+          <div className="card-title">Forbidden (403)</div>
           <div className="muted">
             You’re not authorized to view permissions.
           </div>

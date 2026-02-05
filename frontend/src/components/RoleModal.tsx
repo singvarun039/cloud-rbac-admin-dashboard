@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { AxiosError } from "axios";
 import Modal from "./Modal";
 import { createRole, updateRole, type Role } from "../api/roles";
+import { getApiErrorMessage } from "../api/client";
 
 function isConflictError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
@@ -95,10 +95,12 @@ export default function RoleModal(props: {
         setNotFoundError("Role not found.");
       } else {
         onError(
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-            (mode === "create"
+          getApiErrorMessage(
+            err,
+            mode === "create"
               ? "Failed to create role."
-              : "Failed to update role.")
+              : "Failed to update role.",
+          ),
         );
       }
     } finally {
@@ -175,8 +177,8 @@ export default function RoleModal(props: {
               ? "Creating…"
               : "Saving…"
             : mode === "create"
-            ? "Create"
-            : "Save"}
+              ? "Create"
+              : "Save"}
         </button>
       </div>
     </Modal>

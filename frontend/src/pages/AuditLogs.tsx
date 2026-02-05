@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AxiosError } from "axios";
 import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
+import { getApiErrorMessage } from "../api/client";
 import {
   getAuditLogs,
   type AuditLogRow,
@@ -71,7 +71,7 @@ function NotAuthorized() {
     <div className="page">
       <h1 className="page-title">Audit Logs</h1>
       <div className="card">
-        <div className="card-title">Not authorized</div>
+        <div className="card-title">Forbidden (403)</div>
         <div className="muted">
           You don’t have permission to view audit logs.
         </div>
@@ -172,16 +172,12 @@ export default function AuditLogsPage() {
       } catch (err) {
         if (isCanceledError(err)) return;
         if (fetchSeqRef.current !== seq) return;
-        const msg =
-          (err as AxiosError<{ message?: string }>).response?.data?.message ||
-          (err as Error)?.message ||
-          "Failed to load audit logs.";
-        setError(msg);
+        setError(getApiErrorMessage(err, "Failed to load audit logs."));
       } finally {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
     },
-    [canReadAuditLogs, query]
+    [canReadAuditLogs, query],
   );
 
   useEffect(() => {
