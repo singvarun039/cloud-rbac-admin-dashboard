@@ -77,8 +77,11 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">Projects</h1>
+          <p className="text-sm text-slate-600">Browse projects.</p>
+        </div>
       </div>
 
       {error ? (

@@ -55,7 +55,7 @@ function NotAuthorized() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+        <h1 className="text-2xl font-semibold">Users</h1>
       </div>
 
       <Card>
@@ -201,11 +201,19 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-        <p className="text-sm text-slate-600">
-          Manage application users and access.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">Users</h1>
+          <p className="text-sm text-slate-600">
+            Manage application users and access.
+          </p>
+        </div>
+
+        {canWriteUsers ? (
+          <Button type="button" onClick={onOpenCreate} className="h-10">
+            Create User
+          </Button>
+        ) : null}
       </div>
 
       {success ? (
@@ -256,12 +264,6 @@ export default function UsersPage() {
             </Select>
           </div>
         </div>
-
-        {canWriteUsers ? (
-          <Button type="button" onClick={onOpenCreate} className="h-10">
-            Create User
-          </Button>
-        ) : null}
       </div>
 
       <Card>

@@ -33,7 +33,7 @@ function NotAuthorized() {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
+        <h1 className="text-2xl font-semibold">Roles</h1>
       </div>
 
       <Card>
@@ -165,11 +165,19 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
-        <p className="text-sm text-slate-600">
-          Manage roles and their permissions.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold">Roles</h1>
+          <p className="text-sm text-slate-600">
+            Manage roles and their permissions.
+          </p>
+        </div>
+
+        {canWriteRoles ? (
+          <Button type="button" onClick={onOpenCreate} className="h-10">
+            Create Role
+          </Button>
+        ) : null}
       </div>
 
       {success ? (
@@ -201,12 +209,6 @@ export default function RolesPage() {
             className="h-10"
           />
         </div>
-
-        {canWriteRoles ? (
-          <Button type="button" onClick={onOpenCreate} className="h-10">
-            Create Role
-          </Button>
-        ) : null}
       </div>
 
       <Card>
