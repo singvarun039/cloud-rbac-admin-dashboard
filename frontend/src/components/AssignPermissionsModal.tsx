@@ -249,15 +249,15 @@ export default function AssignPermissionsModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!role ? (
-        <p className="text-sm text-slate-500">No role selected.</p>
-      ) : null}
-      {!canWriteRoles ? (
-        <p className="text-sm text-slate-500">Requires roles.write.</p>
+      {!role || !canWriteRoles ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          {!role ? <p>No role selected.</p> : null}
+          {!canWriteRoles ? <p>Requires roles.write.</p> : null}
+        </div>
       ) : null}
 
       {!canReadPermissions ? (
-        <Card className="mt-4">
+        <Card>
           <CardHeader>
             <CardTitle className="text-base">Forbidden (403)</CardTitle>
           </CardHeader>
@@ -269,8 +269,8 @@ export default function AssignPermissionsModal(props: {
         </Card>
       ) : (
         <>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid gap-1.5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
               <Label>Search</Label>
               <Input
                 value={search}
@@ -278,25 +278,26 @@ export default function AssignPermissionsModal(props: {
                 placeholder="filter by key or description"
                 type="text"
                 disabled={loading || !role}
+                className="h-10"
               />
             </div>
 
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 type="button"
                 onClick={onSelectAllFiltered}
                 disabled={loading || filtered.length === 0}
+                className="h-10"
               >
                 Select all filtered
               </Button>
               <Button
                 variant="outline"
-                size="sm"
                 type="button"
                 onClick={onClearFiltered}
                 disabled={loading || filtered.length === 0}
+                className="h-10"
               >
                 Clear filtered
               </Button>
@@ -304,16 +305,16 @@ export default function AssignPermissionsModal(props: {
           </div>
 
           {loadError ? (
-            <Alert variant="destructive" className="mt-4">
+            <Alert variant="destructive">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <AlertDescription className="sm:pr-4">
                   {loadError}
                 </AlertDescription>
                 <Button
                   variant="outline"
-                  size="sm"
                   type="button"
                   onClick={onRetry}
+                  className="h-10"
                 >
                   Retry
                 </Button>
@@ -321,7 +322,7 @@ export default function AssignPermissionsModal(props: {
             </Alert>
           ) : null}
 
-          <Card className="mt-4">
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">Permissions</CardTitle>
             </CardHeader>
@@ -348,7 +349,7 @@ export default function AssignPermissionsModal(props: {
                     return (
                       <label
                         key={p.id}
-                        className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
+                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
                       >
                         <input
                           type="checkbox"
@@ -375,18 +376,18 @@ export default function AssignPermissionsModal(props: {
             </CardContent>
           </Card>
 
-          <div className="mt-4 text-sm text-slate-500">
+          <div className="text-sm text-slate-500">
             Selected: {selectedIds.length}
           </div>
           {hydratedFromKeys ? (
-            <div className="mt-1 text-sm text-slate-500">
+            <div className="-mt-2 text-sm text-slate-500">
               Hydrated from keys
             </div>
           ) : null}
         </>
       )}
 
-      <div className="mt-6 flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>

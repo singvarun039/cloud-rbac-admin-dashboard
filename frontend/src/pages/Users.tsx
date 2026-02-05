@@ -496,46 +496,52 @@ function CreateUserModal(props: {
   return (
     <Modal title="Create user" isOpen={isOpen} onClose={onClose}>
       {!canWrite ? (
-        <p className="text-sm text-slate-500">Requires users.write.</p>
+        <div className="space-y-1 text-sm text-slate-500">
+          <p>Requires users.write.</p>
+        </div>
       ) : null}
 
-      <div className="grid gap-4">
-        <div className="grid gap-1.5">
+      <div className="space-y-4">
+        <div className="space-y-2">
           <Label>Name</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Email</Label>
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Password</Label>
           <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Status</Label>
           <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting}
+            className="h-10"
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
@@ -543,18 +549,22 @@ function CreateUserModal(props: {
         </div>
       </div>
 
-      {fieldError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{fieldError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {conflictError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{conflictError}</AlertDescription>
-        </Alert>
+      {fieldError || conflictError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
       ) : null}
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>
@@ -635,40 +645,43 @@ function EditUserModal(props: {
 
   return (
     <Modal title="Edit user" isOpen={isOpen} onClose={onClose}>
-      {!user ? (
-        <p className="text-sm text-slate-500">No user selected.</p>
-      ) : null}
-      {!canWrite ? (
-        <p className="text-sm text-slate-500">Requires users.write.</p>
+      {!user || !canWrite ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          {!user ? <p>No user selected.</p> : null}
+          {!canWrite ? <p>Requires users.write.</p> : null}
+        </div>
       ) : null}
 
-      <div className="grid gap-4">
-        <div className="grid gap-1.5">
+      <div className="space-y-4">
+        <div className="space-y-2">
           <Label>Name</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Email</Label>
           <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Status</Label>
           <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
@@ -676,18 +689,22 @@ function EditUserModal(props: {
         </div>
       </div>
 
-      {fieldError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{fieldError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {conflictError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{conflictError}</AlertDescription>
-        </Alert>
+      {fieldError || conflictError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
       ) : null}
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>

@@ -125,15 +125,15 @@ export default function RoleModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!canWrite ? (
-        <p className="text-sm text-slate-500">Requires roles.write.</p>
-      ) : null}
-      {mode === "edit" && !initialRole ? (
-        <p className="text-sm text-slate-500">No role selected.</p>
+      {!canWrite || (mode === "edit" && !initialRole) ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          {!canWrite ? <p>Requires roles.write.</p> : null}
+          {mode === "edit" && !initialRole ? <p>No role selected.</p> : null}
+        </div>
       ) : null}
 
-      <div className="grid gap-4">
-        <div className="grid gap-1.5">
+      <div className="space-y-4">
+        <div className="space-y-2">
           <Label>Name</Label>
           <Input
             value={name}
@@ -143,10 +143,11 @@ export default function RoleModal(props: {
               !canWrite || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="e.g. ADMIN"
+            className="h-10"
           />
         </div>
 
-        <div className="grid gap-1.5">
+        <div className="space-y-2">
           <Label>Description</Label>
           <Input
             value={description}
@@ -156,27 +157,32 @@ export default function RoleModal(props: {
               !canWrite || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="Optional"
+            className="h-10"
           />
         </div>
       </div>
 
-      {fieldError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{fieldError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {conflictError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{conflictError}</AlertDescription>
-        </Alert>
-      ) : null}
-      {notFoundError ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertDescription>{notFoundError}</AlertDescription>
-        </Alert>
+      {fieldError || conflictError || notFoundError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {notFoundError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{notFoundError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
       ) : null}
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>
