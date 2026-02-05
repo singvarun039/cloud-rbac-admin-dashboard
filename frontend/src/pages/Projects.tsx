@@ -1,6 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getApiErrorMessage } from "../api/client";
 import { getProjects, type Project } from "../api/projects";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Skeleton } from "../components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 function formatDate(value?: string): string {
   if (!value) return "—";
@@ -59,83 +76,91 @@ export default function ProjectsPage() {
   }, [page, totalPages]);
 
   return (
-    <div className="page">
-      <h1 className="page-title">Projects</h1>
-
-      {error && (
-        <div className="card" style={{ borderColor: "#e57373" }}>
-          <div className="card-title" style={{ color: "#e57373" }}>
-            Error
-          </div>
-          <div className="muted">{error}</div>
-        </div>
-      )}
-
-      <div className="card">
-        <div className="card-title">All Projects</div>
-
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : projects.length === 0 ? (
-          <div className="muted">No projects found.</div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Owner</th>
-                  <th>Archived</th>
-                  <th>Created</th>
-                  <th>Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.name}</td>
-                    <td className="muted">{p.ownerId ?? "—"}</td>
-                    <td>{p.isArchived ? "Yes" : "No"}</td>
-                    <td className="muted">{formatDate(p.createdAt)}</td>
-                    <td className="muted">{formatDate(p.updatedAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 12,
-          }}
-        >
-          <div className="muted">
-            Page {page} of {totalPages} • {total} total
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              className="btn"
-              disabled={loading || page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Prev
-            </button>
-            <button
-              className="btn"
-              disabled={loading || !hasNext}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
       </div>
+
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">All Projects</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No projects found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Owner</TableHead>
+                  <TableHead>Archived</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead>Updated</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell className="text-slate-500">
+                      {p.ownerId ?? "—"}
+                    </TableCell>
+                    <TableCell>{p.isArchived ? "Yes" : "No"}</TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDate(p.createdAt)}
+                    </TableCell>
+                    <TableCell className="text-slate-500">
+                      {formatDate(p.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-500">
+              Page {page} of {totalPages} • {total} total
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || !hasNext}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

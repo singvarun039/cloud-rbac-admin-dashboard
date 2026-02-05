@@ -8,6 +8,26 @@ import {
   type GetAuditLogsParams,
 } from "../api/auditLogs";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select } from "../components/ui/select";
+import { Skeleton } from "../components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -68,14 +88,17 @@ function actorLabel(row: AuditLogRow): string {
 
 function NotAuthorized() {
   return (
-    <div className="page">
-      <h1 className="page-title">Audit Logs</h1>
-      <div className="card">
-        <div className="card-title">Forbidden (403)</div>
-        <div className="muted">
-          You don’t have permission to view audit logs.
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
       </div>
+
+      <Alert variant="destructive">
+        <AlertTitle>Forbidden (403)</AlertTitle>
+        <AlertDescription>
+          You don’t have permission to view audit logs.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
@@ -215,243 +238,246 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">Audit Logs</h1>
-      <div className="muted">
-        Review security-relevant activity across the system.
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
+        <p className="text-sm text-slate-500">
+          Review security-relevant activity across the system.
+        </p>
       </div>
 
       {error ? (
-        <div className="alert">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <Alert variant="destructive">
+          <AlertTitle>Failed to load</AlertTitle>
+          <AlertDescription className="space-y-3">
             <div>{error}</div>
-            <button className="btn" type="button" onClick={onRetry}>
-              Retry
-            </button>
-          </div>
-        </div>
+            <div>
+              <Button variant="outline" size="sm" type="button" onClick={onRetry}>
+                Retry
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="toolbar">
-        <div className="toolbar-left" style={{ flexWrap: "wrap", gap: 12 }}>
-          <label className="field">
-            <span className="muted">Action</span>
-            <select
-              className="select"
-              value={action}
-              onChange={(e) => {
-                setAction(e.target.value);
-                setPage(1);
-              }}
-            >
-              {ACTION_OPTIONS.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </select>
-          </label>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label>Action</Label>
+              <Select
+                value={action}
+                onChange={(e) => {
+                  setAction(e.target.value);
+                  setPage(1);
+                }}
+              >
+                {ACTION_OPTIONS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
-          <label className="field">
-            <span className="muted">Actor User ID</span>
-            <input
-              className="input"
-              value={actorUserIdInput}
-              onChange={(e) => {
-                setActorUserIdInput(e.target.value);
-                setPage(1);
-              }}
-              placeholder="cuid…"
-              type="text"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>Actor User ID</Label>
+              <Input
+                value={actorUserIdInput}
+                onChange={(e) => {
+                  setActorUserIdInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="cuid…"
+                type="text"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">Actor Email</span>
-            <input
-              className="input"
-              value={actorEmailInput}
-              onChange={(e) => {
-                setActorEmailInput(e.target.value);
-                setPage(1);
-              }}
-              placeholder="user@company.com"
-              type="text"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>Actor Email</Label>
+              <Input
+                value={actorEmailInput}
+                onChange={(e) => {
+                  setActorEmailInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="user@company.com"
+                type="text"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">From</span>
-            <input
-              className="input"
-              value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value);
-                setPage(1);
-              }}
-              type="date"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>From</Label>
+              <Input
+                value={dateFrom}
+                onChange={(e) => {
+                  setDateFrom(e.target.value);
+                  setPage(1);
+                }}
+                type="date"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">To</span>
-            <input
-              className="input"
-              value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value);
-                setPage(1);
-              }}
-              type="date"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>To</Label>
+              <Input
+                value={dateTo}
+                onChange={(e) => {
+                  setDateTo(e.target.value);
+                  setPage(1);
+                }}
+                type="date"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">Entity Type</span>
-            <input
-              className="input"
-              value={entityTypeInput}
-              onChange={(e) => {
-                setEntityTypeInput(e.target.value);
-                setPage(1);
-              }}
-              placeholder="User / Role / Project"
-              type="text"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>Entity Type</Label>
+              <Input
+                value={entityTypeInput}
+                onChange={(e) => {
+                  setEntityTypeInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="User / Role / Project"
+                type="text"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">Entity ID</span>
-            <input
-              className="input"
-              value={entityIdInput}
-              onChange={(e) => {
-                setEntityIdInput(e.target.value);
-                setPage(1);
-              }}
-              placeholder="id…"
-              type="text"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>Entity ID</Label>
+              <Input
+                value={entityIdInput}
+                onChange={(e) => {
+                  setEntityIdInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="id…"
+                type="text"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">Request ID</span>
-            <input
-              className="input"
-              value={requestIdInput}
-              onChange={(e) => {
-                setRequestIdInput(e.target.value);
-                setPage(1);
-              }}
-              placeholder="requestId…"
-              type="text"
-            />
-          </label>
+            <div className="space-y-2">
+              <Label>Request ID</Label>
+              <Input
+                value={requestIdInput}
+                onChange={(e) => {
+                  setRequestIdInput(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="requestId…"
+                type="text"
+              />
+            </div>
 
-          <label className="field">
-            <span className="muted">Page Size</span>
-            <select
-              className="select"
-              value={String(limit)}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
-                setPage(1);
-              }}
-            >
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </label>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-title">Audit Events</div>
-
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : items.length === 0 ? (
-          <div className="muted">No audit logs found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th style={{ width: 190 }}>Timestamp</th>
-                <th style={{ width: 170 }}>Action</th>
-                <th>Actor</th>
-                <th>Entity</th>
-                <th style={{ width: 220 }}>RequestId</th>
-                <th style={{ width: 160 }}>Meta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row.id}>
-                  <td>{formatDate(row.createdAt)}</td>
-                  <td>{row.action}</td>
-                  <td>{actorLabel(row)}</td>
-                  <td>
-                    {row.entityType}
-                    {row.entityId ? `: ${row.entityId}` : ""}
-                  </td>
-                  <td>{row.requestId || "—"}</td>
-                  <td>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 8,
-                      }}
-                    >
-                      <span className="muted">{metaPreview(row.meta)}</span>
-                      <button
-                        className="btn"
-                        type="button"
-                        onClick={() => onOpenDetails(row)}
-                      >
-                        View
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-          }}
-        >
-          <div className="muted">
-            Total: {total} • Page {page} of {totalPages}
+            <div className="space-y-2">
+              <Label>Page Size</Label>
+              <Select
+                value={String(limit)}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </Select>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1 || loading}
-            >
-              Prev
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!hasNext || loading}
-            >
-              Next
-            </button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Audit Events</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : items.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No audit logs found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[190px]">Timestamp</TableHead>
+                  <TableHead className="w-[170px]">Action</TableHead>
+                  <TableHead>Actor</TableHead>
+                  <TableHead>Entity</TableHead>
+                  <TableHead className="w-[220px]">RequestId</TableHead>
+                  <TableHead className="w-[220px]">Meta</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>{formatDate(row.createdAt)}</TableCell>
+                    <TableCell className="font-medium">{row.action}</TableCell>
+                    <TableCell>{actorLabel(row)}</TableCell>
+                    <TableCell>
+                      {row.entityType}
+                      {row.entityId ? `: ${row.entityId}` : ""}
+                    </TableCell>
+                    <TableCell>{row.requestId || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-slate-500">
+                          {metaPreview(row.meta)}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          onClick={() => onOpenDetails(row)}
+                        >
+                          View
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-500">
+              Total: {total} • Page {page} of {totalPages}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasNext || loading}
+              >
+                Next
+              </Button>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <Modal
         title={selected ? `Audit Log ${selected.id}` : "Audit Log"}
@@ -459,40 +485,53 @@ export default function AuditLogsPage() {
         onClose={onCloseDetails}
       >
         {selected ? (
-          <div style={{ display: "grid", gap: 10 }}>
-            <div className="muted">
-              Timestamp: {formatDate(selected.createdAt)}
-            </div>
-            <div className="muted">Action: {selected.action}</div>
-            <div className="muted">Actor: {actorLabel(selected)}</div>
-            <div className="muted">
-              Entity: {selected.entityType}
-              {selected.entityId ? `: ${selected.entityId}` : ""}
-            </div>
-            <div className="muted">RequestId: {selected.requestId || "—"}</div>
-            {typeof selected.ipAddress !== "undefined" ? (
-              <div className="muted">IP: {selected.ipAddress || "—"}</div>
-            ) : null}
-            {typeof selected.userAgent !== "undefined" ? (
-              <div className="muted">
-                User-Agent: {selected.userAgent || "—"}
+          <div className="space-y-4">
+            <div className="grid gap-2 text-sm">
+              <div className="text-slate-600">
+                <span className="font-medium text-slate-900">Timestamp:</span>{" "}
+                {formatDate(selected.createdAt)}
               </div>
-            ) : null}
+              <div className="text-slate-600">
+                <span className="font-medium text-slate-900">Action:</span>{" "}
+                {selected.action}
+              </div>
+              <div className="text-slate-600">
+                <span className="font-medium text-slate-900">Actor:</span>{" "}
+                {actorLabel(selected)}
+              </div>
+              <div className="text-slate-600">
+                <span className="font-medium text-slate-900">Entity:</span>{" "}
+                {selected.entityType}
+                {selected.entityId ? `: ${selected.entityId}` : ""}
+              </div>
+              <div className="text-slate-600">
+                <span className="font-medium text-slate-900">RequestId:</span>{" "}
+                {selected.requestId || "—"}
+              </div>
+              {typeof selected.ipAddress !== "undefined" ? (
+                <div className="text-slate-600">
+                  <span className="font-medium text-slate-900">IP:</span>{" "}
+                  {selected.ipAddress || "—"}
+                </div>
+              ) : null}
+              {typeof selected.userAgent !== "undefined" ? (
+                <div className="text-slate-600">
+                  <span className="font-medium text-slate-900">User-Agent:</span>{" "}
+                  {selected.userAgent || "—"}
+                </div>
+              ) : null}
+            </div>
 
-            <div>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                Meta
-              </div>
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  margin: 0,
-                }}
-              >
-                {safePrettyJson(selected.meta)}
-              </pre>
-            </div>
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm">Meta</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs text-slate-50">
+                  {safePrettyJson(selected.meta)}
+                </pre>
+              </CardContent>
+            </Card>
           </div>
         ) : null}
       </Modal>

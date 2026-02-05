@@ -1,3 +1,5 @@
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+
 type ForbiddenProps = {
   pageTitle?: string;
   title?: string;
@@ -11,12 +13,15 @@ export default function Forbidden(props: ForbiddenProps) {
     props.description ?? "You don’t have permission to view this page.";
 
   return (
-    <div className="page">
-      <h1 className="page-title">{pageTitle}</h1>
-      <div className="card">
-        <div className="card-title">{title}</div>
-        <div className="muted">{description}</div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">{pageTitle}</h1>
       </div>
+
+      <Alert variant="destructive">
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>{description}</AlertDescription>
+      </Alert>
     </div>
   );
 }

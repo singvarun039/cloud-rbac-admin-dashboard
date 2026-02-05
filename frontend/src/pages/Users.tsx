@@ -2,6 +2,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
 import { getApiErrorMessage } from "../api/client";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { Badge } from "../components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select } from "../components/ui/select";
+import { Skeleton } from "../components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import {
   createUser,
   deleteUser,
@@ -32,12 +53,21 @@ function formatDate(value?: string): string {
 
 function NotAuthorized() {
   return (
-    <div className="page">
-      <h1 className="page-title">Users</h1>
-      <div className="card">
-        <div className="card-title">Forbidden (403)</div>
-        <div className="muted">You don’t have permission to view users.</div>
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forbidden (403)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-600">
+            You don’t have permission to view users.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -170,28 +200,35 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">Users</h1>
-      <div className="muted">Manage application users and access.</div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+        <p className="text-sm text-slate-600">
+          Manage application users and access.
+        </p>
+      </div>
 
-      {success ? <div className="alert-success">{success}</div> : null}
+      {success ? (
+        <Alert variant="success">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
       {error ? (
-        <div className="alert">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{error}</div>
-            <button className="btn" type="button" onClick={onRetry}>
+        <Alert variant="destructive">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <AlertDescription className="sm:pr-4">{error}</AlertDescription>
+            <Button variant="outline" size="sm" type="button" onClick={onRetry}>
               Retry
-            </button>
+            </Button>
           </div>
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <label className="field">
-            <span className="muted">Search</span>
-            <input
-              className="input"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="grid gap-1.5">
+            <Label>Search</Label>
+            <Input
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -200,12 +237,11 @@ export default function UsersPage() {
               placeholder="name or email"
               type="text"
             />
-          </label>
+          </div>
 
-          <label className="field">
-            <span className="muted">Status</span>
-            <select
-              className="select"
+          <div className="grid gap-1.5">
+            <Label>Status</Label>
+            <Select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value as StatusFilter);
@@ -215,108 +251,116 @@ export default function UsersPage() {
               <option value="ALL">ALL</option>
               <option value="ACTIVE">ACTIVE</option>
               <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </label>
+            </Select>
+          </div>
         </div>
 
         {canWriteUsers ? (
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={onOpenCreate}
-          >
+          <Button type="button" onClick={onOpenCreate}>
             Create User
-          </button>
+          </Button>
         ) : null}
       </div>
 
-      <div className="card">
-        <div className="card-title">Users</div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Users</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : users.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No users found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[170px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          u.status === "ACTIVE" ? "success" : "destructive"
+                        }
+                      >
+                        {u.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(u.createdAt)}</TableCell>
+                    <TableCell>
+                      {canWriteUsers ? (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            onClick={() => onOpenEdit(u)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            type="button"
+                            onClick={() => void onDelete(u)}
+                          >
+                            Deactivate
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
 
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : users.length === 0 ? (
-          <div className="muted">No users found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style={{ width: 170 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>
-                    <span
-                      className={
-                        u.status === "ACTIVE"
-                          ? "badge badge-active"
-                          : "badge badge-inactive"
-                      }
-                    >
-                      {u.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(u.createdAt)}</td>
-                  <td>
-                    {canWriteUsers ? (
-                      <div className="row-actions">
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenEdit(u)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => void onDelete(u)}
-                        >
-                          Deactivate
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        <div className="pagination">
-          <div className="muted">
-            Page {page} of {totalPages} · Total {total}
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-500">
+              Page {page} of {totalPages} · Total {total}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={loading || page <= 1}
+              >
+                Prev
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={loading || !hasNext}
+              >
+                Next
+              </Button>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={loading || page <= 1}
-            >
-              Prev
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={loading || !hasNext}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <CreateUserModal
         isOpen={createOpen}
@@ -414,71 +458,76 @@ function CreateUserModal(props: {
 
   return (
     <Modal title="Create user" isOpen={isOpen} onClose={onClose}>
-      {!canWrite ? <div className="muted">Requires users.write.</div> : null}
+      {!canWrite ? (
+        <p className="text-sm text-slate-500">Requires users.write.</p>
+      ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting}
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Email
-          <input
-            className="input"
+        <div className="grid gap-1.5">
+          <Label>Email</Label>
+          <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting}
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Password
-          <input
-            className="input"
+        <div className="grid gap-1.5">
+          <Label>Password</Label>
+          <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             disabled={!canWrite || submitting}
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Status
-          <select
-            className="select"
+        <div className="grid gap-1.5">
+          <Label>Status</Label>
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting}
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </label>
+          </Select>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
+      {fieldError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{fieldError}</AlertDescription>
+        </Alert>
+      ) : null}
+      {conflictError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{conflictError}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting}
         >
           {submitting ? "Creating…" : "Create"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -549,61 +598,69 @@ function EditUserModal(props: {
 
   return (
     <Modal title="Edit user" isOpen={isOpen} onClose={onClose}>
-      {!user ? <div className="muted">No user selected.</div> : null}
-      {!canWrite ? <div className="muted">Requires users.write.</div> : null}
+      {!user ? (
+        <p className="text-sm text-slate-500">No user selected.</p>
+      ) : null}
+      {!canWrite ? (
+        <p className="text-sm text-slate-500">Requires users.write.</p>
+      ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting || !user}
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Email
-          <input
-            className="input"
+        <div className="grid gap-1.5">
+          <Label>Email</Label>
+          <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting || !user}
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Status
-          <select
-            className="select"
+        <div className="grid gap-1.5">
+          <Label>Status</Label>
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting || !user}
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </label>
+          </Select>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
+      {fieldError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{fieldError}</AlertDescription>
+        </Alert>
+      ) : null}
+      {conflictError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{conflictError}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting || !user}
         >
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

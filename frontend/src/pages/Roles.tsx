@@ -4,6 +4,25 @@ import { getRoles, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Skeleton } from "../components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -12,12 +31,21 @@ function isCanceledError(err: unknown): boolean {
 
 function NotAuthorized() {
   return (
-    <div className="page">
-      <h1 className="page-title">Roles</h1>
-      <div className="card">
-        <div className="card-title">Forbidden (403)</div>
-        <div className="muted">You don’t have permission to view roles.</div>
+    <div className="space-y-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forbidden (403)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-600">
+            You don’t have permission to view roles.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -136,106 +164,119 @@ export default function RolesPage() {
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">Roles</h1>
-      <div className="muted">Manage roles and their permissions.</div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Roles</h1>
+        <p className="text-sm text-slate-600">
+          Manage roles and their permissions.
+        </p>
+      </div>
 
-      {success ? <div className="alert-success">{success}</div> : null}
+      {success ? (
+        <Alert variant="success">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
       {error ? (
-        <div className="alert">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{error}</div>
-            <button className="btn" type="button" onClick={onRetry}>
+        <Alert variant="destructive">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <AlertDescription className="sm:pr-4">{error}</AlertDescription>
+            <Button variant="outline" size="sm" type="button" onClick={onRetry}>
               Retry
-            </button>
+            </Button>
           </div>
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <label className="field">
-            <span className="muted">Search</span>
-            <input
-              className="input"
-              value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value);
-              }}
-              placeholder="name or description"
-              type="text"
-            />
-          </label>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="grid gap-1.5">
+          <Label>Search</Label>
+          <Input
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+            }}
+            placeholder="name or description"
+            type="text"
+          />
         </div>
 
         {canWriteRoles ? (
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={onOpenCreate}
-          >
+          <Button type="button" onClick={onOpenCreate}>
             Create Role
-          </button>
+          </Button>
         ) : null}
       </div>
 
-      <div className="card">
-        <div className="card-title">Roles</div>
-
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : roles.length === 0 ? (
-          <div className="muted">No roles found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Permissions</th>
-                <th style={{ width: 220 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td>
-                    {r.description ? (
-                      r.description
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                  <td>{permissionCountLabel(r)}</td>
-                  <td>
-                    {canWriteRoles ? (
-                      <div className="row-actions">
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenEdit(r)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenAssign(r)}
-                        >
-                          Assign Permissions
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Roles</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ) : roles.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No roles found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead className="w-[220px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {roles.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      {r.description ? (
+                        r.description
+                      ) : (
+                        <span className="text-sm text-slate-500">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{permissionCountLabel(r)}</TableCell>
+                    <TableCell>
+                      {canWriteRoles ? (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            type="button"
+                            onClick={() => onOpenEdit(r)}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            type="button"
+                            onClick={() => onOpenAssign(r)}
+                          >
+                            Assign Permissions
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">—</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <RoleModal
         open={createOpen}

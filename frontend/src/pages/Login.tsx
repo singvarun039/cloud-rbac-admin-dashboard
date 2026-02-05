@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
+import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -50,44 +61,56 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-title">Sign in</div>
-        <div className="muted">Cloud-Ready RBAC Admin Dashboard</div>
+    <div className="min-h-screen bg-slate-50 p-4">
+      <div className="mx-auto flex min-h-screen max-w-md items-center justify-center">
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>
+              Cloud-Ready RBAC Admin Dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {error ? (
+              <Alert variant="destructive">
+                <AlertTitle>Sign-in failed</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            ) : null}
 
-        {error ? <div className="alert">{error}</div> : null}
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </div>
 
-        <form onSubmit={onSubmit} className="form">
-          <label className="label">
-            Email
-            <input
-              className="input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
-          </label>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
 
-          <label className="label">
-            Password
-            <input
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-          </label>
-
-          <button className="btn btn-primary" type="submit" disabled={loading}>
-            {loading ? "Signing in…" : "Login"}
-          </button>
-        </form>
+              <Button className="w-full" type="submit" disabled={loading}>
+                {loading ? "Signing in…" : "Login"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

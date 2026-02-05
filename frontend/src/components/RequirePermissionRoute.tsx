@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import Forbidden from "./Forbidden";
+import { Skeleton } from "./ui/skeleton";
 
 export default function RequirePermissionRoute(props: {
   permission: string;
@@ -11,15 +12,11 @@ export default function RequirePermissionRoute(props: {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          padding: 24,
-        }}
-      >
-        <div className="muted">Loading…</div>
+      <div className="grid min-h-screen place-items-center p-6">
+        <div className="w-full max-w-sm space-y-3">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-64" />
+        </div>
       </div>
     );
   }

@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import Modal from "./Modal";
 import { createRole, updateRole, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 function isConflictError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
@@ -121,16 +125,17 @@ export default function RoleModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!canWrite ? <div className="muted">Requires roles.write.</div> : null}
+      {!canWrite ? (
+        <p className="text-sm text-slate-500">Requires roles.write.</p>
+      ) : null}
       {mode === "edit" && !initialRole ? (
-        <div className="muted">No role selected.</div>
+        <p className="text-sm text-slate-500">No role selected.</p>
       ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="grid gap-4">
+        <div className="grid gap-1.5">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
@@ -139,12 +144,11 @@ export default function RoleModal(props: {
             }
             placeholder="e.g. ADMIN"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Description
-          <input
-            className="input"
+        <div className="grid gap-1.5">
+          <Label>Description</Label>
+          <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             type="text"
@@ -153,19 +157,30 @@ export default function RoleModal(props: {
             }
             placeholder="Optional"
           />
-        </label>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
-      {notFoundError ? <div className="alert">{notFoundError}</div> : null}
+      {fieldError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{fieldError}</AlertDescription>
+        </Alert>
+      ) : null}
+      {conflictError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{conflictError}</AlertDescription>
+        </Alert>
+      ) : null}
+      {notFoundError ? (
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{notFoundError}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={
@@ -179,7 +194,7 @@ export default function RoleModal(props: {
             : mode === "create"
               ? "Create"
               : "Save"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

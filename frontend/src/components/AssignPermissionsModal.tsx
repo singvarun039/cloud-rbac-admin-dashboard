@@ -3,6 +3,12 @@ import Modal from "./Modal";
 import { getPermissions, type Permission } from "../api/permissions";
 import { replaceRolePermissions, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Skeleton } from "./ui/skeleton";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -243,134 +249,148 @@ export default function AssignPermissionsModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!role ? <div className="muted">No role selected.</div> : null}
+      {!role ? (
+        <p className="text-sm text-slate-500">No role selected.</p>
+      ) : null}
       {!canWriteRoles ? (
-        <div className="muted">Requires roles.write.</div>
+        <p className="text-sm text-slate-500">Requires roles.write.</p>
       ) : null}
 
       {!canReadPermissions ? (
-        <div className="card" style={{ marginTop: 10 }}>
-          <div className="card-title">Forbidden (403)</div>
-          <div className="muted">
-            You’re not authorized to view permissions.
-          </div>
-        </div>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Forbidden (403)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-600">
+              You’re not authorized to view permissions.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <div className="toolbar" style={{ marginTop: 10 }}>
-            <div className="toolbar-left">
-              <label className="field">
-                <span className="muted">Search</span>
-                <input
-                  className="input"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="filter by key or description"
-                  type="text"
-                  disabled={loading || !role}
-                />
-              </label>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="grid gap-1.5">
+              <Label>Search</Label>
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="filter by key or description"
+                type="text"
+                disabled={loading || !role}
+              />
             </div>
 
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                className="btn"
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
                 type="button"
                 onClick={onSelectAllFiltered}
                 disabled={loading || filtered.length === 0}
               >
                 Select all filtered
-              </button>
-              <button
-                className="btn"
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 type="button"
                 onClick={onClearFiltered}
                 disabled={loading || filtered.length === 0}
               >
                 Clear filtered
-              </button>
+              </Button>
             </div>
           </div>
 
           {loadError ? (
-            <div className="alert">
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>{loadError}</div>
-                <button className="btn" type="button" onClick={onRetry}>
+            <Alert variant="destructive" className="mt-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <AlertDescription className="sm:pr-4">
+                  {loadError}
+                </AlertDescription>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={onRetry}
+                >
                   Retry
-                </button>
+                </Button>
               </div>
-            </div>
+            </Alert>
           ) : null}
 
-          <div className="card" style={{ marginTop: 10 }}>
-            <div className="card-title">Permissions</div>
-
-            {loading ? (
-              <div className="muted">Loading…</div>
-            ) : catalog.length === 0 ? (
-              <div className="muted">No permissions found.</div>
-            ) : filtered.length === 0 ? (
-              <div className="muted">No permissions match your search.</div>
-            ) : (
-              <div style={{ display: "grid", gap: 8 }}>
-                {filtered.map((p) => {
-                  const checked = selectedSet.has(p.id);
-                  return (
-                    <label
-                      key={p.id}
-                      className="muted"
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggle(p.id)}
-                        disabled={!canWriteRoles || submitting || !role}
-                      />
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            color: "var(--text, inherit)",
-                          }}
-                        >
-                          {p.key}
-                        </div>
-                        {p.description ? (
-                          <div className="muted" style={{ fontSize: 13 }}>
-                            {p.description}
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="text-base">Permissions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-8 w-full" />
+                </div>
+              ) : catalog.length === 0 ? (
+                <div className="py-10 text-center text-sm text-slate-500">
+                  No permissions found.
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="py-10 text-center text-sm text-slate-500">
+                  No permissions match your search.
+                </div>
+              ) : (
+                <div className="grid gap-2">
+                  {filtered.map((p) => {
+                    const checked = selectedSet.has(p.id);
+                    return (
+                      <label
+                        key={p.id}
+                        className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggle(p.id)}
+                          disabled={!canWriteRoles || submitting || !role}
+                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium text-slate-900">
+                            {p.key}
                           </div>
-                        ) : null}
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                          {p.description ? (
+                            <div className="mt-0.5 text-sm text-slate-600">
+                              {p.description}
+                            </div>
+                          ) : null}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          <div className="muted" style={{ marginTop: 10 }}>
+          <div className="mt-4 text-sm text-slate-500">
             Selected: {selectedIds.length}
           </div>
           {hydratedFromKeys ? (
-            <div className="muted" style={{ marginTop: 4 }}>
+            <div className="mt-1 text-sm text-slate-500">
               Hydrated from keys
             </div>
           ) : null}
         </>
       )}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="mt-6 flex justify-end gap-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSave()}
           disabled={
@@ -382,7 +402,7 @@ export default function AssignPermissionsModal(props: {
           }
         >
           {submitting ? "Saving…" : "Save"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );
