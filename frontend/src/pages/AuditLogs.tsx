@@ -252,7 +252,12 @@ export default function AuditLogsPage() {
           <AlertDescription className="space-y-3">
             <div>{error}</div>
             <div>
-              <Button variant="outline" size="sm" type="button" onClick={onRetry}>
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={onRetry}
+              >
                 Retry
               </Button>
             </div>
@@ -274,6 +279,7 @@ export default function AuditLogsPage() {
                   setAction(e.target.value);
                   setPage(1);
                 }}
+                className="h-10"
               >
                 {ACTION_OPTIONS.map((a) => (
                   <option key={a} value={a}>
@@ -293,6 +299,7 @@ export default function AuditLogsPage() {
                 }}
                 placeholder="cuid…"
                 type="text"
+                className="h-10"
               />
             </div>
 
@@ -306,6 +313,7 @@ export default function AuditLogsPage() {
                 }}
                 placeholder="user@company.com"
                 type="text"
+                className="h-10"
               />
             </div>
 
@@ -318,6 +326,7 @@ export default function AuditLogsPage() {
                   setPage(1);
                 }}
                 type="date"
+                className="h-10"
               />
             </div>
 
@@ -330,6 +339,7 @@ export default function AuditLogsPage() {
                   setPage(1);
                 }}
                 type="date"
+                className="h-10"
               />
             </div>
 
@@ -343,6 +353,7 @@ export default function AuditLogsPage() {
                 }}
                 placeholder="User / Role / Project"
                 type="text"
+                className="h-10"
               />
             </div>
 
@@ -356,6 +367,7 @@ export default function AuditLogsPage() {
                 }}
                 placeholder="id…"
                 type="text"
+                className="h-10"
               />
             </div>
 
@@ -369,6 +381,7 @@ export default function AuditLogsPage() {
                 }}
                 placeholder="requestId…"
                 type="text"
+                className="h-10"
               />
             </div>
 
@@ -380,6 +393,7 @@ export default function AuditLogsPage() {
                   setLimit(Number(e.target.value));
                   setPage(1);
                 }}
+                className="h-10"
               >
                 <option value="10">10</option>
                 <option value="20">20</option>
@@ -397,12 +411,45 @@ export default function AuditLogsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[190px]">Timestamp</TableHead>
+                  <TableHead className="w-[170px]">Action</TableHead>
+                  <TableHead>Actor</TableHead>
+                  <TableHead>Entity</TableHead>
+                  <TableHead className="w-[220px]">RequestId</TableHead>
+                  <TableHead className="w-[220px]">Meta</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-56" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-44" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-44" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-between gap-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-8 w-16" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : items.length === 0 ? (
             <div className="py-10 text-center text-sm text-slate-500">
               No audit logs found.
@@ -516,7 +563,9 @@ export default function AuditLogsPage() {
               ) : null}
               {typeof selected.userAgent !== "undefined" ? (
                 <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">User-Agent:</span>{" "}
+                  <span className="font-medium text-slate-900">
+                    User-Agent:
+                  </span>{" "}
                   {selected.userAgent || "—"}
                 </div>
               ) : null}

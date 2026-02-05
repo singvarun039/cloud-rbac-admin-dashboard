@@ -236,6 +236,7 @@ export default function UsersPage() {
               }}
               placeholder="name or email"
               type="text"
+              className="h-10"
             />
           </div>
 
@@ -247,6 +248,7 @@ export default function UsersPage() {
                 setStatus(e.target.value as StatusFilter);
                 setPage(1);
               }}
+              className="h-10"
             >
               <option value="ALL">ALL</option>
               <option value="ACTIVE">ACTIVE</option>
@@ -256,7 +258,7 @@ export default function UsersPage() {
         </div>
 
         {canWriteUsers ? (
-          <Button type="button" onClick={onOpenCreate}>
+          <Button type="button" onClick={onOpenCreate} className="h-10">
             Create User
           </Button>
         ) : null}
@@ -268,12 +270,43 @@ export default function UsersPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[170px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-44" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-24" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : users.length === 0 ? (
             <div className="py-10 text-center text-sm text-slate-500">
               No users found.
@@ -286,7 +319,9 @@ export default function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead className="w-[170px]">Actions</TableHead>
+                  <TableHead className="w-[170px] text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -304,9 +339,9 @@ export default function UsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>{formatDate(u.createdAt)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       {canWriteUsers ? (
-                        <div className="flex gap-2">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"

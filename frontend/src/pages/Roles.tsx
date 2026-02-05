@@ -198,11 +198,12 @@ export default function RolesPage() {
             }}
             placeholder="name or description"
             type="text"
+            className="h-10"
           />
         </div>
 
         {canWriteRoles ? (
-          <Button type="button" onClick={onOpenCreate}>
+          <Button type="button" onClick={onOpenCreate} className="h-10">
             Create Role
           </Button>
         ) : null}
@@ -214,12 +215,39 @@ export default function RolesPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-48" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead className="w-[220px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-56" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="h-8 w-16" />
+                        <Skeleton className="h-8 w-36" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           ) : roles.length === 0 ? (
             <div className="py-10 text-center text-sm text-slate-500">
               No roles found.
@@ -231,7 +259,9 @@ export default function RolesPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Permissions</TableHead>
-                  <TableHead className="w-[220px]">Actions</TableHead>
+                  <TableHead className="w-[220px] text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,9 +276,9 @@ export default function RolesPage() {
                       )}
                     </TableCell>
                     <TableCell>{permissionCountLabel(r)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       {canWriteRoles ? (
-                        <div className="flex gap-2">
+                        <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
                             size="sm"
