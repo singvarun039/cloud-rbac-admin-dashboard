@@ -88,11 +88,7 @@ function actorLabel(row: AuditLogRow): string {
 
 function NotAuthorized() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Audit Logs</h1>
-      </div>
-
+    <div className="w-full space-y-4">
       <Alert variant="destructive">
         <AlertTitle>Forbidden (403)</AlertTitle>
         <AlertDescription>
@@ -238,25 +234,7 @@ export default function AuditLogsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Audit Logs</h1>
-          <p className="text-sm text-slate-600">
-            Review security-relevant activity across the system.
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          onClick={onRetry}
-          disabled={loading}
-          className="h-10"
-        >
-          Refresh
-        </Button>
-      </div>
-
+    <div className="w-full space-y-4">
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Failed to load</AlertTitle>
@@ -277,8 +255,16 @@ export default function AuditLogsPage() {
       ) : null}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-base">Filters</CardTitle>
+          <Button
+            type="button"
+            onClick={onRetry}
+            disabled={loading}
+            className="h-10"
+          >
+            Refresh
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">

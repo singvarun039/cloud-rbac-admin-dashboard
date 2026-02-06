@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { Button } from "./ui/button";
@@ -22,6 +22,20 @@ const navItems = [
 export default function Layout() {
   const { logout, permissions } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
+  const location = useLocation();
+
+  const pageTitle = useMemo(() => {
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    const titles: Record<string, string> = {
+      "/": "Dashboard",
+      "/users": "Users",
+      "/roles": "Roles",
+      "/projects": "Projects",
+      "/audit-logs": "Audit Logs",
+    };
+
+    return titles[path] ?? "";
+  }, [location.pathname]);
 
   const canReadUsers = permissions.includes("users.read");
   const canReadRoles = permissions.includes("roles.read");
@@ -49,8 +63,8 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="grid min-h-screen grid-cols-[240px_1fr]">
+    <div className="min-h-screen w-full bg-slate-50 text-slate-900">
+      <div className="grid min-h-screen w-full grid-cols-[240px_1fr]">
         <aside className="border-r border-slate-800 bg-slate-950 text-slate-100">
           <div className="px-4 pb-3 pt-4">
             <div className="flex items-center gap-2">
@@ -97,10 +111,10 @@ export default function Layout() {
           </nav>
         </aside>
 
-        <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-white/70 sm:px-6">
-            <div className="min-w-0 truncate text-sm font-semibold tracking-tight text-slate-900">
-              Cloud-Ready RBAC Admin Dashboard
+        <div className="flex min-w-0 w-full flex-col">
+          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-white/70 sm:px-6 lg:px-8">
+            <div className="min-w-0 truncate text-2xl font-semibold tracking-tight text-slate-900">
+              {pageTitle}
             </div>
             <Button
               variant="outline"
@@ -113,8 +127,8 @@ export default function Layout() {
             </Button>
           </header>
 
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mx-auto w-full max-w-6xl">
+          <main className="flex-1 min-w-0 w-full px-4 py-4 sm:px-6 lg:px-8">
+            <div className="w-full max-w-none">
               <Outlet />
             </div>
           </main>

@@ -21,9 +21,17 @@ export function errorHandler(
   err: unknown,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ) {
   if (res.headersSent) return;
+
+  // 0) Prisma validation errors (bad inputs / bad selects)
+  if (err instanceof Prisma.PrismaClientValidationError) {
+    logWithReq(req, "warn", "prisma_validation_error", {
+      message: err.message,
+    });
+    return fail(res, req, 400, "BAD_REQUEST", "Bad request");
+  }
 
   // 1) Zod validation errors
   if (err instanceof ZodError) {
@@ -33,7 +41,7 @@ export function errorHandler(
       400,
       "VALIDATION_ERROR",
       "Validation failed",
-      zodDetails(err)
+      zodDetails(err),
     );
   }
 

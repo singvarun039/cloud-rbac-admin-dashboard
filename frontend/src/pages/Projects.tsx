@@ -76,14 +76,7 @@ export default function ProjectsPage() {
   }, [page, totalPages]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Projects</h1>
-          <p className="text-sm text-slate-600">Browse projects.</p>
-        </div>
-      </div>
-
+    <div className="w-full space-y-4">
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Error</AlertTitle>

@@ -8,6 +8,7 @@ import { usersRouter } from "./modules/users/users.routes";
 import { rolesRouter } from "./modules/roles/roles.routes";
 import { permissionsRouter } from "./modules/permissions/permissions.routes";
 import { projectsRouter } from "./modules/projects/projects.routes";
+import { dashboardRouter } from "./modules/dashboard/dashboard.routes";
 import { requestId } from "./middlewares/requestId";
 import { requestLogger } from "./middlewares/requestLogger";
 import { errorHandler } from "./middlewares/errorHandler";
@@ -39,7 +40,7 @@ export function createApp() {
       // Keep baseline headers without breaking Vite/React dev.
       contentSecurityPolicy: false,
       frameguard: { action: "deny" },
-    })
+    }),
   );
 
   const allowedOrigins = new Set<string>();
@@ -76,6 +77,7 @@ export function createApp() {
   app.use("/api/permissions", permissionsRouter);
   app.use("/api/projects", projectsRouter);
   app.use("/api/audit-logs", auditLogsRouter);
+  app.use("/api/dashboard", dashboardRouter);
 
   // Back-compat / convenience aliases (optional):
   app.use("/users", usersRouter);

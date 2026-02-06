@@ -55,10 +55,6 @@ function formatDate(value?: string): string {
 function NotAuthorized() {
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Users</h1>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Forbidden (403)</CardTitle>
@@ -204,22 +200,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold">Users</h1>
-          <p className="text-sm text-slate-600">
-            Manage application users and access.
-          </p>
-        </div>
-
-        {canWriteUsers ? (
-          <Button type="button" onClick={onOpenCreate} className="h-10">
-            Create User
-          </Button>
-        ) : null}
-      </div>
-
+    <div className="w-full space-y-4">
       {success ? (
         <Alert variant="success">
           <AlertDescription>{success}</AlertDescription>
@@ -268,6 +249,12 @@ export default function UsersPage() {
             </Select>
           </div>
         </div>
+
+        {canWriteUsers ? (
+          <Button type="button" onClick={onOpenCreate} className="h-10">
+            Create User
+          </Button>
+        ) : null}
       </div>
 
       <Card>
