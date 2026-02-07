@@ -326,7 +326,7 @@ export default function UsersPage() {
                 placeholder="Search name or email"
                 aria-label="Search"
                 type="text"
-                className="h-10 w-full lg:col-span-2"
+                className="h-10 w-full placeholder:text-slate-400 lg:col-span-2"
               />
 
               <Select
@@ -497,7 +497,7 @@ export default function UsersPage() {
                     setLimit(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="h-9 w-[92px]"
+                  className="h-10 w-[92px]"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
