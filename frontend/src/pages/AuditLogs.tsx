@@ -13,6 +13,15 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../components/ui/pagination";
 import { Select } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -23,9 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import { FiltersCard } from "../components/page/FiltersCard";
 import { StatsCard } from "../components/page/StatsCard";
-import { TableCard } from "../components/page/TableCard";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -33,14 +40,14 @@ function isCanceledError(err: unknown): boolean {
 }
 
 function formatDate(value?: string): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
 }
 
 function safePrettyJson(value: unknown): string {
-  if (value === null || typeof value === "undefined") return "—";
+  if (value === null || typeof value === "undefined") return "-";
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return "";
@@ -60,14 +67,14 @@ function safePrettyJson(value: unknown): string {
 }
 
 function metaPreview(value: unknown): string {
-  if (value === null || typeof value === "undefined") return "—";
+  if (value === null || typeof value === "undefined") return "-";
   if (typeof value === "string")
-    return value.length > 60 ? `${value.slice(0, 60)}…` : value;
+    return value.length > 60 ? `${value.slice(0, 60)}...` : value;
   if (typeof value === "object") {
     try {
       const s = JSON.stringify(value);
-      if (!s) return "—";
-      return s.length > 60 ? `${s.slice(0, 60)}…` : s;
+      if (!s) return "-";
+      return s.length > 60 ? `${s.slice(0, 60)}...` : s;
     } catch {
       return "View";
     }
@@ -81,7 +88,7 @@ function actorLabel(row: AuditLogRow): string {
       ? `${row.actor.email} (${row.actor.name})`
       : row.actor.email;
   }
-  return row.actorUserId || "—";
+  return row.actorUserId || "-";
 }
 
 function NotAuthorized() {
@@ -90,7 +97,7 @@ function NotAuthorized() {
       <Alert variant="destructive">
         <AlertTitle>Forbidden (403)</AlertTitle>
         <AlertDescription>
-          You don’t have permission to view audit logs.
+          You don't have permission to view audit logs.
         </AlertDescription>
       </Alert>
     </div>
@@ -208,6 +215,60 @@ export default function AuditLogsPage() {
     return Math.max(1, Math.ceil(total / limit));
   }, [limit, total]);
 
+  const showingFrom = useMemo(() => {
+    if (total === 0) return 0;
+    return (page - 1) * limit + 1;
+  }, [limit, page, total]);
+
+  const showingTo = useMemo(() => {
+    if (total === 0) return 0;
+    return Math.min(page * limit, total);
+  }, [limit, page, total]);
+
+  const last24hCount = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 24 * 60 * 60 * 1000;
+    return items.reduce((acc, row) => {
+      const t = Date.parse(row.createdAt);
+      if (!Number.isNaN(t) && now - t <= dayMs) return acc + 1;
+      return acc;
+    }, 0);
+  }, [items]);
+
+  const failureCount = useMemo(() => {
+    return items.reduce((acc, row) => {
+      return row.action.includes("FAILURE") ? acc + 1 : acc;
+    }, 0);
+  }, [items]);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+
+    let start = Math.max(2, page - 1);
+    let end = Math.min(totalPages - 1, page + 1);
+
+    if (page <= 3) {
+      start = 2;
+      end = 4;
+    }
+    if (page >= totalPages - 2) {
+      start = totalPages - 3;
+      end = totalPages - 1;
+    }
+
+    start = Math.max(2, start);
+    end = Math.min(totalPages - 1, end);
+
+    const items: Array<number | "ellipsis"> = [1];
+    if (start > 2) items.push("ellipsis");
+    for (let p = start; p <= end; p++) items.push(p);
+    if (end < totalPages - 1) items.push("ellipsis");
+    items.push(totalPages);
+    return items;
+  }, [page, totalPages]);
+
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
@@ -233,6 +294,10 @@ export default function AuditLogsPage() {
 
   return (
     <div className="w-full space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
+      </div>
+
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Failed to load</AlertTitle>
@@ -257,33 +322,28 @@ export default function AuditLogsPage() {
           <StatsCard title="Total Events" value={total} loading={loading} />
         </div>
         <div className="col-span-12 sm:col-span-6 lg:col-span-3">
-          <StatsCard title="Showing" value={items.length} loading={loading} />
+          <StatsCard title="Last 24h" value={last24hCount} loading={loading} />
         </div>
         <div className="col-span-12 sm:col-span-6 lg:col-span-3">
-          <StatsCard
-            title="Page"
-            value={`${page} / ${totalPages}`}
-            loading={loading}
-          />
+          <StatsCard title="Failures" value={failureCount} loading={loading} />
         </div>
         <div className="col-span-12 sm:col-span-6 lg:col-span-3">
           <StatsCard title="Page Size" value={limit} loading={loading} />
         </div>
       </div>
 
-      <FiltersCard
-        title="Filters"
-        filters={
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-2">
-              <Label>Action</Label>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Select
                 value={action}
                 onChange={(e) => {
                   setAction(e.target.value);
                   setPage(1);
                 }}
-                className="h-10"
+                className="h-10 w-full"
+                aria-label="Action"
               >
                 {ACTION_OPTIONS.map((a) => (
                   <option key={a} value={a}>
@@ -291,38 +351,31 @@ export default function AuditLogsPage() {
                   </option>
                 ))}
               </Select>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Actor User ID</Label>
               <Input
                 value={actorUserIdInput}
                 onChange={(e) => {
                   setActorUserIdInput(e.target.value);
                   setPage(1);
                 }}
-                placeholder="cuid…"
+                placeholder="Actor user ID"
+                aria-label="Actor user ID"
                 type="text"
-                className="h-10"
+                className="h-10 w-full placeholder:text-slate-400"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Actor Email</Label>
               <Input
                 value={actorEmailInput}
                 onChange={(e) => {
                   setActorEmailInput(e.target.value);
                   setPage(1);
                 }}
-                placeholder="user@company.com"
+                placeholder="Actor email"
+                aria-label="Actor email"
                 type="text"
-                className="h-10"
+                className="h-10 w-full placeholder:text-slate-400"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>From</Label>
               <Input
                 value={dateFrom}
                 onChange={(e) => {
@@ -330,12 +383,10 @@ export default function AuditLogsPage() {
                   setPage(1);
                 }}
                 type="date"
-                className="h-10"
+                aria-label="From date"
+                className="h-10 w-full"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>To</Label>
               <Input
                 value={dateTo}
                 onChange={(e) => {
@@ -343,84 +394,63 @@ export default function AuditLogsPage() {
                   setPage(1);
                 }}
                 type="date"
-                className="h-10"
+                aria-label="To date"
+                className="h-10 w-full"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Entity Type</Label>
               <Input
                 value={entityTypeInput}
                 onChange={(e) => {
                   setEntityTypeInput(e.target.value);
                   setPage(1);
                 }}
-                placeholder="User / Role / Project"
+                placeholder="Entity type"
+                aria-label="Entity type"
                 type="text"
-                className="h-10"
+                className="h-10 w-full placeholder:text-slate-400"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Entity ID</Label>
               <Input
                 value={entityIdInput}
                 onChange={(e) => {
                   setEntityIdInput(e.target.value);
                   setPage(1);
                 }}
-                placeholder="id…"
+                placeholder="Entity ID"
+                aria-label="Entity ID"
                 type="text"
-                className="h-10"
+                className="h-10 w-full placeholder:text-slate-400"
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label>Request ID</Label>
               <Input
                 value={requestIdInput}
                 onChange={(e) => {
                   setRequestIdInput(e.target.value);
                   setPage(1);
                 }}
-                placeholder="requestId…"
+                placeholder="Search request ID"
+                aria-label="Search request ID"
                 type="text"
-                className="h-10"
+                className="h-10 w-full placeholder:text-slate-400"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Page Size</Label>
-              <Select
-                value={String(limit)}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="h-10"
+            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+              <Button
+                type="button"
+                onClick={onRetry}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
               >
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </Select>
+                Apply Filters
+              </Button>
             </div>
           </div>
-        }
-        actions={
-          <Button
-            type="button"
-            onClick={onRetry}
-            disabled={loading}
-            className="h-10"
-          >
-            Apply Filters
-          </Button>
-        }
-      />
+        </CardContent>
+      </Card>
 
-      <TableCard title="Audit Events">
-        <>
+      <Card className="w-full">
+        <CardContent>
           {loading ? (
             <Table>
               <TableHeader>
@@ -487,7 +517,7 @@ export default function AuditLogsPage() {
                       {row.entityType}
                       {row.entityId ? `: ${row.entityId}` : ""}
                     </TableCell>
-                    <TableCell>{row.requestId || "—"}</TableCell>
+                    <TableCell>{row.requestId || "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-slate-500">
@@ -510,32 +540,89 @@ export default function AuditLogsPage() {
           )}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-slate-500">
-              Total: {total} • Page {page} of {totalPages}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <div className="text-sm text-slate-500">
+                Showing {showingFrom}-{showingTo} of {total} events
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-slate-600">Page size</Label>
+                <Select
+                  value={String(limit)}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-10 w-[92px]"
+                >
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </Select>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1 || loading}
-              >
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={!hasNext || loading}
-              >
-                Next
-              </Button>
-            </div>
+
+            <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (loading || page <= 1) return;
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                    className={
+                      loading || page <= 1
+                        ? "pointer-events-none opacity-50"
+                        : undefined
+                    }
+                  />
+                </PaginationItem>
+
+                {paginationItems.map((item, idx) =>
+                  item === "ellipsis" ? (
+                    <PaginationItem key={`e-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={item}>
+                      <PaginationLink
+                        href="#"
+                        isActive={item === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (loading) return;
+                          setPage(item);
+                        }}
+                        className={loading ? "pointer-events-none" : undefined}
+                      >
+                        {item}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (loading || !hasNext) return;
+                      setPage((p) => p + 1);
+                    }}
+                    className={
+                      loading || !hasNext
+                        ? "pointer-events-none opacity-50"
+                        : undefined
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
-        </>
-      </TableCard>
+        </CardContent>
+      </Card>
 
       <Modal
         title={selected ? `Audit Log ${selected.id}` : "Audit Log"}
@@ -564,12 +651,12 @@ export default function AuditLogsPage() {
               </div>
               <div className="text-slate-600">
                 <span className="font-medium text-slate-900">RequestId:</span>{" "}
-                {selected.requestId || "—"}
+                {selected.requestId || "-"}
               </div>
               {typeof selected.ipAddress !== "undefined" ? (
                 <div className="text-slate-600">
                   <span className="font-medium text-slate-900">IP:</span>{" "}
-                  {selected.ipAddress || "—"}
+                  {selected.ipAddress || "-"}
                 </div>
               ) : null}
               {typeof selected.userAgent !== "undefined" ? (
@@ -577,7 +664,7 @@ export default function AuditLogsPage() {
                   <span className="font-medium text-slate-900">
                     User-Agent:
                   </span>{" "}
-                  {selected.userAgent || "—"}
+                  {selected.userAgent || "-"}
                 </div>
               ) : null}
             </div>
