@@ -61,7 +61,6 @@ import {
   type UserStatus,
 } from "../api/users";
 import { StatsCard } from "../components/page/StatsCard";
-import { TableCard } from "../components/page/TableCard";
 import { Pencil, UserX } from "lucide-react";
 
 type StatusFilter = "ALL" | UserStatus;
@@ -356,7 +355,10 @@ export default function UsersPage() {
               </Button>
 
               <Separator orientation="horizontal" className="sm:hidden" />
-              <Separator orientation="vertical" className="hidden h-6 sm:block" />
+              <Separator
+                orientation="vertical"
+                className="hidden h-6 sm:block"
+              />
 
               <Button
                 variant="outline"
@@ -372,8 +374,8 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
-      <TableCard title="Users">
-        <>
+      <Card className="w-full">
+        <CardContent>
           {loading ? (
             <Table>
               <TableHeader>
@@ -564,8 +566,8 @@ export default function UsersPage() {
               </PaginationContent>
             </Pagination>
           </div>
-        </>
-      </TableCard>
+        </CardContent>
+      </Card>
 
       <AlertDialog
         open={deactivateOpen}
