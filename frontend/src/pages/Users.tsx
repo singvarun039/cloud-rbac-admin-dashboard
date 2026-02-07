@@ -35,6 +35,15 @@ import { Select } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../components/ui/pagination";
+import {
   Table,
   TableBody,
   TableCell,
@@ -98,7 +107,7 @@ export default function UsersPage() {
   const canWriteUsers = permissions.includes("users.write");
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("ALL");
 
@@ -121,6 +130,44 @@ export default function UsersPage() {
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
   }, [limit, total]);
+
+  const showingFrom = useMemo(() => {
+    if (total === 0) return 0;
+    return (page - 1) * limit + 1;
+  }, [limit, page, total]);
+
+  const showingTo = useMemo(() => {
+    if (total === 0) return 0;
+    return Math.min(page * limit, total);
+  }, [limit, page, total]);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+
+    let start = Math.max(2, page - 1);
+    let end = Math.min(totalPages - 1, page + 1);
+
+    if (page <= 3) {
+      start = 2;
+      end = 4;
+    }
+    if (page >= totalPages - 2) {
+      start = totalPages - 3;
+      end = totalPages - 1;
+    }
+
+    start = Math.max(2, start);
+    end = Math.min(totalPages - 1, end);
+
+    const items: Array<number | "ellipsis"> = [1];
+    if (start > 2) items.push("ellipsis");
+    for (let p = start; p <= end; p++) items.push(p);
+    if (end < totalPages - 1) items.push("ellipsis");
+    items.push(totalPages);
+    return items;
+  }, [page, totalPages]);
 
   const fetchUsers = useCallback(
     async (opts?: { signal?: AbortSignal }) => {
@@ -437,29 +484,86 @@ export default function UsersPage() {
           )}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-slate-500">
-              Page {page} of {totalPages} - Total {total}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <div className="text-sm text-slate-500">
+                Showing {showingFrom}-{showingTo} of {total} users
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-slate-600">Page size</Label>
+                <Select
+                  value={String(limit)}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-9 w-[92px]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </Select>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={loading || page <= 1}
-              >
-                Prev
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={loading || !hasNext}
-              >
-                Next
-              </Button>
-            </div>
+
+            <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (loading || page <= 1) return;
+                      setPage((p) => Math.max(1, p - 1));
+                    }}
+                    className={
+                      loading || page <= 1
+                        ? "pointer-events-none opacity-50"
+                        : undefined
+                    }
+                  />
+                </PaginationItem>
+
+                {paginationItems.map((item, idx) =>
+                  item === "ellipsis" ? (
+                    <PaginationItem key={`e-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={item}>
+                      <PaginationLink
+                        href="#"
+                        isActive={item === page}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (loading) return;
+                          setPage(item);
+                        }}
+                        className={loading ? "pointer-events-none" : undefined}
+                      >
+                        {item}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (loading || !hasNext) return;
+                      setPage((p) => p + 1);
+                    }}
+                    className={
+                      loading || !hasNext
+                        ? "pointer-events-none opacity-50"
+                        : undefined
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         </>
       </TableCard>
