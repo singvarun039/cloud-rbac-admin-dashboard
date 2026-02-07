@@ -32,6 +32,7 @@ import {
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select } from "../components/ui/select";
+import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
 import {
@@ -59,7 +60,6 @@ import {
   type User,
   type UserStatus,
 } from "../api/users";
-import { FiltersCard } from "../components/page/FiltersCard";
 import { StatsCard } from "../components/page/StatsCard";
 import { TableCard } from "../components/page/TableCard";
 import { Pencil, UserX } from "lucide-react";
@@ -314,64 +314,63 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <FiltersCard
-        title="Filters"
-        filters={
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="grid gap-1.5">
-              <Label>Search</Label>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Input
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                placeholder="name or email"
+                placeholder="Search name or email"
+                aria-label="Search"
                 type="text"
-                className="h-10"
+                className="h-10 w-full lg:col-span-2"
               />
-            </div>
 
-            <div className="grid gap-1.5">
-              <Label>Status</Label>
               <Select
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value as StatusFilter);
                   setPage(1);
                 }}
-                className="h-10"
+                aria-label="Status"
+                className="h-10 w-full lg:col-span-2"
               >
                 <option value="ALL">ALL</option>
                 <option value="ACTIVE">ACTIVE</option>
                 <option value="INACTIVE">INACTIVE</option>
               </Select>
             </div>
-          </div>
-        }
-        actions={
-          <>
-            <Button
-              type="button"
-              onClick={onRetry}
-              disabled={loading}
-              className="h-10"
-            >
-              Apply Filters
-            </Button>
-            {canWriteUsers ? (
+
+            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+              <Button
+                type="button"
+                onClick={onRetry}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Apply Filters
+              </Button>
+
+              <Separator orientation="horizontal" className="sm:hidden" />
+              <Separator orientation="vertical" className="hidden h-6 sm:block" />
+
               <Button
                 variant="outline"
                 type="button"
                 onClick={onOpenCreate}
-                className="h-10"
+                className="h-10 w-full sm:w-auto"
+                disabled={!canWriteUsers}
               >
                 Create User
               </Button>
-            ) : null}
-          </>
-        }
-      />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <TableCard title="Users">
         <>
