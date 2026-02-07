@@ -10,12 +10,7 @@ import {
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select } from "../components/ui/select";
@@ -28,6 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
+import { FiltersCard } from "../components/page/FiltersCard";
+import { StatsCard } from "../components/page/StatsCard";
+import { TableCard } from "../components/page/TableCard";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -254,19 +252,28 @@ export default function AuditLogsPage() {
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle className="text-base">Filters</CardTitle>
-          <Button
-            type="button"
-            onClick={onRetry}
-            disabled={loading}
-            className="h-10"
-          >
-            Refresh
-          </Button>
-        </CardHeader>
-        <CardContent>
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Events" value={total} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Showing" value={items.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Page"
+            value={`${page} / ${totalPages}`}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Page Size" value={limit} loading={loading} />
+        </div>
+      </div>
+
+      <FiltersCard
+        title="Filters"
+        filters={
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label>Action</Label>
@@ -399,14 +406,21 @@ export default function AuditLogsPage() {
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        }
+        actions={
+          <Button
+            type="button"
+            onClick={onRetry}
+            disabled={loading}
+            className="h-10"
+          >
+            Apply Filters
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Audit Events</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <TableCard title="Audit Events">
+        <>
           {loading ? (
             <Table>
               <TableHeader>
@@ -520,8 +534,8 @@ export default function AuditLogsPage() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </>
+      </TableCard>
 
       <Modal
         title={selected ? `Audit Log ${selected.id}` : "Audit Log"}

@@ -24,6 +24,9 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
+import { FiltersCard } from "../components/page/FiltersCard";
+import { StatsCard } from "../components/page/StatsCard";
+import { TableCard } from "../components/page/TableCard";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -87,6 +90,19 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [assigningRole, setAssigningRole] = useState<Role | null>(null);
+
+  const totalPermissions = roles.reduce((acc, r) => {
+    const countFromArray = Array.isArray(r.permissions)
+      ? r.permissions.length
+      : null;
+    const count =
+      typeof countFromArray === "number"
+        ? countFromArray
+        : typeof r.permissionCount === "number"
+          ? r.permissionCount
+          : 0;
+    return acc + count;
+  }, 0);
 
   const fetchSeqRef = useRef(0);
 
@@ -178,32 +194,75 @@ export default function RolesPage() {
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="grid gap-1.5">
-          <Label>Search</Label>
-          <Input
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-            }}
-            placeholder="name or description"
-            type="text"
-            className="h-10"
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Roles" value={roles.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Total Permissions"
+            value={totalPermissions}
+            loading={loading}
           />
         </div>
-
-        {canWriteRoles ? (
-          <Button type="button" onClick={onOpenCreate} className="h-10">
-            Create Role
-          </Button>
-        ) : null}
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Limit"
+            value={100}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Search"
+            value={debouncedSearch.trim() ? 1 : 0}
+            loading={loading}
+          />
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Roles</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <FiltersCard
+        title="Filters"
+        filters={
+          <div className="grid gap-1.5">
+            <Label>Search</Label>
+            <Input
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+              }}
+              placeholder="name or description"
+              type="text"
+              className="h-10"
+            />
+          </div>
+        }
+        actions={
+          <>
+            <Button
+              type="button"
+              onClick={onRetry}
+              disabled={loading}
+              className="h-10"
+            >
+              Apply Filters
+            </Button>
+            {canWriteRoles ? (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onOpenCreate}
+                className="h-10"
+              >
+                Create Role
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <TableCard title="Roles">
+        <>
           {loading ? (
             <Table>
               <TableHeader>
@@ -297,8 +356,8 @@ export default function RolesPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
-      </Card>
+        </>
+      </TableCard>
 
       <RoleModal
         open={createOpen}

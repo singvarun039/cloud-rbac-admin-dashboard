@@ -2,8 +2,10 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { cn } from "../lib/utils";
 import {
+  CircleUser,
   FolderKanban,
   LayoutDashboard,
   ScrollText,
@@ -20,8 +22,9 @@ const navItems = [
 ];
 
 export default function Layout() {
-  const { logout, permissions } = useAuth();
+  const { logout, permissions, user } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
 
   const pageTitle = useMemo(() => {
@@ -116,15 +119,45 @@ export default function Layout() {
             <div className="min-w-0 truncate text-2xl font-semibold tracking-tight text-slate-900">
               {pageTitle}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onLogout}
-              type="button"
-              disabled={loggingOut}
-            >
-              {loggingOut ? "Logging out…" : "Logout"}
-            </Button>
+            <Popover open={userMenuOpen} onOpenChange={setUserMenuOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  aria-label="User menu"
+                  disabled={loggingOut}
+                  className="rounded-full border border-slate-200 bg-white/60 hover:bg-slate-50"
+                >
+                  <CircleUser className="h-5 w-5 text-slate-700" aria-hidden="true" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent align="end" className="w-64 p-3">
+                <div className="space-y-1">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {user?.name || "Signed in"}
+                  </div>
+                  <div className="break-all text-xs text-muted-foreground">
+                    {user?.email || "—"}
+                  </div>
+                </div>
+
+                <div className="-mx-3 my-3 h-px bg-slate-200" />
+
+                <Button
+                  variant="ghost"
+                  type="button"
+                  className="h-9 w-full justify-start text-red-600 hover:bg-slate-100 hover:text-red-600"
+                  onClick={async () => {
+                    setUserMenuOpen(false);
+                    await onLogout();
+                  }}
+                >
+                  Logout
+                </Button>
+              </PopoverContent>
+            </Popover>
           </header>
 
           <main className="flex-1 min-w-0 w-full px-4 py-4 sm:px-6 lg:px-8">

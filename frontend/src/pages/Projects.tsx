@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getApiErrorMessage } from "../api/client";
 import { getProjects, type Project } from "../api/projects";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -18,6 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
+import { FiltersCard } from "../components/page/FiltersCard";
+import { StatsCard } from "../components/page/StatsCard";
+import { TableCard } from "../components/page/TableCard";
 
 function formatDate(value?: string): string {
   if (!value) return "—";
@@ -42,20 +39,15 @@ export default function ProjectsPage() {
     return Math.max(1, Math.ceil(total / limit));
   }, [limit, total]);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    const seq = ++fetchSeqRef.current;
+  const fetchProjects = useCallback(
+    async (opts?: { signal?: AbortSignal }) => {
+      const seq = ++fetchSeqRef.current;
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    void (async () => {
       try {
-        const res = await getProjects(
-          { page, limit },
-          { signal: controller.signal },
-        );
-
+        const res = await getProjects({ page, limit }, { signal: opts?.signal });
         if (fetchSeqRef.current !== seq) return;
         setProjects(res.data);
         setTotal(res.meta.total);
@@ -66,10 +58,20 @@ export default function ProjectsPage() {
       } finally {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
-    })();
+    },
+    [limit, page],
+  );
 
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetchProjects({ signal: controller.signal });
     return () => controller.abort();
-  }, [limit, page]);
+  }, [fetchProjects]);
+
+  const onRetry = useCallback(() => {
+    const controller = new AbortController();
+    void fetchProjects({ signal: controller.signal });
+  }, [fetchProjects]);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -84,11 +86,46 @@ export default function ProjectsPage() {
         </Alert>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">All Projects</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Projects" value={total} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Showing" value={projects.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Page"
+            value={`${page} / ${totalPages}`}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Page Size" value={limit} loading={loading} />
+        </div>
+      </div>
+
+      <FiltersCard
+        title="Filters"
+        filters={
+          <div className="text-sm text-slate-600">
+            No filters available for projects.
+          </div>
+        }
+        actions={
+          <Button
+            type="button"
+            onClick={onRetry}
+            disabled={loading}
+            className="h-10"
+          >
+            Refresh
+          </Button>
+        }
+      />
+
+      <TableCard title="All Projects">
+        <>
           {loading ? (
             <Table>
               <TableHeader>
@@ -181,8 +218,8 @@ export default function ProjectsPage() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </>
+      </TableCard>
     </div>
   );
 }

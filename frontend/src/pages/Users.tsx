@@ -11,6 +11,24 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Button } from "../components/ui/button";
+import { buttonVariants } from "../components/ui/button-variants";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Select } from "../components/ui/select";
@@ -32,6 +50,10 @@ import {
   type User,
   type UserStatus,
 } from "../api/users";
+import { FiltersCard } from "../components/page/FiltersCard";
+import { StatsCard } from "../components/page/StatsCard";
+import { TableCard } from "../components/page/TableCard";
+import { Pencil, UserX } from "lucide-react";
 
 type StatusFilter = "ALL" | UserStatus;
 
@@ -46,7 +68,7 @@ function isCanceledError(err: unknown): boolean {
 }
 
 function formatDate(value?: string): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
@@ -61,7 +83,7 @@ function NotAuthorized() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600">
-            You don’t have permission to view users.
+            You don't have permission to view users.
           </p>
         </CardContent>
       </Card>
@@ -79,6 +101,9 @@ export default function UsersPage() {
   const [limit] = useState(10);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("ALL");
+
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [deactivateUser, setDeactivateUser] = useState<User | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
@@ -170,11 +195,6 @@ export default function UsersPage() {
       if (!canWriteUsers) return;
       setSuccess(null);
 
-      const ok = window.confirm(
-        `Deactivate user "${u.email}"? You can re-enable later by editing status.`,
-      );
-      if (!ok) return;
-
       try {
         await deleteUser(u.id);
 
@@ -194,6 +214,17 @@ export default function UsersPage() {
     },
     [canWriteUsers, fetchUsers, page, users.length],
   );
+
+  const onRequestDeactivate = useCallback((u: User) => {
+    setDeactivateUser(u);
+    setDeactivateOpen(true);
+  }, []);
+
+  const onConfirmDeactivate = useCallback(() => {
+    if (!deactivateUser) return;
+    setDeactivateOpen(false);
+    void onDelete(deactivateUser);
+  }, [deactivateUser, onDelete]);
 
   if (!canReadUsers) {
     return <NotAuthorized />;
@@ -217,51 +248,86 @@ export default function UsersPage() {
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="grid gap-1.5">
-            <Label>Search</Label>
-            <Input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="name or email"
-              type="text"
-              className="h-10"
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label>Status</Label>
-            <Select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as StatusFilter);
-                setPage(1);
-              }}
-              className="h-10"
-            >
-              <option value="ALL">ALL</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </Select>
-          </div>
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Users" value={total} loading={loading} />
         </div>
-
-        {canWriteUsers ? (
-          <Button type="button" onClick={onOpenCreate} className="h-10">
-            Create User
-          </Button>
-        ) : null}
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Showing" value={users.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Page"
+            value={`${page} / ${totalPages}`}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Page Size" value={limit} loading={loading} />
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Users</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <FiltersCard
+        title="Filters"
+        filters={
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="grid gap-1.5">
+              <Label>Search</Label>
+              <Input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="name or email"
+                type="text"
+                className="h-10"
+              />
+            </div>
+
+            <div className="grid gap-1.5">
+              <Label>Status</Label>
+              <Select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value as StatusFilter);
+                  setPage(1);
+                }}
+                className="h-10"
+              >
+                <option value="ALL">ALL</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </Select>
+            </div>
+          </div>
+        }
+        actions={
+          <>
+            <Button
+              type="button"
+              onClick={onRetry}
+              disabled={loading}
+              className="h-10"
+            >
+              Apply Filters
+            </Button>
+            {canWriteUsers ? (
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onOpenCreate}
+                className="h-10"
+              >
+                Create User
+              </Button>
+            ) : null}
+          </>
+        }
+      />
+
+      <TableCard title="Users">
+        <>
           {loading ? (
             <Table>
               <TableHeader>
@@ -334,28 +400,34 @@ export default function UsersPage() {
                     <TableCell>{formatDate(u.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       {canWriteUsers ? (
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            type="button"
-                            onClick={() => onOpenEdit(u)}
-                            className="h-9 min-w-20"
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            type="button"
-                            onClick={() => void onDelete(u)}
-                            className="h-9 min-w-24"
-                          >
-                            Deactivate
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              type="button"
+                              className="h-9 px-2"
+                            >
+                              ...
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => onOpenEdit(u)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => onRequestDeactivate(u)}
+                              className="text-red-700 focus:bg-red-50 focus:text-red-700"
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       ) : (
-                        <span className="text-sm text-slate-500">—</span>
+                        <span className="text-sm text-slate-500">-</span>
                       )}
                     </TableCell>
                   </TableRow>
@@ -366,7 +438,7 @@ export default function UsersPage() {
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-slate-500">
-              Page {page} of {totalPages} · Total {total}
+              Page {page} of {totalPages} - Total {total}
             </div>
             <div className="flex gap-2">
               <Button
@@ -389,8 +461,37 @@ export default function UsersPage() {
               </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </>
+      </TableCard>
+
+      <AlertDialog
+        open={deactivateOpen}
+        onOpenChange={(open: boolean) => {
+          setDeactivateOpen(open);
+          if (!open) setDeactivateUser(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deactivateUser
+                ? `Deactivate user "${deactivateUser.email}"? You can re-enable later by editing status.`
+                : "Are you sure you want to deactivate this user?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onConfirmDeactivate}
+            >
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CreateUserModal
         isOpen={createOpen}
@@ -574,7 +675,7 @@ function CreateUserModal(props: {
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting}
         >
-          {submitting ? "Creating…" : "Create"}
+          {submitting ? "Creating..." : "Create"}
         </Button>
       </div>
     </Modal>
@@ -714,7 +815,7 @@ function EditUserModal(props: {
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting || !user}
         >
-          {submitting ? "Saving…" : "Save"}
+          {submitting ? "Saving..." : "Save"}
         </Button>
       </div>
     </Modal>
