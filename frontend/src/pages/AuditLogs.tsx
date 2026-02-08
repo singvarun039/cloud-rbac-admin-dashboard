@@ -458,7 +458,7 @@ export default function AuditLogsPage() {
       </Card>
 
       <Card className="w-full">
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
             <Table>
               <TableHeader>
