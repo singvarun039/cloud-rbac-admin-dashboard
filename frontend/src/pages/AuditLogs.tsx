@@ -10,7 +10,13 @@ import {
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { Calendar } from "../components/ui/calendar";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -33,6 +39,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
+import { format } from "date-fns";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -44,6 +51,14 @@ function formatDate(value?: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
+}
+
+function parseDateOnly(value: string): Date | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  // Treat as local date, not UTC.
+  const d = new Date(`${trimmed}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
 function safePrettyJson(value: unknown): string {
@@ -294,10 +309,6 @@ export default function AuditLogsPage() {
 
   return (
     <div className="w-full space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Logs</h1>
-      </div>
-
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Failed to load</AlertTitle>
@@ -376,26 +387,35 @@ export default function AuditLogsPage() {
                 className="h-10 w-full placeholder:text-slate-400"
               />
 
-              <Input
-                value={dateFrom}
-                onChange={(e) => {
-                  setDateFrom(e.target.value);
+              <Calendar
+                value={parseDateOnly(dateFrom)}
+                onChange={(d) => {
+                  const next = d ? format(d, "yyyy-MM-dd") : "";
+                  setDateFrom(next);
                   setPage(1);
+
+                  if (dateTo && next && dateTo < next) {
+                    setDateTo(next);
+                  }
                 }}
-                type="date"
-                aria-label="From date"
-                className="h-10 w-full"
+                placeholder="Start date"
+                className="h-10 w-full justify-start text-left font-normal"
               />
 
-              <Input
-                value={dateTo}
-                onChange={(e) => {
-                  setDateTo(e.target.value);
+              <Calendar
+                value={parseDateOnly(dateTo)}
+                onChange={(d) => {
+                  const next = d ? format(d, "yyyy-MM-dd") : "";
+
+                  if (dateFrom && next && next < dateFrom) {
+                    setDateTo(dateFrom);
+                  } else {
+                    setDateTo(next);
+                  }
                   setPage(1);
                 }}
-                type="date"
-                aria-label="To date"
-                className="h-10 w-full"
+                placeholder="End date"
+                className="h-10 w-full justify-start text-left font-normal"
               />
 
               <Input
