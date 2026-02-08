@@ -10,7 +10,6 @@ import {
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
-import { Calendar } from "../components/ui/calendar";
 import {
   Card,
   CardContent,
@@ -40,6 +39,7 @@ import {
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
 import { format } from "date-fns";
+import { DatePickerRange, type DateRange } from "../components/ui/date-picker-range";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -156,6 +156,14 @@ export default function AuditLogsPage() {
   const entityType = useDebouncedValue(entityTypeInput, 300);
   const entityId = useDebouncedValue(entityIdInput, 300);
   const requestId = useDebouncedValue(requestIdInput, 300);
+
+  const selectedRange = useMemo<DateRange | undefined>(() => {
+    const from = parseDateOnly(dateFrom);
+    const to = parseDateOnly(dateTo);
+    if (!from && !to) return undefined;
+    if (from && to && to < from) return { from: to, to: from };
+    return { from, to };
+  }, [dateFrom, dateTo]);
 
   const [items, setItems] = useState<AuditLogRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -387,35 +395,15 @@ export default function AuditLogsPage() {
                 className="h-10 w-full placeholder:text-slate-400"
               />
 
-              <Calendar
-                value={parseDateOnly(dateFrom)}
-                onChange={(d) => {
-                  const next = d ? format(d, "yyyy-MM-dd") : "";
-                  setDateFrom(next);
-                  setPage(1);
-
-                  if (dateTo && next && dateTo < next) {
-                    setDateTo(next);
-                  }
-                }}
-                placeholder="Start date"
-                className="h-10 w-full justify-start text-left font-normal"
-              />
-
-              <Calendar
-                value={parseDateOnly(dateTo)}
-                onChange={(d) => {
-                  const next = d ? format(d, "yyyy-MM-dd") : "";
-
-                  if (dateFrom && next && next < dateFrom) {
-                    setDateTo(dateFrom);
-                  } else {
-                    setDateTo(next);
-                  }
+              <DatePickerRange
+                value={selectedRange}
+                onChange={(range) => {
+                  setDateFrom(range?.from ? format(range.from, "yyyy-MM-dd") : "");
+                  setDateTo(range?.to ? format(range.to, "yyyy-MM-dd") : "");
                   setPage(1);
                 }}
-                placeholder="End date"
-                className="h-10 w-full justify-start text-left font-normal"
+                placeholder="Pick a date range"
+                className="w-full"
               />
 
               <Input

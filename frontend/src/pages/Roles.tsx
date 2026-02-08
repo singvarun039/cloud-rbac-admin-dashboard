@@ -54,7 +54,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
-import { Pencil, Shield } from "lucide-react";
+import { ChevronDown, Pencil, Shield } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -346,7 +346,7 @@ export default function RolesPage() {
       </Card>
 
       <Card className="w-full">
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
             <Table>
               <TableHeader>
@@ -417,9 +417,10 @@ export default function RolesPage() {
                               variant="ghost"
                               size="sm"
                               type="button"
-                              className="h-9 px-2"
+                              className="h-8 px-2"
                             >
-                              ...
+                              Action
+                              <ChevronDown className="ml-1 h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
