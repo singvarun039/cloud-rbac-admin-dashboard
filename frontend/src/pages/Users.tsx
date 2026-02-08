@@ -110,6 +110,9 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("ALL");
 
+  const [searchInput, setSearchInput] = useState("");
+  const [statusInput, setStatusInput] = useState<StatusFilter>("ALL");
+
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [deactivateUser, setDeactivateUser] = useState<User | null>(null);
 
@@ -125,6 +128,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const fetchSeqRef = useRef(0);
+  const skipAutoFetchRef = useRef(false);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -169,8 +173,19 @@ export default function UsersPage() {
   }, [page, totalPages]);
 
   const fetchUsers = useCallback(
-    async (opts?: { signal?: AbortSignal }) => {
+    async (opts?: {
+      signal?: AbortSignal;
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: StatusFilter;
+    }) => {
       if (!canReadUsers) return;
+
+      const effectivePage = opts?.page ?? page;
+      const effectiveLimit = opts?.limit ?? limit;
+      const effectiveSearch = opts?.search ?? search;
+      const effectiveStatus = opts?.status ?? status;
 
       const seq = ++fetchSeqRef.current;
       setLoading(true);
@@ -179,10 +194,10 @@ export default function UsersPage() {
       try {
         const res = await getUsers(
           {
-            page,
-            limit,
-            search,
-            status,
+            page: effectivePage,
+            limit: effectiveLimit,
+            search: effectiveSearch,
+            status: effectiveStatus,
           },
           { signal: opts?.signal },
         );
@@ -204,10 +219,14 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!canReadUsers) return;
+    if (skipAutoFetchRef.current) {
+      skipAutoFetchRef.current = false;
+      return;
+    }
     const controller = new AbortController();
     void fetchUsers({ signal: controller.signal });
     return () => controller.abort();
-  }, [canReadUsers, fetchUsers]);
+  }, [canReadUsers, limit, page]);
 
   useEffect(() => {
     // Keep page within range if total shrinks.
@@ -218,6 +237,47 @@ export default function UsersPage() {
     setSuccess(null);
     const controller = new AbortController();
     void fetchUsers({ signal: controller.signal });
+  }, [fetchUsers]);
+
+  const onApplyFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setPage(1);
+    setSearch(searchInput);
+    setStatus(statusInput);
+
+    const controller = new AbortController();
+    void fetchUsers({
+      signal: controller.signal,
+      page: 1,
+      limit,
+      search: searchInput,
+      status: statusInput,
+    });
+  }, [fetchUsers, limit, searchInput, statusInput]);
+
+  const onResetFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setSearchInput("");
+    setStatusInput("ALL");
+    setSearch("");
+    setStatus("ALL");
+    setPage(1);
+    setLimit(10);
+
+    const controller = new AbortController();
+    void fetchUsers({
+      signal: controller.signal,
+      page: 1,
+      limit: 10,
+      search: "",
+      status: "ALL",
+    });
   }, [fetchUsers]);
 
   const onOpenCreate = useCallback(() => {
@@ -318,10 +378,9 @@ export default function UsersPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Input
-                value={search}
+                value={searchInput}
                 onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
+                  setSearchInput(e.target.value);
                 }}
                 placeholder="Search name or email"
                 aria-label="Search"
@@ -330,10 +389,9 @@ export default function UsersPage() {
               />
 
               <Select
-                value={status}
+                value={statusInput}
                 onChange={(e) => {
-                  setStatus(e.target.value as StatusFilter);
-                  setPage(1);
+                  setStatusInput(e.target.value as StatusFilter);
                 }}
                 aria-label="Status"
                 className="h-10 w-full lg:col-span-2"
@@ -347,11 +405,20 @@ export default function UsersPage() {
             <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
               <Button
                 type="button"
-                onClick={onRetry}
+                onClick={onApplyFilters}
                 disabled={loading}
                 className="h-10 w-full sm:w-auto"
               >
                 Apply Filters
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onResetFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Reset Filters
               </Button>
 
               <Separator orientation="horizontal" className="sm:hidden" />
@@ -361,7 +428,6 @@ export default function UsersPage() {
               />
 
               <Button
-                variant="outline"
                 type="button"
                 onClick={onOpenCreate}
                 className="h-10 w-full sm:w-auto"
@@ -486,10 +552,72 @@ export default function UsersPage() {
           )}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-              <div className="text-sm text-slate-500">
-                Showing {showingFrom}-{showingTo} of {total} users
-              </div>
+            <div className="text-sm text-slate-500">
+              Showing {showingFrom}-{showingTo} of {total} users
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || page <= 1) return;
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      className={
+                        loading || page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationItems.map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (loading) return;
+                            setPage(item);
+                          }}
+                          className={
+                            loading ? "pointer-events-none" : undefined
+                          }
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || !hasNext) return;
+                        setPage((p) => p + 1);
+                      }}
+                      className={
+                        loading || !hasNext
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
@@ -507,65 +635,6 @@ export default function UsersPage() {
                 </Select>
               </div>
             </div>
-
-            <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || page <= 1) return;
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                    className={
-                      loading || page <= 1
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-
-                {paginationItems.map((item, idx) =>
-                  item === "ellipsis" ? (
-                    <PaginationItem key={`e-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={item}>
-                      <PaginationLink
-                        href="#"
-                        isActive={item === page}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (loading) return;
-                          setPage(item);
-                        }}
-                        className={loading ? "pointer-events-none" : undefined}
-                      >
-                        {item}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ),
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || !hasNext) return;
-                      setPage((p) => p + 1);
-                    }}
-                    className={
-                      loading || !hasNext
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
           </div>
         </CardContent>
       </Card>
