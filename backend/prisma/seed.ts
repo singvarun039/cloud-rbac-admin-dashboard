@@ -4,11 +4,14 @@ import { hashPassword } from "../src/utils/password";
 const PERMISSION_KEYS = [
   "users.read",
   "users.write",
+  "users.edit",
   "roles.read",
   "roles.write",
+  "roles.edit",
   "permissions.read",
   "projects.read",
   "projects.write",
+  "projects.edit",
   "audit.read",
 ] as const;
 

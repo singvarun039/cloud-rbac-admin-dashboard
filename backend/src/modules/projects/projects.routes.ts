@@ -153,7 +153,7 @@ projectsRouter.post(
 projectsRouter.patch(
   "/:id",
   authenticate,
-  requirePermission("projects.write"),
+  requirePermission(["projects.write", "projects.edit"]),
   validateParams(ProjectIdParamSchema),
   validateBody(PatchProjectBodySchema),
   asyncHandler(async (req, res) => {

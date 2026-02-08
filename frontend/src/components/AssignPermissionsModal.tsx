@@ -18,7 +18,7 @@ function isCanceledError(err: unknown): boolean {
 export default function AssignPermissionsModal(props: {
   open: boolean;
   role: Role | null;
-  canWriteRoles: boolean;
+  canEditRoles: boolean;
   canReadPermissions: boolean;
   onClose: () => void;
   onSuccess: () => Promise<void> | void;
@@ -27,7 +27,7 @@ export default function AssignPermissionsModal(props: {
   const {
     open,
     role,
-    canWriteRoles,
+    canEditRoles,
     canReadPermissions,
     onClose,
     onSuccess,
@@ -218,7 +218,7 @@ export default function AssignPermissionsModal(props: {
   }, [fetchPermissions]);
 
   const onSave = useCallback(async () => {
-    if (!canWriteRoles || submitting) return;
+    if (!canEditRoles || submitting) return;
     if (!role) return;
     if (!canReadPermissions) return;
     if (!hasChanges) return;
@@ -234,7 +234,7 @@ export default function AssignPermissionsModal(props: {
     }
   }, [
     canReadPermissions,
-    canWriteRoles,
+    canEditRoles,
     hasChanges,
     onError,
     onSuccess,
@@ -249,10 +249,10 @@ export default function AssignPermissionsModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!role || !canWriteRoles ? (
+      {!role || !canEditRoles ? (
         <div className="space-y-1 text-sm text-slate-500">
           {!role ? <p>No role selected.</p> : null}
-          {!canWriteRoles ? <p>Requires roles.write.</p> : null}
+          {!canEditRoles ? <p>Requires roles.write or roles.edit.</p> : null}
         </div>
       ) : null}
 
@@ -326,7 +326,7 @@ export default function AssignPermissionsModal(props: {
             <CardHeader>
               <CardTitle className="text-base">Permissions</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="max-h-[45vh] overflow-y-auto">
               {loading ? (
                 <div className="space-y-3">
                   <Skeleton className="h-4 w-48" />
@@ -355,7 +355,7 @@ export default function AssignPermissionsModal(props: {
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggle(p.id)}
-                          disabled={!canWriteRoles || submitting || !role}
+                          disabled={!canEditRoles || submitting || !role}
                           className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900"
                         />
                         <div className="min-w-0">
@@ -396,7 +396,7 @@ export default function AssignPermissionsModal(props: {
           onClick={() => void onSave()}
           disabled={
             !role ||
-            !canWriteRoles ||
+            !canEditRoles ||
             !canReadPermissions ||
             submitting ||
             !hasChanges

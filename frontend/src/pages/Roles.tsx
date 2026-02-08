@@ -19,6 +19,8 @@ import { Select } from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
+import { DetailsSheet } from "../components/DetailsSheet";
+import { Badge } from "../components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +56,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
-import { ChevronDown, Pencil, Shield } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Shield } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -91,11 +93,19 @@ function permissionCountLabel(role: Role): string {
   return `${count} permissions`;
 }
 
+function formatDate(value?: string): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
 export default function RolesPage() {
   const { permissions } = useAuth();
 
   const canReadRoles = permissions.includes("roles.read");
   const canWriteRoles = permissions.includes("roles.write");
+  const canEditRoles = canWriteRoles || permissions.includes("roles.edit");
   const canReadPermissions = permissions.includes("permissions.read");
 
   const [page, setPage] = useState(1);
@@ -118,6 +128,9 @@ export default function RolesPage() {
 
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
   const [assignConfirmRole, setAssignConfirmRole] = useState<Role | null>(null);
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewRole, setViewRole] = useState<Role | null>(null);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -271,6 +284,11 @@ export default function RolesPage() {
     setSuccess(null);
     setEditingRole(r);
     setEditOpen(true);
+  }, []);
+
+  const onRequestView = useCallback((r: Role) => {
+    setViewRole(r);
+    setViewOpen(true);
   }, []);
 
   const onCloseEdit = useCallback(() => {
@@ -461,7 +479,7 @@ export default function RolesPage() {
                     </TableCell>
                     <TableCell>{permissionCountLabel(r)}</TableCell>
                     <TableCell className="text-right">
-                      {canWriteRoles ? (
+                      {canReadRoles ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -475,18 +493,28 @@ export default function RolesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
+                            <DropdownMenuItem onSelect={() => onRequestView(r)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onSelect={() => onRequestAssign(r)}
-                              disabled={!canReadPermissions}
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Assign Permissions
-                            </DropdownMenuItem>
+
+                            {canEditRoles ? (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() => onRequestAssign(r)}
+                                  disabled={!canReadPermissions}
+                                >
+                                  <Shield className="mr-2 h-4 w-4" />
+                                  Assign Permissions
+                                </DropdownMenuItem>
+                              </>
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
@@ -619,7 +647,8 @@ export default function RolesPage() {
       <RoleModal
         open={createOpen}
         mode="create"
-        canWrite={canWriteRoles}
+        canCreate={canWriteRoles}
+        canEdit={canEditRoles}
         onClose={() => setCreateOpen(false)}
         onSuccess={async () => {
           setCreateOpen(false);
@@ -637,7 +666,8 @@ export default function RolesPage() {
         open={editOpen}
         mode="edit"
         initialRole={editingRole}
-        canWrite={canWriteRoles}
+        canCreate={canWriteRoles}
+        canEdit={canEditRoles}
         onClose={onCloseEdit}
         onSuccess={async () => {
           onCloseEdit();
@@ -654,7 +684,7 @@ export default function RolesPage() {
       <AssignPermissionsModal
         open={assignOpen}
         role={assigningRole}
-        canWriteRoles={canWriteRoles}
+        canEditRoles={canEditRoles}
         canReadPermissions={canReadPermissions}
         onClose={onCloseAssign}
         onSuccess={async () => {
@@ -668,6 +698,63 @@ export default function RolesPage() {
           toast.error("Action failed", { description: msg });
         }}
       />
+
+      <DetailsSheet
+        open={viewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open);
+          if (!open) setViewRole(null);
+        }}
+        title="Role details"
+        description={viewRole ? viewRole.name : undefined}
+      >
+        {!viewRole ? (
+          <div className="text-sm text-slate-500">No role selected.</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label>Name</Label>
+              <div className="text-sm">{viewRole.name}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Description</Label>
+              <div className="text-sm">{viewRole.description || "—"}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Permissions</Label>
+              <div className="text-sm text-slate-700">
+                {permissionCountLabel(viewRole)}
+              </div>
+              {Array.isArray(viewRole.permissions) &&
+              viewRole.permissions.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {viewRole.permissions.map((p) => (
+                    <Badge key={p.id} variant="secondary">
+                      {p.key}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">No permissions.</div>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-1">
+              <Label>Created</Label>
+              <div className="text-sm">{formatDate(viewRole.createdAt)}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Updated</Label>
+              <div className="text-sm">{formatDate(viewRole.updatedAt)}</div>
+            </div>
+          </div>
+        )}
+      </DetailsSheet>
     </div>
   );
 }

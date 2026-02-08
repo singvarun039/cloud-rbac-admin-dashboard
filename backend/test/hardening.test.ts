@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
 import type { Express } from "express";
+import { requirePermission } from "../src/middlewares/requirePermission";
+import { AppError } from "../src/errors/AppError";
 
 let app: Express;
 
@@ -64,4 +66,60 @@ test("security headers: baseline helmet headers present", async () => {
 
   // Safest for APIs.
   assert.equal(res.headers["x-frame-options"], "DENY");
+});
+
+test("rbac: requirePermission accepts array (OR)", () => {
+  let nextCalled = false;
+
+  const mw = requirePermission(["roles.write", "roles.edit"]);
+  mw(
+    { user: { permissions: ["roles.edit"] } } as any,
+    {} as any,
+    () => {
+      nextCalled = true;
+    },
+  );
+
+  assert.equal(nextCalled, true);
+});
+
+test("rbac: requirePermission array throws FORBIDDEN when none match", () => {
+  const mw = requirePermission(["users.write", "users.edit"]);
+  try {
+    mw(
+      { user: { permissions: ["users.read"] } } as any,
+      {} as any,
+      () => {},
+    );
+    assert.fail("Expected middleware to throw");
+  } catch (err) {
+    assert.ok(err instanceof AppError);
+    assert.equal(err.status, 403);
+    assert.equal(err.code, "FORBIDDEN");
+  }
+});
+
+test("rbac: requirePermission preserves single-key behavior", () => {
+  let nextCalled = false;
+  const mw = requirePermission("projects.read");
+  mw(
+    { user: { permissions: ["projects.read"] } } as any,
+    {} as any,
+    () => {
+      nextCalled = true;
+    },
+  );
+  assert.equal(nextCalled, true);
+});
+
+test("rbac: requirePermission throws UNAUTHORIZED when req.user missing", () => {
+  const mw = requirePermission("users.read");
+  try {
+    mw({} as any, {} as any, () => {});
+    assert.fail("Expected middleware to throw");
+  } catch (err) {
+    assert.ok(err instanceof AppError);
+    assert.equal(err.status, 401);
+    assert.equal(err.code, "UNAUTHORIZED");
+  }
 });

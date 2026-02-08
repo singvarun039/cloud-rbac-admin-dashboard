@@ -150,7 +150,7 @@ rolesRouter.post(
 rolesRouter.patch(
   "/:id",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(PatchRoleParamsSchema),
   validateBody(PatchRoleBodySchema),
   asyncHandler(async (req, res) => {
@@ -396,7 +396,7 @@ async function replaceRolePermissions(req: any, res: any) {
 rolesRouter.post(
   "/:id/permissions",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(RoleIdOrIdParamSchema),
   validateBody(ReplaceRolePermissionsBodySchema),
   asyncHandler(replaceRolePermissions)
@@ -406,7 +406,7 @@ rolesRouter.post(
 rolesRouter.put(
   "/:roleId/permissions",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(RoleIdOrIdParamSchema),
   validateBody(ReplaceRolePermissionsBodySchema),
   asyncHandler(replaceRolePermissions)

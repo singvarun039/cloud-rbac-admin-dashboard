@@ -8,6 +8,9 @@ export type User = {
   name: string;
   email: string;
   status: UserStatus;
+  roles?: Array<{ id: string; name: string }>;
+  roleId?: string;
+  roleName?: string;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -123,12 +126,15 @@ export type CreateUserRequest = {
   email: string;
   password: string;
   status?: UserStatus;
+  roleId?: string;
 };
 
 export type UpdateUserRequest = {
   name: string;
   email: string;
   status: UserStatus;
+  roleId?: string;
+  password?: string;
 };
 
 export async function createUser(payload: CreateUserRequest): Promise<User> {
@@ -158,4 +164,8 @@ export async function updateUser(
 
 export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}`);
+}
+
+export async function permanentlyDeleteUser(id: string): Promise<void> {
+  await api.delete(`/api/users/${id}/permanent`);
 }
