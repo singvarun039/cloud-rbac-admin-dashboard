@@ -7,7 +7,6 @@ import {
   type AuditLogRow,
   type GetAuditLogsParams,
 } from "../api/auditLogs";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import {
@@ -27,6 +26,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../components/ui/pagination";
+import { Separator } from "../components/ui/separator";
 import { Select } from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -40,6 +40,15 @@ import {
 import { StatsCard } from "../components/page/StatsCard";
 import { format } from "date-fns";
 import { DatePickerRange, type DateRange } from "../components/ui/date-picker-range";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../components/ui/sheet";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -135,35 +144,44 @@ const ACTION_OPTIONS = [
   "PROJECT_ARCHIVED",
 ];
 
+const DEFAULT_PAGE_SIZE = 10;
+
 export default function AuditLogsPage() {
   const { permissions } = useAuth();
   const canReadAuditLogs = permissions.includes("audit.read");
 
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
 
-  const [action, setAction] = useState("ALL");
-  const [actorUserIdInput, setActorUserIdInput] = useState("");
+  const [actionInput, setActionInput] = useState("ALL");
   const [actorEmailInput, setActorEmailInput] = useState("");
+  const [requestIdInput, setRequestIdInput] = useState("");
+  const [dateFromInput, setDateFromInput] = useState("");
+  const [dateToInput, setDateToInput] = useState("");
+
+  const [actorUserIdInput, setActorUserIdInput] = useState("");
   const [entityTypeInput, setEntityTypeInput] = useState("");
   const [entityIdInput, setEntityIdInput] = useState("");
-  const [requestIdInput, setRequestIdInput] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
 
-  const actorUserId = useDebouncedValue(actorUserIdInput, 300);
-  const actorEmail = useDebouncedValue(actorEmailInput, 300);
-  const entityType = useDebouncedValue(entityTypeInput, 300);
-  const entityId = useDebouncedValue(entityIdInput, 300);
-  const requestId = useDebouncedValue(requestIdInput, 300);
+  const [actionApplied, setActionApplied] = useState("ALL");
+  const [actorEmailApplied, setActorEmailApplied] = useState("");
+  const [requestIdApplied, setRequestIdApplied] = useState("");
+  const [dateFromApplied, setDateFromApplied] = useState("");
+  const [dateToApplied, setDateToApplied] = useState("");
+  const [actorUserIdApplied, setActorUserIdApplied] = useState("");
+  const [entityTypeApplied, setEntityTypeApplied] = useState("");
+  const [entityIdApplied, setEntityIdApplied] = useState("");
+
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [appliedSeq, setAppliedSeq] = useState(0);
 
   const selectedRange = useMemo<DateRange | undefined>(() => {
-    const from = parseDateOnly(dateFrom);
-    const to = parseDateOnly(dateTo);
+    const from = parseDateOnly(dateFromInput);
+    const to = parseDateOnly(dateToInput);
     if (!from && !to) return undefined;
     if (from && to && to < from) return { from: to, to: from };
     return { from, to };
-  }, [dateFrom, dateTo]);
+  }, [dateFromInput, dateToInput]);
 
   const [items, setItems] = useState<AuditLogRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -180,26 +198,26 @@ export default function AuditLogsPage() {
     return {
       page,
       limit,
-      action,
-      actorUserId,
-      actorEmail,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      entityType,
-      entityId,
-      requestId,
+      action: actionApplied,
+      actorUserId: actorUserIdApplied,
+      actorEmail: actorEmailApplied,
+      dateFrom: dateFromApplied || undefined,
+      dateTo: dateToApplied || undefined,
+      entityType: entityTypeApplied,
+      entityId: entityIdApplied,
+      requestId: requestIdApplied,
     };
   }, [
-    action,
-    actorEmail,
-    actorUserId,
-    dateFrom,
-    dateTo,
-    entityId,
-    entityType,
+    actionApplied,
+    actorEmailApplied,
+    actorUserIdApplied,
+    dateFromApplied,
+    dateToApplied,
+    entityIdApplied,
+    entityTypeApplied,
     limit,
     page,
-    requestId,
+    requestIdApplied,
   ]);
 
   const fetchAuditLogs = useCallback(
@@ -232,7 +250,7 @@ export default function AuditLogsPage() {
     const controller = new AbortController();
     void fetchAuditLogs({ signal: controller.signal });
     return () => controller.abort();
-  }, [canReadAuditLogs, fetchAuditLogs]);
+  }, [canReadAuditLogs, fetchAuditLogs, appliedSeq]);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -301,6 +319,53 @@ export default function AuditLogsPage() {
     void fetchAuditLogs({ signal: controller.signal });
   }, [fetchAuditLogs]);
 
+  const onApplyFilters = useCallback(() => {
+    setActionApplied(actionInput);
+    setActorEmailApplied(actorEmailInput);
+    setRequestIdApplied(requestIdInput);
+    setDateFromApplied(dateFromInput);
+    setDateToApplied(dateToInput);
+    setActorUserIdApplied(actorUserIdInput);
+    setEntityTypeApplied(entityTypeInput);
+    setEntityIdApplied(entityIdInput);
+    setPage(1);
+    setAppliedSeq((s) => s + 1);
+  }, [
+    actionInput,
+    actorEmailInput,
+    actorUserIdInput,
+    dateFromInput,
+    dateToInput,
+    entityIdInput,
+    entityTypeInput,
+    requestIdInput,
+  ]);
+
+  const onResetFilters = useCallback(() => {
+    setActionInput("ALL");
+    setActorEmailInput("");
+    setRequestIdInput("");
+    setDateFromInput("");
+    setDateToInput("");
+    setActorUserIdInput("");
+    setEntityTypeInput("");
+    setEntityIdInput("");
+
+    setActionApplied("ALL");
+    setActorEmailApplied("");
+    setRequestIdApplied("");
+    setDateFromApplied("");
+    setDateToApplied("");
+    setActorUserIdApplied("");
+    setEntityTypeApplied("");
+    setEntityIdApplied("");
+
+    setLimit(DEFAULT_PAGE_SIZE);
+    setPage(1);
+    setAdvancedOpen(false);
+    setAppliedSeq((s) => s + 1);
+  }, []);
+
   const onOpenDetails = useCallback((row: AuditLogRow) => {
     setSelected(row);
     setDetailsOpen(true);
@@ -356,11 +421,8 @@ export default function AuditLogsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Select
-                value={action}
-                onChange={(e) => {
-                  setAction(e.target.value);
-                  setPage(1);
-                }}
+                value={actionInput}
+                onChange={(e) => setActionInput(e.target.value)}
                 className="h-10 w-full"
                 aria-label="Action"
               >
@@ -372,23 +434,8 @@ export default function AuditLogsPage() {
               </Select>
 
               <Input
-                value={actorUserIdInput}
-                onChange={(e) => {
-                  setActorUserIdInput(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Actor user ID"
-                aria-label="Actor user ID"
-                type="text"
-                className="h-10 w-full placeholder:text-slate-400"
-              />
-
-              <Input
                 value={actorEmailInput}
-                onChange={(e) => {
-                  setActorEmailInput(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setActorEmailInput(e.target.value)}
                 placeholder="Actor email"
                 aria-label="Actor email"
                 type="text"
@@ -398,44 +445,20 @@ export default function AuditLogsPage() {
               <DatePickerRange
                 value={selectedRange}
                 onChange={(range) => {
-                  setDateFrom(range?.from ? format(range.from, "yyyy-MM-dd") : "");
-                  setDateTo(range?.to ? format(range.to, "yyyy-MM-dd") : "");
-                  setPage(1);
+                  setDateFromInput(
+                    range?.from ? format(range.from, "yyyy-MM-dd") : "",
+                  );
+                  setDateToInput(
+                    range?.to ? format(range.to, "yyyy-MM-dd") : "",
+                  );
                 }}
                 placeholder="Pick a date range"
                 className="w-full"
               />
 
               <Input
-                value={entityTypeInput}
-                onChange={(e) => {
-                  setEntityTypeInput(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Entity type"
-                aria-label="Entity type"
-                type="text"
-                className="h-10 w-full placeholder:text-slate-400"
-              />
-
-              <Input
-                value={entityIdInput}
-                onChange={(e) => {
-                  setEntityIdInput(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Entity ID"
-                aria-label="Entity ID"
-                type="text"
-                className="h-10 w-full placeholder:text-slate-400"
-              />
-
-              <Input
                 value={requestIdInput}
-                onChange={(e) => {
-                  setRequestIdInput(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setRequestIdInput(e.target.value)}
                 placeholder="Search request ID"
                 aria-label="Search request ID"
                 type="text"
@@ -446,12 +469,95 @@ export default function AuditLogsPage() {
             <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
               <Button
                 type="button"
-                onClick={onRetry}
+                onClick={onApplyFilters}
                 disabled={loading}
                 className="h-10 w-full sm:w-auto"
               >
                 Apply Filters
               </Button>
+
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onResetFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Reset Filters
+              </Button>
+
+              <Separator orientation="vertical" className="hidden h-10 sm:block" />
+
+              <Sheet open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    type="button"
+                    className="h-10 w-full sm:w-auto"
+                  >
+                    Advanced Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="flex h-full flex-col">
+                  <SheetHeader>
+                    <SheetTitle>Advanced Filters</SheetTitle>
+                    <SheetDescription>
+                      Refine audit logs using additional fields.
+                    </SheetDescription>
+                  </SheetHeader>
+
+                  <div className="flex-1 space-y-3 overflow-auto pt-4">
+                    <Input
+                      value={actorUserIdInput}
+                      onChange={(e) => setActorUserIdInput(e.target.value)}
+                      placeholder="Actor user ID"
+                      aria-label="Actor user ID"
+                      type="text"
+                      className="h-10 w-full placeholder:text-slate-400"
+                    />
+
+                    <Input
+                      value={entityTypeInput}
+                      onChange={(e) => setEntityTypeInput(e.target.value)}
+                      placeholder="Entity type"
+                      aria-label="Entity type"
+                      type="text"
+                      className="h-10 w-full placeholder:text-slate-400"
+                    />
+
+                    <Input
+                      value={entityIdInput}
+                      onChange={(e) => setEntityIdInput(e.target.value)}
+                      placeholder="Entity ID"
+                      aria-label="Entity ID"
+                      type="text"
+                      className="h-10 w-full placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  <SheetFooter className="border-t border-slate-200 pt-4">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => {
+                        onResetFilters();
+                      }}
+                      className="h-10"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        onApplyFilters();
+                        setAdvancedOpen(false);
+                      }}
+                      className="h-10"
+                    >
+                      Apply Filters
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </CardContent>
@@ -469,6 +575,7 @@ export default function AuditLogsPage() {
                   <TableHead>Entity</TableHead>
                   <TableHead className="w-[220px]">RequestId</TableHead>
                   <TableHead className="w-[220px]">Meta</TableHead>
+                  <TableHead className="w-[120px] text-right">ACTION</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -490,8 +597,10 @@ export default function AuditLogsPage() {
                       <Skeleton className="h-4 w-44" />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-between gap-2">
-                        <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
                         <Skeleton className="h-8 w-16" />
                       </div>
                     </TableCell>
@@ -513,6 +622,7 @@ export default function AuditLogsPage() {
                   <TableHead>Entity</TableHead>
                   <TableHead className="w-[220px]">RequestId</TableHead>
                   <TableHead className="w-[220px]">Meta</TableHead>
+                  <TableHead className="w-[120px] text-right">ACTION</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -527,10 +637,12 @@ export default function AuditLogsPage() {
                     </TableCell>
                     <TableCell>{row.requestId || "-"}</TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="truncate text-slate-500">
-                          {metaPreview(row.meta)}
-                        </span>
+                      <span className="block truncate text-slate-500">
+                        {metaPreview(row.meta)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
                         <Button
                           variant="outline"
                           size="sm"
@@ -548,10 +660,72 @@ export default function AuditLogsPage() {
           )}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-              <div className="text-sm text-slate-500">
-                Showing {showingFrom}-{showingTo} of {total} events
-              </div>
+            <div className="text-sm text-slate-500">
+              Showing {showingFrom}-{showingTo} of {total} events
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || page <= 1) return;
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      className={
+                        loading || page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationItems.map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (loading) return;
+                            setPage(item);
+                          }}
+                          className={
+                            loading ? "pointer-events-none" : undefined
+                          }
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || !hasNext) return;
+                        setPage((p) => p + 1);
+                      }}
+                      className={
+                        loading || !hasNext
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
@@ -569,65 +743,6 @@ export default function AuditLogsPage() {
                 </Select>
               </div>
             </div>
-
-            <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || page <= 1) return;
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                    className={
-                      loading || page <= 1
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-
-                {paginationItems.map((item, idx) =>
-                  item === "ellipsis" ? (
-                    <PaginationItem key={`e-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={item}>
-                      <PaginationLink
-                        href="#"
-                        isActive={item === page}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (loading) return;
-                          setPage(item);
-                        }}
-                        className={loading ? "pointer-events-none" : undefined}
-                      >
-                        {item}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ),
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || !hasNext) return;
-                      setPage((p) => p + 1);
-                    }}
-                    className={
-                      loading || !hasNext
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
           </div>
         </CardContent>
       </Card>
