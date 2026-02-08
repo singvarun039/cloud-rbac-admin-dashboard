@@ -45,6 +45,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
+import { ChevronDown } from "lucide-react";
 
 function formatDate(value?: string): string {
   if (!value) return "-";
@@ -266,7 +267,7 @@ export default function ProjectsPage() {
       </Card>
 
       <Card className="w-full">
-        <CardContent>
+        <CardContent className="pt-6">
           {loading ? (
             <Table>
               <TableHeader>
@@ -345,9 +346,10 @@ export default function ProjectsPage() {
                             variant="ghost"
                             size="sm"
                             type="button"
-                            className="h-9 px-2"
+                            className="h-8 px-2"
                           >
-                            ...
+                            Action
+                            <ChevronDown className="ml-1 h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
