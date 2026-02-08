@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import Modal from "./Modal";
 import { createRole, updateRole, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
+import { Alert, AlertDescription } from "./ui/alert";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
 
 function isConflictError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
@@ -121,16 +125,17 @@ export default function RoleModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!canWrite ? <div className="muted">Requires roles.write.</div> : null}
-      {mode === "edit" && !initialRole ? (
-        <div className="muted">No role selected.</div>
+      {!canWrite || (mode === "edit" && !initialRole) ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          {!canWrite ? <p>Requires roles.write.</p> : null}
+          {mode === "edit" && !initialRole ? <p>No role selected.</p> : null}
+        </div>
       ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
@@ -138,13 +143,13 @@ export default function RoleModal(props: {
               !canWrite || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="e.g. ADMIN"
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Description
-          <input
-            className="input"
+        <div className="space-y-2">
+          <Label>Description</Label>
+          <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             type="text"
@@ -152,20 +157,36 @@ export default function RoleModal(props: {
               !canWrite || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="Optional"
+            className="h-10"
           />
-        </label>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
-      {notFoundError ? <div className="alert">{notFoundError}</div> : null}
+      {fieldError || conflictError || notFoundError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {notFoundError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{notFoundError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={
@@ -179,7 +200,7 @@ export default function RoleModal(props: {
             : mode === "create"
               ? "Create"
               : "Save"}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

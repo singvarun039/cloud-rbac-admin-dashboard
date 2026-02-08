@@ -2,6 +2,56 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
 import { getApiErrorMessage } from "../api/client";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { Badge } from "../components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { buttonVariants } from "../components/ui/button-variants";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select } from "../components/ui/select";
+import { Separator } from "../components/ui/separator";
+import { Skeleton } from "../components/ui/skeleton";
+import { toast } from "../components/ui/use-toast";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../components/ui/pagination";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 import {
   createUser,
   deleteUser,
@@ -10,6 +60,8 @@ import {
   type User,
   type UserStatus,
 } from "../api/users";
+import { StatsCard } from "../components/page/StatsCard";
+import { ChevronDown, Pencil, UserX } from "lucide-react";
 
 type StatusFilter = "ALL" | UserStatus;
 
@@ -24,7 +76,7 @@ function isCanceledError(err: unknown): boolean {
 }
 
 function formatDate(value?: string): string {
-  if (!value) return "—";
+  if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toLocaleString();
@@ -32,12 +84,17 @@ function formatDate(value?: string): string {
 
 function NotAuthorized() {
   return (
-    <div className="page">
-      <h1 className="page-title">Users</h1>
-      <div className="card">
-        <div className="card-title">Forbidden (403)</div>
-        <div className="muted">You don’t have permission to view users.</div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forbidden (403)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-600">
+            You don't have permission to view users.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -49,9 +106,15 @@ export default function UsersPage() {
   const canWriteUsers = permissions.includes("users.write");
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("ALL");
+
+  const [searchInput, setSearchInput] = useState("");
+  const [statusInput, setStatusInput] = useState<StatusFilter>("ALL");
+
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
+  const [deactivateUser, setDeactivateUser] = useState<User | null>(null);
 
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
@@ -65,14 +128,64 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const fetchSeqRef = useRef(0);
+  const skipAutoFetchRef = useRef(false);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
   }, [limit, total]);
 
+  const showingFrom = useMemo(() => {
+    if (total === 0) return 0;
+    return (page - 1) * limit + 1;
+  }, [limit, page, total]);
+
+  const showingTo = useMemo(() => {
+    if (total === 0) return 0;
+    return Math.min(page * limit, total);
+  }, [limit, page, total]);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+
+    let start = Math.max(2, page - 1);
+    let end = Math.min(totalPages - 1, page + 1);
+
+    if (page <= 3) {
+      start = 2;
+      end = 4;
+    }
+    if (page >= totalPages - 2) {
+      start = totalPages - 3;
+      end = totalPages - 1;
+    }
+
+    start = Math.max(2, start);
+    end = Math.min(totalPages - 1, end);
+
+    const items: Array<number | "ellipsis"> = [1];
+    if (start > 2) items.push("ellipsis");
+    for (let p = start; p <= end; p++) items.push(p);
+    if (end < totalPages - 1) items.push("ellipsis");
+    items.push(totalPages);
+    return items;
+  }, [page, totalPages]);
+
   const fetchUsers = useCallback(
-    async (opts?: { signal?: AbortSignal }) => {
+    async (opts?: {
+      signal?: AbortSignal;
+      page?: number;
+      limit?: number;
+      search?: string;
+      status?: StatusFilter;
+    }) => {
       if (!canReadUsers) return;
+
+      const effectivePage = opts?.page ?? page;
+      const effectiveLimit = opts?.limit ?? limit;
+      const effectiveSearch = opts?.search ?? search;
+      const effectiveStatus = opts?.status ?? status;
 
       const seq = ++fetchSeqRef.current;
       setLoading(true);
@@ -81,10 +194,10 @@ export default function UsersPage() {
       try {
         const res = await getUsers(
           {
-            page,
-            limit,
-            search,
-            status,
+            page: effectivePage,
+            limit: effectiveLimit,
+            search: effectiveSearch,
+            status: effectiveStatus,
           },
           { signal: opts?.signal },
         );
@@ -106,10 +219,14 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!canReadUsers) return;
+    if (skipAutoFetchRef.current) {
+      skipAutoFetchRef.current = false;
+      return;
+    }
     const controller = new AbortController();
     void fetchUsers({ signal: controller.signal });
     return () => controller.abort();
-  }, [canReadUsers, fetchUsers]);
+  }, [canReadUsers, limit, page]);
 
   useEffect(() => {
     // Keep page within range if total shrinks.
@@ -120,6 +237,47 @@ export default function UsersPage() {
     setSuccess(null);
     const controller = new AbortController();
     void fetchUsers({ signal: controller.signal });
+  }, [fetchUsers]);
+
+  const onApplyFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setPage(1);
+    setSearch(searchInput);
+    setStatus(statusInput);
+
+    const controller = new AbortController();
+    void fetchUsers({
+      signal: controller.signal,
+      page: 1,
+      limit,
+      search: searchInput,
+      status: statusInput,
+    });
+  }, [fetchUsers, limit, searchInput, statusInput]);
+
+  const onResetFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setSearchInput("");
+    setStatusInput("ALL");
+    setSearch("");
+    setStatus("ALL");
+    setPage(1);
+    setLimit(10);
+
+    const controller = new AbortController();
+    void fetchUsers({
+      signal: controller.signal,
+      page: 1,
+      limit: 10,
+      search: "",
+      status: "ALL",
+    });
   }, [fetchUsers]);
 
   const onOpenCreate = useCallback(() => {
@@ -143,11 +301,6 @@ export default function UsersPage() {
       if (!canWriteUsers) return;
       setSuccess(null);
 
-      const ok = window.confirm(
-        `Deactivate user "${u.email}"? You can re-enable later by editing status.`,
-      );
-      if (!ok) return;
-
       try {
         await deleteUser(u.id);
 
@@ -158,165 +311,362 @@ export default function UsersPage() {
           void fetchUsers();
         }
         setSuccess("User deactivated.");
+        toast.success("User deactivated");
       } catch (err) {
-        setError(getApiErrorMessage(err, "Failed to deactivate user."));
+        const msg = getApiErrorMessage(err, "Failed to deactivate user.");
+        setError(msg);
+        toast.error("Action failed", { description: msg });
       }
     },
     [canWriteUsers, fetchUsers, page, users.length],
   );
+
+  const onRequestDeactivate = useCallback((u: User) => {
+    setDeactivateUser(u);
+    setDeactivateOpen(true);
+  }, []);
+
+  const onConfirmDeactivate = useCallback(() => {
+    if (!deactivateUser) return;
+    setDeactivateOpen(false);
+    void onDelete(deactivateUser);
+  }, [deactivateUser, onDelete]);
 
   if (!canReadUsers) {
     return <NotAuthorized />;
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">Users</h1>
-      <div className="muted">Manage application users and access.</div>
-
-      {success ? <div className="alert-success">{success}</div> : null}
+    <div className="w-full space-y-4">
+      {success ? (
+        <Alert variant="success">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
       {error ? (
-        <div className="alert">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{error}</div>
-            <button className="btn" type="button" onClick={onRetry}>
+        <Alert variant="destructive">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <AlertDescription className="sm:pr-4">{error}</AlertDescription>
+            <Button variant="outline" size="sm" type="button" onClick={onRetry}>
               Retry
-            </button>
+            </Button>
           </div>
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <label className="field">
-            <span className="muted">Search</span>
-            <input
-              className="input"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="name or email"
-              type="text"
-            />
-          </label>
-
-          <label className="field">
-            <span className="muted">Status</span>
-            <select
-              className="select"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value as StatusFilter);
-                setPage(1);
-              }}
-            >
-              <option value="ALL">ALL</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </label>
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Users" value={total} loading={loading} />
         </div>
-
-        {canWriteUsers ? (
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={onOpenCreate}
-          >
-            Create User
-          </button>
-        ) : null}
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Showing" value={users.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Page"
+            value={`${page} / ${totalPages}`}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Page Size" value={limit} loading={loading} />
+        </div>
       </div>
 
-      <div className="card">
-        <div className="card-title">Users</div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
+              <Input
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                }}
+                placeholder="Search name or email"
+                aria-label="Search"
+                type="text"
+                className="h-10 w-full placeholder:text-slate-400 lg:col-span-2"
+              />
 
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : users.length === 0 ? (
-          <div className="muted">No users found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th style={{ width: 170 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>
-                    <span
-                      className={
-                        u.status === "ACTIVE"
-                          ? "badge badge-active"
-                          : "badge badge-inactive"
-                      }
-                    >
-                      {u.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(u.createdAt)}</td>
-                  <td>
-                    {canWriteUsers ? (
-                      <div className="row-actions">
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenEdit(u)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => void onDelete(u)}
-                        >
-                          Deactivate
-                        </button>
+              <Select
+                value={statusInput}
+                onChange={(e) => {
+                  setStatusInput(e.target.value as StatusFilter);
+                }}
+                aria-label="Status"
+                className="h-10 w-full lg:col-span-2"
+              >
+                <option value="ALL">ALL</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+              </Select>
+            </div>
+
+            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+              <Button
+                type="button"
+                onClick={onApplyFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Apply Filters
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onResetFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Reset Filters
+              </Button>
+
+              <Separator orientation="horizontal" className="sm:hidden" />
+              <Separator
+                orientation="vertical"
+                className="hidden h-6 sm:block"
+              />
+
+              <Button
+                type="button"
+                onClick={onOpenCreate}
+                className="h-10 w-full sm:w-auto"
+                disabled={!canWriteUsers}
+              >
+                Create User
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          {loading ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[170px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-44" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="h-9 w-20" />
+                        <Skeleton className="h-9 w-24" />
                       </div>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : users.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No users found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created</TableHead>
+                  <TableHead className="w-[170px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id}>
+                    <TableCell className="font-medium">{u.name}</TableCell>
+                    <TableCell>{u.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          u.status === "ACTIVE" ? "success" : "destructive"
+                        }
+                      >
+                        {u.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{formatDate(u.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      {canWriteUsers ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              type="button"
+                              className="h-8 px-2"
+                            >
+                              Action
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => onOpenEdit(u)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => onRequestDeactivate(u)}
+                              className="text-red-700 focus:bg-red-50 focus:text-red-700"
+                            >
+                              <UserX className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-sm text-slate-500">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
 
-        <div className="pagination">
-          <div className="muted">
-            Page {page} of {totalPages} · Total {total}
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-500">
+              Showing {showingFrom}-{showingTo} of {total} users
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || page <= 1) return;
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      className={
+                        loading || page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationItems.map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (loading) return;
+                            setPage(item);
+                          }}
+                          className={
+                            loading ? "pointer-events-none" : undefined
+                          }
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || !hasNext) return;
+                        setPage((p) => p + 1);
+                      }}
+                      className={
+                        loading || !hasNext
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-slate-600">Page size</Label>
+                <Select
+                  value={String(limit)}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-10 w-[92px]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </Select>
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              className="btn"
+        </CardContent>
+      </Card>
+
+      <AlertDialog
+        open={deactivateOpen}
+        onOpenChange={(open: boolean) => {
+          setDeactivateOpen(open);
+          if (!open) setDeactivateUser(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deactivateUser
+                ? `Deactivate user "${deactivateUser.email}"? You can re-enable later by editing status.`
+                : "Are you sure you want to deactivate this user?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction
               type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={loading || page <= 1}
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onConfirmDeactivate}
             >
-              Prev
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={loading || !hasNext}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <CreateUserModal
         isOpen={createOpen}
@@ -327,8 +677,12 @@ export default function UsersPage() {
           setPage(1);
           await fetchUsers();
           setSuccess("User created.");
+          toast.success("User created");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <EditUserModal
@@ -340,8 +694,12 @@ export default function UsersPage() {
           onCloseEdit();
           await fetchUsers();
           setSuccess("User updated.");
+          toast.success("User updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
     </div>
   );
@@ -414,71 +772,86 @@ function CreateUserModal(props: {
 
   return (
     <Modal title="Create user" isOpen={isOpen} onClose={onClose}>
-      {!canWrite ? <div className="muted">Requires users.write.</div> : null}
+      {!canWrite ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          <p>Requires users.write.</p>
+        </div>
+      ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Email
-          <input
-            className="input"
+        <div className="space-y-2">
+          <Label>Email</Label>
+          <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Password
-          <input
-            className="input"
+        <div className="space-y-2">
+          <Label>Password</Label>
+          <Input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             disabled={!canWrite || submitting}
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Status
-          <select
-            className="select"
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting}
+            className="h-10"
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </label>
+          </Select>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
+      {fieldError || conflictError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting}
         >
-          {submitting ? "Creating…" : "Create"}
-        </button>
+          {submitting ? "Creating..." : "Create"}
+        </Button>
       </div>
     </Modal>
   );
@@ -549,61 +922,76 @@ function EditUserModal(props: {
 
   return (
     <Modal title="Edit user" isOpen={isOpen} onClose={onClose}>
-      {!user ? <div className="muted">No user selected.</div> : null}
-      {!canWrite ? <div className="muted">Requires users.write.</div> : null}
+      {!user || !canWrite ? (
+        <div className="space-y-1 text-sm text-slate-500">
+          {!user ? <p>No user selected.</p> : null}
+          {!canWrite ? <p>Requires users.write.</p> : null}
+        </div>
+      ) : null}
 
-      <div className="form">
-        <label className="label">
-          Name
-          <input
-            className="input"
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Name</Label>
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Email
-          <input
-            className="input"
+        <div className="space-y-2">
+          <Label>Email</Label>
+          <Input
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           />
-        </label>
+        </div>
 
-        <label className="label">
-          Status
-          <select
-            className="select"
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select
             value={status}
             onChange={(e) => setStatus(e.target.value as UserStatus)}
             disabled={!canWrite || submitting || !user}
+            className="h-10"
           >
             <option value="ACTIVE">ACTIVE</option>
             <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </label>
+          </Select>
+        </div>
       </div>
 
-      {fieldError ? <div className="alert">{fieldError}</div> : null}
-      {conflictError ? <div className="alert">{conflictError}</div> : null}
+      {fieldError || conflictError ? (
+        <div className="space-y-3">
+          {fieldError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{fieldError}</AlertDescription>
+            </Alert>
+          ) : null}
+          {conflictError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{conflictError}</AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="modal-actions">
-        <button className="btn" type="button" onClick={onClose}>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button variant="outline" type="button" onClick={onClose}>
           Cancel
-        </button>
-        <button
-          className="btn btn-primary"
+        </Button>
+        <Button
           type="button"
           onClick={() => void onSubmit()}
           disabled={!canWrite || submitting || !user}
         >
-          {submitting ? "Saving…" : "Save"}
-        </button>
+          {submitting ? "Saving..." : "Save"}
+        </Button>
       </div>
     </Modal>
   );

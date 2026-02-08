@@ -1,9 +1,60 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { getRoles, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { buttonVariants } from "../components/ui/button-variants";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Select } from "../components/ui/select";
+import { Separator } from "../components/ui/separator";
+import { Skeleton } from "../components/ui/skeleton";
+import { toast } from "../components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "../components/ui/pagination";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
+import { StatsCard } from "../components/page/StatsCard";
+import { ChevronDown, Pencil, Shield } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -12,12 +63,17 @@ function isCanceledError(err: unknown): boolean {
 
 function NotAuthorized() {
   return (
-    <div className="page">
-      <h1 className="page-title">Roles</h1>
-      <div className="card">
-        <div className="card-title">Forbidden (403)</div>
-        <div className="muted">You don’t have permission to view roles.</div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Forbidden (403)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-slate-600">
+            You don't have permission to view roles.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -42,6 +98,10 @@ export default function RolesPage() {
   const canWriteRoles = permissions.includes("roles.write");
   const canReadPermissions = permissions.includes("permissions.read");
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,24 +110,76 @@ export default function RolesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
-
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [assigningRole, setAssigningRole] = useState<Role | null>(null);
 
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [assignConfirmRole, setAssignConfirmRole] = useState<Role | null>(null);
+
+  const totalPages = useMemo(() => {
+    return Math.max(1, Math.ceil(total / limit));
+  }, [limit, total]);
+
+  const hasNext = useMemo(() => {
+    return page < totalPages;
+  }, [page, totalPages]);
+
+  const showingFrom = useMemo(() => {
+    if (total === 0) return 0;
+    return (page - 1) * limit + 1;
+  }, [limit, page, total]);
+
+  const showingTo = useMemo(() => {
+    if (total === 0) return 0;
+    return Math.min(page * limit, total);
+  }, [limit, page, total]);
+
+  const paginationItems = useMemo(() => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1);
+    }
+
+    let start = Math.max(2, page - 1);
+    let end = Math.min(totalPages - 1, page + 1);
+
+    if (page <= 3) {
+      start = 2;
+      end = 4;
+    }
+    if (page >= totalPages - 2) {
+      start = totalPages - 3;
+      end = totalPages - 1;
+    }
+
+    start = Math.max(2, start);
+    end = Math.min(totalPages - 1, end);
+
+    const items: Array<number | "ellipsis"> = [1];
+    if (start > 2) items.push("ellipsis");
+    for (let p = start; p <= end; p++) items.push(p);
+    if (end < totalPages - 1) items.push("ellipsis");
+    items.push(totalPages);
+    return items;
+  }, [page, totalPages]);
+
   const fetchSeqRef = useRef(0);
+  const skipAutoFetchRef = useRef(false);
 
   const fetchRoles = useCallback(
-    async (opts?: { signal?: AbortSignal }) => {
+    async (opts?: {
+      signal?: AbortSignal;
+      page?: number;
+      limit?: number;
+      search?: string;
+    }) => {
       if (!canReadRoles) return;
+
+      const effectivePage = opts?.page ?? page;
+      const effectiveLimit = opts?.limit ?? limit;
+      const effectiveSearch = opts?.search ?? debouncedSearch;
 
       const seq = ++fetchSeqRef.current;
       setLoading(true);
@@ -75,11 +187,12 @@ export default function RolesPage() {
 
       try {
         const res = await getRoles(
-          { page: 1, limit: 100, search: debouncedSearch },
+          { page: effectivePage, limit: effectiveLimit, search: effectiveSearch },
           { signal: opts?.signal },
         );
         if (fetchSeqRef.current !== seq) return;
         setRoles(res.data);
+        setTotal(res.meta.total);
       } catch (err) {
         if (isCanceledError(err)) return;
         if (fetchSeqRef.current !== seq) return;
@@ -88,20 +201,65 @@ export default function RolesPage() {
         if (fetchSeqRef.current === seq) setLoading(false);
       }
     },
-    [canReadRoles, debouncedSearch],
+    [canReadRoles, debouncedSearch, limit, page],
   );
 
   useEffect(() => {
+    // Keep page within range if total shrinks.
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  useEffect(() => {
     if (!canReadRoles) return;
+    if (skipAutoFetchRef.current) {
+      skipAutoFetchRef.current = false;
+      return;
+    }
     const controller = new AbortController();
     void fetchRoles({ signal: controller.signal });
     return () => controller.abort();
-  }, [canReadRoles, fetchRoles]);
+  }, [canReadRoles, debouncedSearch, fetchRoles, limit, page]);
 
   const onRetry = useCallback(() => {
     setSuccess(null);
     const controller = new AbortController();
     void fetchRoles({ signal: controller.signal });
+  }, [fetchRoles]);
+
+  const onApplyFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setPage(1);
+    setDebouncedSearch(searchInput);
+
+    const controller = new AbortController();
+    void fetchRoles({
+      signal: controller.signal,
+      page: 1,
+      limit,
+      search: searchInput,
+    });
+  }, [fetchRoles, limit, searchInput]);
+
+  const onResetFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setSearchInput("");
+    setDebouncedSearch("");
+    setPage(1);
+    setLimit(10);
+
+    const controller = new AbortController();
+    void fetchRoles({
+      signal: controller.signal,
+      page: 1,
+      limit: 10,
+      search: "",
+    });
   }, [fetchRoles]);
 
   const onOpenCreate = useCallback(() => {
@@ -131,111 +289,332 @@ export default function RolesPage() {
     setAssigningRole(null);
   }, []);
 
+  const onRequestAssign = useCallback((r: Role) => {
+    setAssignConfirmRole(r);
+    setAssignConfirmOpen(true);
+  }, []);
+
+  const onConfirmAssign = useCallback(() => {
+    if (!assignConfirmRole) return;
+    setAssignConfirmOpen(false);
+    onOpenAssign(assignConfirmRole);
+  }, [assignConfirmRole, onOpenAssign]);
+
   if (!canReadRoles) {
     return <NotAuthorized />;
   }
 
   return (
-    <div className="page">
-      <h1 className="page-title">Roles</h1>
-      <div className="muted">Manage roles and their permissions.</div>
-
-      {success ? <div className="alert-success">{success}</div> : null}
+    <div className="w-full space-y-4">
+      {success ? (
+        <Alert variant="success">
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      ) : null}
       {error ? (
-        <div className="alert">
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{error}</div>
-            <button className="btn" type="button" onClick={onRetry}>
+        <Alert variant="destructive">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <AlertDescription className="sm:pr-4">{error}</AlertDescription>
+            <Button variant="outline" size="sm" type="button" onClick={onRetry}>
               Retry
-            </button>
+            </Button>
           </div>
-        </div>
+        </Alert>
       ) : null}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <label className="field">
-            <span className="muted">Search</span>
-            <input
-              className="input"
-              value={searchInput}
-              onChange={(e) => {
-                setSearchInput(e.target.value);
-              }}
-              placeholder="name or description"
-              type="text"
-            />
-          </label>
+      <div className="grid w-full grid-cols-12 gap-4">
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Total Roles" value={total} loading={loading} />
         </div>
-
-        {canWriteRoles ? (
-          <button
-            className="btn btn-primary"
-            type="button"
-            onClick={onOpenCreate}
-          >
-            Create Role
-          </button>
-        ) : null}
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Showing" value={roles.length} loading={loading} />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard
+            title="Page"
+            value={`${page} / ${totalPages}`}
+            loading={loading}
+          />
+        </div>
+        <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <StatsCard title="Page Size" value={limit} loading={loading} />
+        </div>
       </div>
 
-      <div className="card">
-        <div className="card-title">Roles</div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
+              <Input
+                value={searchInput}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                }}
+                placeholder="Search name or description"
+                aria-label="Search"
+                type="text"
+                className="h-10 w-full placeholder:text-slate-400 sm:col-span-2 lg:col-span-4"
+              />
+            </div>
 
-        {loading ? (
-          <div className="muted">Loading…</div>
-        ) : roles.length === 0 ? (
-          <div className="muted">No roles found.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Permissions</th>
-                <th style={{ width: 220 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roles.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td>
-                    {r.description ? (
-                      r.description
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                  <td>{permissionCountLabel(r)}</td>
-                  <td>
-                    {canWriteRoles ? (
-                      <div className="row-actions">
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenEdit(r)}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          className="btn"
-                          type="button"
-                          onClick={() => onOpenAssign(r)}
-                        >
-                          Assign Permissions
-                        </button>
+            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+              <Button
+                type="button"
+                onClick={onApplyFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Apply Filters
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onResetFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Reset Filters
+              </Button>
+
+              <Separator orientation="horizontal" className="sm:hidden" />
+              <Separator
+                orientation="vertical"
+                className="hidden h-6 sm:block"
+              />
+
+              <Button
+                type="button"
+                onClick={onOpenCreate}
+                className="h-10 w-full sm:w-auto"
+                disabled={!canWriteRoles}
+              >
+                Create Role
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full">
+        <CardContent className="pt-6">
+          {loading ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead className="w-[220px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-56" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="h-9 w-20" />
+                        <Skeleton className="h-9 w-36" />
                       </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : roles.length === 0 ? (
+            <div className="py-10 text-center text-sm text-slate-500">
+              No roles found.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Permissions</TableHead>
+                  <TableHead className="w-[220px] text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {roles.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>
+                      {r.description ? (
+                        r.description
+                      ) : (
+                        <span className="text-sm text-slate-500">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{permissionCountLabel(r)}</TableCell>
+                    <TableCell className="text-right">
+                      {canWriteRoles ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              type="button"
+                              className="h-8 px-2"
+                            >
+                              Action
+                              <ChevronDown className="ml-1 h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => onRequestAssign(r)}
+                              disabled={!canReadPermissions}
+                            >
+                              <Shield className="mr-2 h-4 w-4" />
+                              Assign Permissions
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-sm text-slate-500">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-500">
+              Showing {showingFrom}-{showingTo} of {total} roles
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || page <= 1) return;
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      className={
+                        loading || page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationItems.map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
                     ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (loading) return;
+                            setPage(item);
+                          }}
+                          className={
+                            loading ? "pointer-events-none" : undefined
+                          }
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || !hasNext) return;
+                        setPage((p) => p + 1);
+                      }}
+                      className={
+                        loading || !hasNext
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-slate-600">Page size</Label>
+                <Select
+                  value={String(limit)}
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="h-10 w-[92px]"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AlertDialog
+        open={assignConfirmOpen}
+        onOpenChange={(open: boolean) => {
+          setAssignConfirmOpen(open);
+          if (!open) setAssignConfirmRole(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Assign permissions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {assignConfirmRole
+                ? `Open permission assignment for role "${assignConfirmRole.name}"?`
+                : "Open permission assignment for this role?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className={buttonVariants({ variant: "default" })}
+              onClick={onConfirmAssign}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <RoleModal
         open={createOpen}
@@ -246,8 +625,12 @@ export default function RolesPage() {
           setCreateOpen(false);
           await fetchRoles();
           setSuccess("Role created.");
+          toast.success("Role created");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <RoleModal
@@ -260,8 +643,12 @@ export default function RolesPage() {
           onCloseEdit();
           await fetchRoles();
           setSuccess("Role updated.");
+          toast.success("Role updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
 
       <AssignPermissionsModal
@@ -274,8 +661,12 @@ export default function RolesPage() {
           onCloseAssign();
           await fetchRoles();
           setSuccess("Role permissions updated.");
+          toast.success("Permissions updated");
         }}
-        onError={(msg) => setError(msg)}
+        onError={(msg) => {
+          setError(msg);
+          toast.error("Action failed", { description: msg });
+        }}
       />
     </div>
   );
