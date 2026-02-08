@@ -110,13 +110,6 @@ export default function RolesPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      setDebouncedSearch(searchInput);
-    }, 300);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
-
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
@@ -173,10 +166,20 @@ export default function RolesPage() {
   }, [page, totalPages]);
 
   const fetchSeqRef = useRef(0);
+  const skipAutoFetchRef = useRef(false);
 
   const fetchRoles = useCallback(
-    async (opts?: { signal?: AbortSignal }) => {
+    async (opts?: {
+      signal?: AbortSignal;
+      page?: number;
+      limit?: number;
+      search?: string;
+    }) => {
       if (!canReadRoles) return;
+
+      const effectivePage = opts?.page ?? page;
+      const effectiveLimit = opts?.limit ?? limit;
+      const effectiveSearch = opts?.search ?? debouncedSearch;
 
       const seq = ++fetchSeqRef.current;
       setLoading(true);
@@ -184,7 +187,7 @@ export default function RolesPage() {
 
       try {
         const res = await getRoles(
-          { page, limit, search: debouncedSearch },
+          { page: effectivePage, limit: effectiveLimit, search: effectiveSearch },
           { signal: opts?.signal },
         );
         if (fetchSeqRef.current !== seq) return;
@@ -208,15 +211,55 @@ export default function RolesPage() {
 
   useEffect(() => {
     if (!canReadRoles) return;
+    if (skipAutoFetchRef.current) {
+      skipAutoFetchRef.current = false;
+      return;
+    }
     const controller = new AbortController();
     void fetchRoles({ signal: controller.signal });
     return () => controller.abort();
-  }, [canReadRoles, fetchRoles]);
+  }, [canReadRoles, debouncedSearch, fetchRoles, limit, page]);
 
   const onRetry = useCallback(() => {
     setSuccess(null);
     const controller = new AbortController();
     void fetchRoles({ signal: controller.signal });
+  }, [fetchRoles]);
+
+  const onApplyFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setPage(1);
+    setDebouncedSearch(searchInput);
+
+    const controller = new AbortController();
+    void fetchRoles({
+      signal: controller.signal,
+      page: 1,
+      limit,
+      search: searchInput,
+    });
+  }, [fetchRoles, limit, searchInput]);
+
+  const onResetFilters = useCallback(() => {
+    setSuccess(null);
+    setError(null);
+    skipAutoFetchRef.current = true;
+
+    setSearchInput("");
+    setDebouncedSearch("");
+    setPage(1);
+    setLimit(10);
+
+    const controller = new AbortController();
+    void fetchRoles({
+      signal: controller.signal,
+      page: 1,
+      limit: 10,
+      search: "",
+    });
   }, [fetchRoles]);
 
   const onOpenCreate = useCallback(() => {
@@ -306,7 +349,6 @@ export default function RolesPage() {
                 value={searchInput}
                 onChange={(e) => {
                   setSearchInput(e.target.value);
-                  setPage(1);
                 }}
                 placeholder="Search name or description"
                 aria-label="Search"
@@ -318,11 +360,21 @@ export default function RolesPage() {
             <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
               <Button
                 type="button"
-                onClick={onRetry}
+                onClick={onApplyFilters}
                 disabled={loading}
                 className="h-10 w-full sm:w-auto"
               >
                 Apply Filters
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onResetFilters}
+                disabled={loading}
+                className="h-10 w-full sm:w-auto"
+              >
+                Reset Filters
               </Button>
 
               <Separator orientation="horizontal" className="sm:hidden" />
@@ -332,7 +384,6 @@ export default function RolesPage() {
               />
 
               <Button
-                variant="outline"
                 type="button"
                 onClick={onOpenCreate}
                 className="h-10 w-full sm:w-auto"
@@ -449,10 +500,72 @@ export default function RolesPage() {
           )}
 
           <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-              <div className="text-sm text-slate-500">
-                Showing {showingFrom}-{showingTo} of {total} roles
-              </div>
+            <div className="text-sm text-slate-500">
+              Showing {showingFrom}-{showingTo} of {total} roles
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+              <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || page <= 1) return;
+                        setPage((p) => Math.max(1, p - 1));
+                      }}
+                      className={
+                        loading || page <= 1
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+
+                  {paginationItems.map((item, idx) =>
+                    item === "ellipsis" ? (
+                      <PaginationItem key={`e-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <PaginationLink
+                          href="#"
+                          isActive={item === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (loading) return;
+                            setPage(item);
+                          }}
+                          className={
+                            loading ? "pointer-events-none" : undefined
+                          }
+                        >
+                          {item}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (loading || !hasNext) return;
+                        setPage((p) => p + 1);
+                      }}
+                      className={
+                        loading || !hasNext
+                          ? "pointer-events-none opacity-50"
+                          : undefined
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
@@ -470,65 +583,6 @@ export default function RolesPage() {
                 </Select>
               </div>
             </div>
-
-            <Pagination className="sm:mx-0 sm:w-auto sm:justify-end">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || page <= 1) return;
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                    className={
-                      loading || page <= 1
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-
-                {paginationItems.map((item, idx) =>
-                  item === "ellipsis" ? (
-                    <PaginationItem key={`e-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={item}>
-                      <PaginationLink
-                        href="#"
-                        isActive={item === page}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (loading) return;
-                          setPage(item);
-                        }}
-                        className={loading ? "pointer-events-none" : undefined}
-                      >
-                        {item}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ),
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (loading || !hasNext) return;
-                      setPage((p) => p + 1);
-                    }}
-                    className={
-                      loading || !hasNext
-                        ? "pointer-events-none opacity-50"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
           </div>
         </CardContent>
       </Card>
