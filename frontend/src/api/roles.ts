@@ -149,3 +149,7 @@ export async function replaceRolePermissions(
 
   return body as { role: Role } & Record<string, unknown>;
 }
+
+export async function permanentlyDeleteRole(id: string): Promise<void> {
+  await api.delete(`/api/roles/${id}/permanent`);
+}

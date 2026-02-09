@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { getRoles, type Role } from "../api/roles";
+import { getRoles, permanentlyDeleteRole, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
@@ -56,7 +56,9 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
-import { ChevronDown, Eye, Pencil, Shield } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Shield, Trash2 } from "lucide-react";
+
+const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -131,6 +133,11 @@ export default function RolesPage() {
 
   const [viewOpen, setViewOpen] = useState(false);
   const [viewRole, setViewRole] = useState<Role | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteRole, setDeleteRole] = useState<Role | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -317,6 +324,47 @@ export default function RolesPage() {
     setAssignConfirmOpen(false);
     onOpenAssign(assignConfirmRole);
   }, [assignConfirmRole, onOpenAssign]);
+
+  const onRequestDelete = useCallback(
+    (r: Role) => {
+      if (!canWriteRoles) return;
+      setSuccess(null);
+      setError(null);
+      setDeleteRole(r);
+      setDeleteConfirmText("");
+      setDeleteOpen(true);
+    },
+    [canWriteRoles],
+  );
+
+  const onConfirmDelete = useCallback(async () => {
+    if (!canWriteRoles || !deleteRole || deleting) return;
+
+    const expected = deleteRole.name;
+    if (deleteConfirmText.trim() !== expected) {
+      toast.error("Delete blocked", {
+        description: "Confirmation did not match.",
+      });
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await permanentlyDeleteRole(deleteRole.id);
+      setDeleteOpen(false);
+      setDeleteRole(null);
+      setDeleteConfirmText("");
+      await fetchRoles();
+      setSuccess("Role deleted permanently.");
+      toast.success("Role deleted");
+    } catch (err) {
+      const msg = getApiErrorMessage(err, "Failed to delete role.");
+      setError(msg);
+      toast.error("Action failed", { description: msg });
+    } finally {
+      setDeleting(false);
+    }
+  }, [canWriteRoles, deleteConfirmText, deleteRole, deleting, fetchRoles]);
 
   if (!canReadRoles) {
     return <NotAuthorized />;
@@ -515,6 +563,36 @@ export default function RolesPage() {
                                 </DropdownMenuItem>
                               </>
                             ) : null}
+
+                            {canWriteRoles ? (
+                              <>
+                                {(() => {
+                                  const isProtected = PROTECTED_ROLE_NAMES.has(r.name);
+                                  return (
+                                    <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() => onRequestDelete(r)}
+                                  disabled={isProtected}
+                                  className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  {isProtected ? "Delete (system role)" : "Delete"}
+                                </DropdownMenuItem>
+
+                                {isProtected ? (
+                                  <DropdownMenuItem
+                                    disabled
+                                    className="whitespace-normal text-xs text-slate-500 data-[disabled]:opacity-100"
+                                  >
+                                    System roles cannot be deleted. Create a custom role to use Delete.
+                                  </DropdownMenuItem>
+                                ) : null}
+                                    </>
+                                  );
+                                })()}
+                              </>
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
@@ -639,6 +717,61 @@ export default function RolesPage() {
               onClick={onConfirmAssign}
             >
               Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open: boolean) => {
+          if (deleting) return;
+          setDeleteOpen(open);
+          if (!open) {
+            setDeleteRole(null);
+            setDeleteConfirmText("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete role permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteRole
+                ? `This will permanently delete role "${deleteRole.name}". This action is irreversible. Type the role name to confirm.`
+                : "This will permanently delete this role. This action is irreversible."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deleteRole ? (
+            <div className="mt-3 space-y-2">
+              <Label>Confirm role name</Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={deleteRole.name}
+                autoComplete="off"
+              />
+            </div>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" disabled={deleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onConfirmDelete}
+              disabled={
+                deleting ||
+                !deleteRole ||
+                (deleteRole
+                  ? deleteConfirmText.trim() !== deleteRole.name
+                  : true)
+              }
+            >
+              Delete permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

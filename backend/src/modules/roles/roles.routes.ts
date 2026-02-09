@@ -24,6 +24,8 @@ import { AppError } from "../../errors/AppError";
 
 export const rolesRouter = Router();
 
+const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
+
 function roleToApi(role: {
   id: string;
   name: string;
@@ -410,4 +412,81 @@ rolesRouter.put(
   validateParams(RoleIdOrIdParamSchema),
   validateBody(ReplaceRolePermissionsBodySchema),
   asyncHandler(replaceRolePermissions)
+);
+
+rolesRouter.delete(
+  "/:id/permanent",
+  authenticate,
+  requirePermission("roles.write"),
+  validateParams(PatchRoleParamsSchema),
+  asyncHandler(async (req, res) => {
+    const roleId = (req.params as any).id as string;
+
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
+
+    if (!role) {
+      throw AppError.notFound("Role not found");
+    }
+
+    if (PROTECTED_ROLE_NAMES.has(role.name)) {
+      throw AppError.validation(
+        { roleName: role.name },
+        "System roles cannot be deleted",
+      );
+    }
+
+    const assignedCount = await prisma.userRole.count({
+      where: { roleId },
+    });
+
+    if (assignedCount > 0) {
+      throw AppError.validation(
+        { roleId, assignedCount },
+        "Role is assigned to users; reassign users before deleting",
+      );
+    }
+
+    const permissionsCount = await prisma.rolePermission.count({
+      where: { roleId },
+    });
+
+    await prisma.role.delete({
+      where: { id: roleId },
+    });
+
+    await writeAuditLog({
+      req,
+      action: "ROLE_DELETED",
+      entityType: "ROLE",
+      entityId: roleId,
+      meta: {
+        roleId,
+        name: role.name,
+        description: role.description,
+        permissionsCount,
+      },
+    });
+
+    return ok(
+      res,
+      req,
+      {
+        success: true,
+        role: {
+          id: roleId,
+          name: role.name,
+          description: role.description,
+          permissionsCount,
+        },
+      },
+      200,
+    );
+  }),
 );

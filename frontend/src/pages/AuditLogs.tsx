@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
 import { getApiErrorMessage } from "../api/client";
 import {
@@ -7,6 +6,7 @@ import {
   type AuditLogRow,
   type GetAuditLogsParams,
 } from "../api/auditLogs";
+import { DetailsSheet } from "../components/DetailsSheet";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import {
@@ -38,8 +38,16 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
+import { toast } from "../components/ui/use-toast";
 import { format } from "date-fns";
 import { DatePickerRange, type DateRange } from "../components/ui/date-picker-range";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -49,6 +57,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../components/ui/sheet";
+import { ChevronDown } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -113,6 +122,28 @@ function actorLabel(row: AuditLogRow): string {
       : row.actor.email;
   }
   return row.actorUserId || "-";
+}
+
+function actorRoleFromMeta(meta: unknown): string | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  const record = meta as Record<string, unknown>;
+
+  const actorRole = record.actorRole;
+  if (typeof actorRole === "string" && actorRole.trim()) return actorRole.trim();
+
+  const roleName = record.roleName;
+  if (typeof roleName === "string" && roleName.trim()) return roleName.trim();
+
+  const role = record.role;
+  if (typeof role === "string" && role.trim()) return role.trim();
+
+  const roles = record.roles;
+  if (Array.isArray(roles)) {
+    const first = roles.find((r) => typeof r === "string" && r.trim());
+    if (typeof first === "string") return first.trim();
+  }
+
+  return undefined;
 }
 
 function NotAuthorized() {
@@ -190,8 +221,17 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selected, setSelected] = useState<AuditLogRow | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
+
+  const onCopyRequestId = useCallback(async (requestId: string) => {
+    try {
+      await navigator.clipboard.writeText(requestId);
+      toast.success("Copied", { description: "requestId copied to clipboard." });
+    } catch {
+      toast.error("Copy failed", { description: "Could not copy requestId." });
+    }
+  }, []);
 
   const fetchSeqRef = useRef(0);
 
@@ -367,14 +407,9 @@ export default function AuditLogsPage() {
     setAppliedSeq((s) => s + 1);
   }, []);
 
-  const onOpenDetails = useCallback((row: AuditLogRow) => {
-    setSelected(row);
-    setDetailsOpen(true);
-  }, []);
-
-  const onCloseDetails = useCallback(() => {
-    setDetailsOpen(false);
-    setSelected(null);
+  const onOpenView = useCallback((row: AuditLogRow) => {
+    setSelectedLog(row);
+    setViewOpen(true);
   }, []);
 
   if (!canReadAuditLogs) {
@@ -642,17 +677,35 @@ export default function AuditLogsPage() {
                         {metaPreview(row.meta)}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          type="button"
-                          onClick={() => onOpenDetails(row)}
-                        >
-                          View
-                        </Button>
-                      </div>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            className="h-8 px-2"
+                          >
+                            Action
+                            <ChevronDown className="ml-1 h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => onOpenView(row)}>
+                            View
+                          </DropdownMenuItem>
+                          {row.requestId ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() => void onCopyRequestId(row.requestId!)}
+                              >
+                                Copy requestId
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -748,64 +801,107 @@ export default function AuditLogsPage() {
         </CardContent>
       </Card>
 
-      <Modal
-        title={selected ? `Audit Log ${selected.id}` : "Audit Log"}
-        isOpen={detailsOpen}
-        onClose={onCloseDetails}
+      <DetailsSheet
+        open={viewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open);
+          if (!open) setSelectedLog(null);
+        }}
+        title="Audit log details"
+        description={
+          selectedLog
+            ? selectedLog.requestId ||
+              `${selectedLog.action} • ${formatDate(selectedLog.createdAt)}`
+            : undefined
+        }
       >
-        {selected ? (
-          <div className="space-y-4">
-            <div className="grid gap-2 text-sm">
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Timestamp:</span>{" "}
-                {formatDate(selected.createdAt)}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Action:</span>{" "}
-                {selected.action}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Actor:</span>{" "}
-                {actorLabel(selected)}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Entity:</span>{" "}
-                {selected.entityType}
-                {selected.entityId ? `: ${selected.entityId}` : ""}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">RequestId:</span>{" "}
-                {selected.requestId || "-"}
-              </div>
-              {typeof selected.ipAddress !== "undefined" ? (
-                <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">IP:</span>{" "}
-                  {selected.ipAddress || "-"}
-                </div>
-              ) : null}
-              {typeof selected.userAgent !== "undefined" ? (
-                <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">
-                    User-Agent:
-                  </span>{" "}
-                  {selected.userAgent || "-"}
-                </div>
-              ) : null}
+        {!selectedLog ? (
+          <div className="text-sm text-slate-500">No audit log selected.</div>
+        ) : (
+          <div className="max-h-[calc(100vh-8rem)] space-y-4 overflow-y-auto pr-1">
+            <div className="space-y-1">
+              <Label>Timestamp</Label>
+              <div className="text-sm">{formatDate(selectedLog.createdAt)}</div>
             </div>
+
+            <div className="space-y-1">
+              <Label>Action</Label>
+              <div className="text-sm">{selectedLog.action}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Actor</Label>
+              <div className="text-sm">{actorLabel(selectedLog)}</div>
+              {(() => {
+                const role = actorRoleFromMeta(selectedLog.meta);
+                return role ? (
+                  <div className="text-xs text-slate-500">Role: {role}</div>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="space-y-1">
+              <Label>Entity</Label>
+              <div className="text-sm">
+                <span>{selectedLog.entityType || "—"}</span>
+                {selectedLog.entityId ? (
+                  <span className="text-slate-500"> • {selectedLog.entityId}</span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Request ID</Label>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 truncate text-sm">
+                  {selectedLog.requestId || "—"}
+                </div>
+                {selectedLog.requestId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => void onCopyRequestId(selectedLog.requestId!)}
+                  >
+                    Copy
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            {typeof selectedLog.ipAddress !== "undefined" ? (
+              <div className="space-y-1">
+                <Label>IP address</Label>
+                <div className="text-sm">{selectedLog.ipAddress || "—"}</div>
+              </div>
+            ) : null}
+
+            {typeof selectedLog.userAgent !== "undefined" ? (
+              <div className="space-y-1">
+                <Label>User agent</Label>
+                <div className="text-sm break-words">
+                  {selectedLog.userAgent || "—"}
+                </div>
+              </div>
+            ) : null}
+
+            <Separator />
 
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm">Meta</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs text-slate-50">
-                  {safePrettyJson(selected.meta)}
+                <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs text-slate-50">
+                  {safePrettyJson(selectedLog.meta)}
                 </pre>
               </CardContent>
             </Card>
           </div>
-        ) : null}
-      </Modal>
+        )}
+      </DetailsSheet>
+
     </div>
   );
 }
