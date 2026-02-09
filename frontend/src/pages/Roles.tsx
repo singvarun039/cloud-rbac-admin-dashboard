@@ -579,15 +579,6 @@ export default function RolesPage() {
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   {isProtected ? "Delete (system role)" : "Delete"}
                                 </DropdownMenuItem>
-
-                                {isProtected ? (
-                                  <DropdownMenuItem
-                                    disabled
-                                    className="whitespace-normal text-xs text-slate-500 data-[disabled]:opacity-100"
-                                  >
-                                    System roles cannot be deleted. Create a custom role to use Delete.
-                                  </DropdownMenuItem>
-                                ) : null}
                                     </>
                                   );
                                 })()}
