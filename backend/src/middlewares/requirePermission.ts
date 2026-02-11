@@ -7,7 +7,9 @@ export function requirePermission(permissionKey: string | string[]) {
       throw AppError.unauthorized();
     }
 
-    const required = Array.isArray(permissionKey) ? permissionKey : [permissionKey];
+    const required = Array.isArray(permissionKey)
+      ? permissionKey
+      : [permissionKey];
     const userPermissions = req.user.permissions ?? [];
 
     const hasAny = required.some((key) => userPermissions.includes(key));

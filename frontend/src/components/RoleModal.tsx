@@ -27,8 +27,16 @@ export default function RoleModal(props: {
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
-  const { open, mode, initialRole, canCreate, canEdit, onClose, onSuccess, onError } =
-    props;
+  const {
+    open,
+    mode,
+    initialRole,
+    canCreate,
+    canEdit,
+    onClose,
+    onSuccess,
+    onError,
+  } = props;
 
   const canSubmit = mode === "create" ? canCreate : canEdit;
 

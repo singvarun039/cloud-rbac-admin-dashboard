@@ -113,11 +113,7 @@ export default function ProjectsPage() {
   }, [page, totalPages]);
 
   const fetchProjects = useCallback(
-    async (opts?: {
-      signal?: AbortSignal;
-      page?: number;
-      limit?: number;
-    }) => {
+    async (opts?: { signal?: AbortSignal; page?: number; limit?: number }) => {
       const seq = ++fetchSeqRef.current;
 
       const effectivePage = opts?.page ?? page;
@@ -285,11 +281,7 @@ export default function ProjectsPage() {
                 className="hidden h-6 sm:block"
               />
 
-              <Button
-                type="button"
-                className="h-10 w-full sm:w-auto"
-                disabled
-              >
+              <Button type="button" className="h-10 w-full sm:w-auto" disabled>
                 Create Project
               </Button>
             </div>

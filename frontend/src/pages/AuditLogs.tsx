@@ -40,7 +40,10 @@ import {
 import { StatsCard } from "../components/page/StatsCard";
 import { toast } from "../components/ui/use-toast";
 import { format } from "date-fns";
-import { DatePickerRange, type DateRange } from "../components/ui/date-picker-range";
+import {
+  DatePickerRange,
+  type DateRange,
+} from "../components/ui/date-picker-range";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,7 +132,8 @@ function actorRoleFromMeta(meta: unknown): string | undefined {
   const record = meta as Record<string, unknown>;
 
   const actorRole = record.actorRole;
-  if (typeof actorRole === "string" && actorRole.trim()) return actorRole.trim();
+  if (typeof actorRole === "string" && actorRole.trim())
+    return actorRole.trim();
 
   const roleName = record.roleName;
   if (typeof roleName === "string" && roleName.trim()) return roleName.trim();
@@ -227,7 +231,9 @@ export default function AuditLogsPage() {
   const onCopyRequestId = useCallback(async (requestId: string) => {
     try {
       await navigator.clipboard.writeText(requestId);
-      toast.success("Copied", { description: "requestId copied to clipboard." });
+      toast.success("Copied", {
+        description: "requestId copied to clipboard.",
+      });
     } catch {
       toast.error("Copy failed", { description: "Could not copy requestId." });
     }
@@ -522,14 +528,14 @@ export default function AuditLogsPage() {
                 Reset Filters
               </Button>
 
-              <Separator orientation="vertical" className="hidden h-10 sm:block" />
+              <Separator
+                orientation="vertical"
+                className="hidden h-10 sm:block"
+              />
 
               <Sheet open={advancedOpen} onOpenChange={setAdvancedOpen}>
                 <SheetTrigger asChild>
-                  <Button
-                    type="button"
-                    className="h-10 w-full sm:w-auto"
-                  >
+                  <Button type="button" className="h-10 w-full sm:w-auto">
                     Advanced Filters
                   </Button>
                 </SheetTrigger>
@@ -698,7 +704,9 @@ export default function AuditLogsPage() {
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onSelect={() => void onCopyRequestId(row.requestId!)}
+                                onSelect={() =>
+                                  void onCopyRequestId(row.requestId!)
+                                }
                               >
                                 Copy requestId
                               </DropdownMenuItem>
@@ -845,7 +853,10 @@ export default function AuditLogsPage() {
               <div className="text-sm">
                 <span>{selectedLog.entityType || "—"}</span>
                 {selectedLog.entityId ? (
-                  <span className="text-slate-500"> • {selectedLog.entityId}</span>
+                  <span className="text-slate-500">
+                    {" "}
+                    • {selectedLog.entityId}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -901,7 +912,6 @@ export default function AuditLogsPage() {
           </div>
         )}
       </DetailsSheet>
-
     </div>
   );
 }

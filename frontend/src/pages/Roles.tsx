@@ -207,7 +207,11 @@ export default function RolesPage() {
 
       try {
         const res = await getRoles(
-          { page: effectivePage, limit: effectiveLimit, search: effectiveSearch },
+          {
+            page: effectivePage,
+            limit: effectiveLimit,
+            search: effectiveSearch,
+          },
           { signal: opts?.signal },
         );
         if (fetchSeqRef.current !== seq) return;
@@ -549,7 +553,9 @@ export default function RolesPage() {
                             {canEditRoles ? (
                               <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
+                                <DropdownMenuItem
+                                  onSelect={() => onOpenEdit(r)}
+                                >
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
@@ -567,18 +573,22 @@ export default function RolesPage() {
                             {canWriteRoles ? (
                               <>
                                 {(() => {
-                                  const isProtected = PROTECTED_ROLE_NAMES.has(r.name);
+                                  const isProtected = PROTECTED_ROLE_NAMES.has(
+                                    r.name,
+                                  );
                                   return (
                                     <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onSelect={() => onRequestDelete(r)}
-                                  disabled={isProtected}
-                                  className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  {isProtected ? "Delete (system role)" : "Delete"}
-                                </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onSelect={() => onRequestDelete(r)}
+                                        disabled={isProtected}
+                                        className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {isProtected
+                                          ? "Delete (system role)"
+                                          : "Delete"}
+                                      </DropdownMenuItem>
                                     </>
                                   );
                                 })()}

@@ -40,16 +40,20 @@ test("cors: OPTIONS preflight succeeds for allowed origin", async () => {
     .set("Access-Control-Request-Method", "POST")
     .set(
       "Access-Control-Request-Headers",
-      "Content-Type, Authorization, X-Request-Id"
+      "Content-Type, Authorization, X-Request-Id",
     );
 
   assert.ok(res.status === 204 || res.status === 200);
   assert.equal(res.headers["access-control-allow-origin"], origin);
 
-  const allowMethods = String(res.headers["access-control-allow-methods"] ?? "");
+  const allowMethods = String(
+    res.headers["access-control-allow-methods"] ?? "",
+  );
   assert.ok(allowMethods.includes("POST"));
 
-  const allowHeaders = String(res.headers["access-control-allow-headers"] ?? "").toLowerCase();
+  const allowHeaders = String(
+    res.headers["access-control-allow-headers"] ?? "",
+  ).toLowerCase();
   assert.ok(allowHeaders.includes("authorization"));
   assert.ok(allowHeaders.includes("content-type"));
   assert.ok(allowHeaders.includes("x-request-id"));
@@ -72,13 +76,9 @@ test("rbac: requirePermission accepts array (OR)", () => {
   let nextCalled = false;
 
   const mw = requirePermission(["roles.write", "roles.edit"]);
-  mw(
-    { user: { permissions: ["roles.edit"] } } as any,
-    {} as any,
-    () => {
-      nextCalled = true;
-    },
-  );
+  mw({ user: { permissions: ["roles.edit"] } } as any, {} as any, () => {
+    nextCalled = true;
+  });
 
   assert.equal(nextCalled, true);
 });
@@ -86,11 +86,7 @@ test("rbac: requirePermission accepts array (OR)", () => {
 test("rbac: requirePermission array throws FORBIDDEN when none match", () => {
   const mw = requirePermission(["users.write", "users.edit"]);
   try {
-    mw(
-      { user: { permissions: ["users.read"] } } as any,
-      {} as any,
-      () => {},
-    );
+    mw({ user: { permissions: ["users.read"] } } as any, {} as any, () => {});
     assert.fail("Expected middleware to throw");
   } catch (err) {
     assert.ok(err instanceof AppError);
@@ -102,13 +98,9 @@ test("rbac: requirePermission array throws FORBIDDEN when none match", () => {
 test("rbac: requirePermission preserves single-key behavior", () => {
   let nextCalled = false;
   const mw = requirePermission("projects.read");
-  mw(
-    { user: { permissions: ["projects.read"] } } as any,
-    {} as any,
-    () => {
-      nextCalled = true;
-    },
-  );
+  mw({ user: { permissions: ["projects.read"] } } as any, {} as any, () => {
+    nextCalled = true;
+  });
   assert.equal(nextCalled, true);
 });
 

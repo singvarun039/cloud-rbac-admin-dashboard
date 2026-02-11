@@ -67,7 +67,7 @@ function unwrapRolesList(payload: unknown): RolesResponse {
 
 export async function getRoles(
   params?: GetRolesParams,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal },
 ): Promise<RolesResponse> {
   const query: Record<string, unknown> = {};
 
@@ -116,7 +116,7 @@ export type UpdateRoleRequest = {
 
 export async function updateRole(
   id: string,
-  payload: UpdateRoleRequest
+  payload: UpdateRoleRequest,
 ): Promise<Role> {
   const res = await api.patch(`/api/roles/${id}`, payload);
   const body = res.data as unknown;
@@ -136,7 +136,7 @@ export async function updateRole(
 
 export async function replaceRolePermissions(
   id: string,
-  payload: { permissionIds: string[] }
+  payload: { permissionIds: string[] },
 ): Promise<{ role: Role } & Record<string, unknown>> {
   const res = await api.post(`/api/roles/${id}/permissions`, payload);
   const body = res.data as unknown;

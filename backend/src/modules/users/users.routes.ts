@@ -44,8 +44,8 @@ async function ensureDefaultUserRole() {
         update: {},
         create: { key, description: key },
         select: { id: true, key: true },
-      })
-    )
+      }),
+    ),
   );
 
   await prisma.rolePermission.createMany({
@@ -148,7 +148,7 @@ usersRouter.get(
     const hasNext = page * limit < total;
 
     return ok(res, req, { items, meta: { page, limit, total, hasNext } }, 200);
-  })
+  }),
 );
 
 usersRouter.post(
@@ -234,7 +234,7 @@ usersRouter.post(
     });
 
     return ok(res, req, { user: userToApi(user) }, 201);
-  })
+  }),
 );
 
 usersRouter.patch(
@@ -390,7 +390,7 @@ usersRouter.patch(
     });
 
     return ok(res, req, { user: userToApi(user) }, 200);
-  })
+  }),
 );
 
 usersRouter.delete(
@@ -474,8 +474,7 @@ usersRouter.delete(
       meta: {
         email: target.email,
         name:
-          [target.firstName, target.lastName].filter(Boolean).join(" ") ||
-          null,
+          [target.firstName, target.lastName].filter(Boolean).join(" ") || null,
         status: target.isActive ? "ACTIVE" : "INACTIVE",
       },
     });
@@ -543,5 +542,5 @@ usersRouter.delete(
     });
 
     return ok(res, req, { success: true }, 200);
-  })
+  }),
 );

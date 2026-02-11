@@ -348,22 +348,25 @@ export default function UsersPage() {
     setViewOpen(true);
   }, []);
 
-  const roleTextForUser = useCallback((u: User): { text: string; title?: string } => {
-    const roleNames =
-      (Array.isArray(u.roles) && u.roles.length > 0
-        ? u.roles.map((r) => r.name)
-        : u.roleName
-          ? [u.roleName]
-          : [])
-        .filter((x) => typeof x === "string" && x.trim().length > 0);
+  const roleTextForUser = useCallback(
+    (u: User): { text: string; title?: string } => {
+      const roleNames = (
+        Array.isArray(u.roles) && u.roles.length > 0
+          ? u.roles.map((r) => r.name)
+          : u.roleName
+            ? [u.roleName]
+            : []
+      ).filter((x) => typeof x === "string" && x.trim().length > 0);
 
-    if (roleNames.length === 0) return { text: "—" };
-    if (roleNames.length === 1) return { text: roleNames[0] };
-    return {
-      text: `${roleNames[0]} +${roleNames.length - 1}`,
-      title: roleNames.join(", "),
-    };
-  }, []);
+      if (roleNames.length === 0) return { text: "—" };
+      if (roleNames.length === 1) return { text: roleNames[0] };
+      return {
+        text: `${roleNames[0]} +${roleNames.length - 1}`,
+        title: roleNames.join(", "),
+      };
+    },
+    [],
+  );
 
   const onConfirmDeactivate = useCallback(() => {
     if (!deactivateUser) return;
@@ -377,7 +380,9 @@ export default function UsersPage() {
     const expected = deleteTarget.email;
     if (deleteConfirmText.trim() !== expected) {
       setError(`Type ${expected} to confirm deletion.`);
-      toast.error("Delete blocked", { description: "Confirmation did not match." });
+      toast.error("Delete blocked", {
+        description: "Confirmation did not match.",
+      });
       return;
     }
 
@@ -575,11 +580,7 @@ export default function UsersPage() {
                     <TableCell>
                       {(() => {
                         const role = roleTextForUser(u);
-                        return (
-                          <span title={role.title}>
-                            {role.text}
-                          </span>
-                        );
+                        return <span title={role.title}>{role.text}</span>;
                       })()}
                     </TableCell>
                     <TableCell>
@@ -615,7 +616,9 @@ export default function UsersPage() {
                             {canEditUsers ? (
                               <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => onOpenEdit(u)}>
+                                <DropdownMenuItem
+                                  onSelect={() => onOpenEdit(u)}
+                                >
                                   <Pencil className="mr-2 h-4 w-4" />
                                   Edit
                                 </DropdownMenuItem>
@@ -812,7 +815,9 @@ export default function UsersPage() {
               disabled={
                 !deleteTarget ||
                 Boolean(me?.id && deleteTarget?.id === me.id) ||
-                (deleteTarget ? deleteConfirmText.trim() !== deleteTarget.email : true)
+                (deleteTarget
+                  ? deleteConfirmText.trim() !== deleteTarget.email
+                  : true)
               }
             >
               Delete permanently
@@ -968,7 +973,10 @@ function CreateUserModal(props: {
 
     void (async () => {
       try {
-        const res = await getRoles({ page: 1, limit: 100 }, { signal: controller.signal });
+        const res = await getRoles(
+          { page: 1, limit: 100 },
+          { signal: controller.signal },
+        );
         const items = res.data;
         setRoles(items);
 
@@ -1033,7 +1041,17 @@ function CreateUserModal(props: {
     } finally {
       setSubmitting(false);
     }
-  }, [canWrite, email, name, onCreated, onError, password, roleId, status, submitting]);
+  }, [
+    canWrite,
+    email,
+    name,
+    onCreated,
+    onError,
+    password,
+    roleId,
+    status,
+    submitting,
+  ]);
 
   return (
     <Modal title="Create user" isOpen={isOpen} onClose={onClose}>
@@ -1275,7 +1293,18 @@ function EditUserModal(props: {
     } finally {
       setSubmitting(false);
     }
-  }, [canEdit, email, name, onError, onUpdated, password, roleId, status, submitting, user]);
+  }, [
+    canEdit,
+    email,
+    name,
+    onError,
+    onUpdated,
+    password,
+    roleId,
+    status,
+    submitting,
+    user,
+  ]);
 
   return (
     <Modal title="Edit user" isOpen={isOpen} onClose={onClose}>

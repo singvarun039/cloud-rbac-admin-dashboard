@@ -8,7 +8,7 @@ export async function fetchUserWithRolesAndPermissions(params: {
 
   if (!userId && !email) {
     throw new Error(
-      "fetchUserWithRolesAndPermissions requires userId or email"
+      "fetchUserWithRolesAndPermissions requires userId or email",
     );
   }
 

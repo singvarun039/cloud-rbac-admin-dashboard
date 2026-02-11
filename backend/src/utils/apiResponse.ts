@@ -24,7 +24,7 @@ export function ok<T>(
   req: Request,
   data: T,
   statusOrMeta?: number | Meta,
-  meta?: Meta
+  meta?: Meta,
 ) {
   const requestId = req.requestId ?? "unknown";
 
@@ -48,7 +48,7 @@ export function fail(
   status: number,
   code: string,
   message: string,
-  details?: unknown
+  details?: unknown,
 ) {
   const requestId = req.requestId ?? "unknown";
 

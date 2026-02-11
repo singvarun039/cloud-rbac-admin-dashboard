@@ -47,7 +47,9 @@ export function getApiErrorMessage(
     const envelopeError = record?.error;
 
     const envelopeErrorRecord =
-      envelopeError && typeof envelopeError === "object" && envelopeError !== null
+      envelopeError &&
+      typeof envelopeError === "object" &&
+      envelopeError !== null
         ? (envelopeError as Record<string, unknown>)
         : null;
 

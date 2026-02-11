@@ -97,8 +97,8 @@ async function main() {
         update: {},
         create: { key, description: key },
         select: { id: true, key: true },
-      })
-    )
+      }),
+    ),
   );
 
   await prisma.rolePermission.createMany({
@@ -131,7 +131,7 @@ async function main() {
   console.log("✅ Seeded roles:", [adminRole.name, userRole.name]);
   console.log(
     "✅ Seeded permissions:",
-    permissions.map((p) => p.key)
+    permissions.map((p) => p.key),
   );
   console.log("✅ Assigned ADMIN role to:", user.email);
   console.log("✅ Assigned USER role to:", readOnlyUser.email);

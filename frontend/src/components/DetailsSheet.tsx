@@ -21,7 +21,9 @@ export function DetailsSheet(props: {
       <SheetContent side="right" className="w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
-          {description ? <SheetDescription>{description}</SheetDescription> : null}
+          {description ? (
+            <SheetDescription>{description}</SheetDescription>
+          ) : null}
         </SheetHeader>
         <div className="space-y-4">{children}</div>
       </SheetContent>

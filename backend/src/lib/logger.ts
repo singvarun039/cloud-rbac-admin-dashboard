@@ -19,7 +19,7 @@ export function logWithReq(
   req: Request,
   level: LogLevel,
   message: string,
-  extra: Record<string, unknown> = {}
+  extra: Record<string, unknown> = {},
 ) {
   const requestId = req.requestId ?? "unknown";
   const userId = req.user?.id ?? null;

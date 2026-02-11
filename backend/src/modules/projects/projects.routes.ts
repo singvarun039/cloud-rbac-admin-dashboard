@@ -89,7 +89,7 @@ projectsRouter.get(
     const hasNext = page * limit < total;
 
     return ok(res, req, { items, meta: { page, limit, total, hasNext } }, 200);
-  })
+  }),
 );
 
 projectsRouter.post(
@@ -147,7 +147,7 @@ projectsRouter.post(
     });
 
     return ok(res, req, { project: projectToApi(project) }, 201);
-  })
+  }),
 );
 
 projectsRouter.patch(
@@ -241,7 +241,7 @@ projectsRouter.patch(
     });
 
     return ok(res, req, { project: projectToApi(project) }, 200);
-  })
+  }),
 );
 
 projectsRouter.delete(
@@ -291,5 +291,5 @@ projectsRouter.delete(
     });
 
     return ok(res, req, { success: true }, 200);
-  })
+  }),
 );

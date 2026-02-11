@@ -31,7 +31,7 @@ const loginLimiter = rateLimit({
       req,
       429,
       "RATE_LIMITED",
-      "Too many login attempts. Please try again later."
+      "Too many login attempts. Please try again later.",
     );
   },
 });
@@ -48,7 +48,7 @@ const refreshLimiter = rateLimit({
       req,
       429,
       "RATE_LIMITED",
-      "Too many refresh attempts. Please try again later."
+      "Too many refresh attempts. Please try again later.",
     );
   },
 });
@@ -57,17 +57,17 @@ authRouter.post(
   "/login",
   loginLimiter,
   validateBody(LoginBodySchema),
-  asyncHandler(AuthController.login)
+  asyncHandler(AuthController.login),
 );
 authRouter.post(
   "/refresh",
   refreshLimiter,
   validateBody(RefreshBodySchema),
-  asyncHandler(AuthController.refresh)
+  asyncHandler(AuthController.refresh),
 );
 authRouter.post(
   "/logout",
   validateBody(RefreshBodySchema),
-  asyncHandler(AuthController.logout)
+  asyncHandler(AuthController.logout),
 );
 authRouter.get("/me", authenticate, asyncHandler(AuthController.me));

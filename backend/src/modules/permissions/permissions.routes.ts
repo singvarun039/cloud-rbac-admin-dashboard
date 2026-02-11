@@ -23,5 +23,5 @@ permissionsRouter.get(
     });
 
     return ok(res, req, { permissions }, 200);
-  })
+  }),
 );
