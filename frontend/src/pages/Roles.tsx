@@ -15,7 +15,13 @@ import { Button } from "../components/ui/button";
 import { buttonVariants } from "../components/ui/button-variants";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
@@ -677,16 +683,20 @@ export default function RolesPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>

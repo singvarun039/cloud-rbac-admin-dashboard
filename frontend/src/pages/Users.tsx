@@ -31,7 +31,13 @@ import {
 } from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
@@ -460,15 +466,21 @@ export default function UsersPage() {
 
               <Select
                 value={statusInput}
-                onChange={(e) => {
-                  setStatusInput(e.target.value as StatusFilter);
+                onValueChange={(value) => {
+                  setStatusInput(value as StatusFilter);
                 }}
-                aria-label="Status"
-                className="h-10 w-full lg:col-span-2"
               >
-                <option value="ALL">ALL</option>
-                <option value="ACTIVE">ACTIVE</option>
-                <option value="INACTIVE">INACTIVE</option>
+                <SelectTrigger
+                  aria-label="Status"
+                  className="h-10 w-full lg:col-span-2"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">ALL</SelectItem>
+                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                  <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -728,16 +740,20 @@ export default function UsersPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -1117,33 +1133,43 @@ function CreateUserModal(props: {
           <Label>Status</Label>
           <Select
             value={status}
-            onChange={(e) => setStatus(e.target.value as UserStatus)}
+            onValueChange={(value) => setStatus(value as UserStatus)}
             disabled={!canWrite || submitting}
-            className="h-10"
           >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
+            <SelectTrigger className="h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+              <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+            </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label>Role</Label>
           <Select
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
+            value={roleId ? roleId : "__default__"}
+            onValueChange={(value) =>
+              setRoleId(value === "__default__" ? "" : value)
+            }
             disabled={!canWrite || submitting || rolesLoading}
-            className="h-10 w-full"
           >
-            <option value="">
-              {systemDefaultRoleName
-                ? `System default (${systemDefaultRoleName})`
-                : "System default"}
-            </option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
+            <SelectTrigger className="h-10 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__default__">
+                {systemDefaultRoleName
+                  ? `System default (${systemDefaultRoleName})`
+                  : "System default"}
+              </SelectItem>
+              {roles.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           {rolesError ? (
             <p className="text-xs text-slate-500">{rolesError}</p>
@@ -1342,33 +1368,43 @@ function EditUserModal(props: {
           <Label>Status</Label>
           <Select
             value={status}
-            onChange={(e) => setStatus(e.target.value as UserStatus)}
+            onValueChange={(value) => setStatus(value as UserStatus)}
             disabled={!canEdit || submitting || !user}
-            className="h-10"
           >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
+            <SelectTrigger className="h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+              <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+            </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label>Role</Label>
           <Select
-            value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
+            value={roleId ? roleId : "__keep_current__"}
+            onValueChange={(value) =>
+              setRoleId(value === "__keep_current__" ? "" : value)
+            }
             disabled={!canEdit || submitting || !user || rolesLoading}
-            className="h-10 w-full"
           >
-            <option value="" disabled>
-              {user?.roleName
-                ? `Keep current role (${user.roleName})`
-                : "Select role"}
-            </option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
+            <SelectTrigger className="h-10 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__keep_current__">
+                {user?.roleName
+                  ? `Keep current role (${user.roleName})`
+                  : "Select role"}
+              </SelectItem>
+              {roles.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           {rolesError ? (
             <p className="text-xs text-slate-500">{rolesError}</p>

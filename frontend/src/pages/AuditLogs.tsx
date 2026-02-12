@@ -27,7 +27,13 @@ import {
   PaginationPrevious,
 } from "../components/ui/pagination";
 import { Separator } from "../components/ui/separator";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
 import {
   Table,
@@ -52,15 +58,16 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../components/ui/sheet";
-import { ChevronDown } from "lucide-react";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "../components/ui/drawer";
+import { ChevronDown, Copy, Eye } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -464,15 +471,18 @@ export default function AuditLogsPage() {
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Select
                 value={actionInput}
-                onChange={(e) => setActionInput(e.target.value)}
-                className="h-10 w-full"
-                aria-label="Action"
+                onValueChange={(value) => setActionInput(value)}
               >
-                {ACTION_OPTIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
+                <SelectTrigger className="h-10 w-full" aria-label="Action">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACTION_OPTIONS.map((a) => (
+                    <SelectItem key={a} value={a}>
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
 
               <Input
@@ -533,21 +543,29 @@ export default function AuditLogsPage() {
                 className="hidden h-10 sm:block"
               />
 
-              <Sheet open={advancedOpen} onOpenChange={setAdvancedOpen}>
-                <SheetTrigger asChild>
+              <Drawer open={advancedOpen} onOpenChange={setAdvancedOpen} direction="right">
+                <DrawerTrigger asChild>
                   <Button type="button" className="h-10 w-full sm:w-auto">
                     Advanced Filters
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="flex h-full flex-col">
-                  <SheetHeader>
-                    <SheetTitle>Advanced Filters</SheetTitle>
-                    <SheetDescription>
-                      Refine audit logs using additional fields.
-                    </SheetDescription>
-                  </SheetHeader>
+                </DrawerTrigger>
+                <DrawerContent className="inset-y-0 right-0 h-full w-3/4 border-l border-slate-200 sm:max-w-sm">
+                  <DrawerClose
+                    className="absolute right-2 top-2 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+                    aria-label="Close"
+                  >
+                    <span className="text-lg leading-none">×</span>
+                  </DrawerClose>
 
-                  <div className="flex-1 space-y-3 overflow-auto pt-4">
+                  <div className="flex h-full flex-col px-6 pb-6 pt-4">
+                    <DrawerHeader className="pr-10">
+                      <DrawerTitle>Advanced Filters</DrawerTitle>
+                      <DrawerDescription>
+                      Refine audit logs using additional fields.
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="mt-4 flex-1 space-y-3 overflow-auto">
                     <Input
                       value={actorUserIdInput}
                       onChange={(e) => setActorUserIdInput(e.target.value)}
@@ -574,9 +592,9 @@ export default function AuditLogsPage() {
                       type="text"
                       className="h-10 w-full placeholder:text-slate-400"
                     />
-                  </div>
+                    </div>
 
-                  <SheetFooter className="border-t border-slate-200 pt-4">
+                    <DrawerFooter className="border-t border-slate-200 pt-4">
                     <Button
                       variant="outline"
                       type="button"
@@ -597,9 +615,10 @@ export default function AuditLogsPage() {
                     >
                       Apply Filters
                     </Button>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
           </div>
         </CardContent>
@@ -698,6 +717,7 @@ export default function AuditLogsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onSelect={() => onOpenView(row)}>
+                            <Eye className="mr-2 h-4 w-4" />
                             View
                           </DropdownMenuItem>
                           {row.requestId ? (
@@ -708,6 +728,7 @@ export default function AuditLogsPage() {
                                   void onCopyRequestId(row.requestId!)
                                 }
                               >
+                                <Copy className="mr-2 h-4 w-4" />
                                 Copy requestId
                               </DropdownMenuItem>
                             </>
@@ -792,16 +813,20 @@ export default function AuditLogsPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
