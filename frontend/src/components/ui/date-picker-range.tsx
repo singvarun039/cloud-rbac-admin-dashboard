@@ -6,7 +6,7 @@ import type { DateRange } from "react-day-picker";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { CalendarRange } from "./calendar-range";
+import { Calendar } from "./calendar";
 
 export type DatePickerRangeProps = {
   value?: DateRange;
@@ -53,7 +53,7 @@ function DatePickerRange({
           disabled={disabled}
           className={cn(
             "h-10 w-full justify-start text-left font-normal px-2.5",
-            !value?.from && "text-muted-foreground",
+            !value?.from && "text-slate-500",
             className,
           )}
         >
@@ -63,7 +63,7 @@ function DatePickerRange({
       </PopoverTrigger>
 
       <PopoverContent align="start" className="w-auto p-0">
-        <CalendarRange
+        <Calendar
           initialFocus
           mode="range"
           selected={value}
