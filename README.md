@@ -13,6 +13,12 @@ Dockerfiles live next to the real sources:
 - `backend/Dockerfile`
 - `frontend/Dockerfile`
 
+## Architecture
+
+- **Frontend**: React + Vite. In dev, the Vite server proxies `/api` → API.
+- **API**: Express + Prisma. Prisma connects to Postgres.
+- **Docker dev**: `docker compose` runs `db`, `api`, `web` with bind mounts for hot reload.
+
 ## Prerequisites
 
 - Docker Desktop (Docker Compose v2)
@@ -25,7 +31,39 @@ Dockerfiles live next to the real sources:
 
 2) Start everything:
 
-- `docker compose up --build`
+- Preferred (deterministic):
+	- `docker compose up -d --build --wait`
+
+- If your Docker Compose doesn't support `--wait`:
+	- `docker compose up -d --build`
+	- `docker compose ps`
+	- Retry curls until `api` is Up and (if shown) Healthy
+
+## Verify (Dev)
+
+### Endpoints
+
+- `curl http://localhost:4000/api/health`
+- `curl http://localhost:5173/api/health`
+
+### Hot reload (Windows)
+
+File watching over bind mounts can be flaky on Windows. Polling is supported but **disabled by default**.
+
+1) Start with polling enabled:
+
+	- `CHOKIDAR_USEPOLLING=true docker compose up -d --build --wait`
+
+	- (Alternative) `WATCHPACK_POLLING=true docker compose up -d --build --wait`
+
+2) In another terminal, touch files on the host (this is the real signal path we care about):
+
+	- API reload: `touch backend/src/routes/health.ts` then `docker compose logs -f --tail=50 api`
+	- Web reload: `touch frontend/src/App.tsx` then `docker compose logs -f --tail=50 web`
+
+If you need observable Vite HMR debug output in logs (without adding custom app logging), run:
+
+	- `CHOKIDAR_USEPOLLING=true DEBUG=vite:hmr docker compose up -d --build --wait`
 
 ## Stop
 
@@ -45,7 +83,8 @@ This removes the Postgres volume (data loss):
 ## Troubleshooting
 
 - **Port conflicts**: change `API_PORT`, `WEB_PORT`, or the `5432:5432` mapping in `docker-compose.yml`.
-- **Windows file watching**: if hot reload is flaky, run Docker Desktop with WSL2 and keep the repo in the Linux filesystem. You can also set `CHOKIDAR_USEPOLLING=true` (supported by both `api` and `web` services).
+- **Windows file watching**: if hot reload doesn’t trigger on bind mounts, rerun with polling:
+	- `CHOKIDAR_USEPOLLING=true docker compose up -d --build --wait`
 - **Rebuild images**: `docker compose build --no-cache` then `docker compose up`.
 
 ## Production images
