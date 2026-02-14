@@ -15,6 +15,7 @@ import { errorHandler } from "./middlewares/errorHandler";
 import { AppError } from "./errors/AppError";
 import { auditLogsRouter } from "./modules/auditLogs/auditLogs.routes";
 import { env } from "./config/env";
+import { ok } from "./utils/apiResponse";
 
 function parseAllowedOrigins(value: string): string[] {
   return value
@@ -69,6 +70,18 @@ export function createApp() {
   app.use(cors(corsOptions));
   app.options(/.*/, cors(corsOptions));
   app.use(express.json({ limit: "1mb" }));
+
+  app.get("/", (req, res) => {
+    return ok(
+      res,
+      req,
+      {
+        service: "backend",
+        health: "/api/health",
+      },
+      200,
+    );
+  });
 
   app.use("/api", healthRoutes);
   app.use("/api/auth", authRouter);

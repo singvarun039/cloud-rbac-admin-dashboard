@@ -25,6 +25,21 @@ export function errorHandler(
 ) {
   if (res.headersSent) return;
 
+  // 0) Prisma initialization errors (connection/config issues)
+  if (err instanceof Prisma.PrismaClientInitializationError) {
+    logWithReq(req, "error", "prisma_init_error", {
+      message: err.message,
+    });
+
+    return fail(
+      res,
+      req,
+      500,
+      "DB_NOT_READY",
+      "Database is not ready. Apply migrations and seed data.",
+    );
+  }
+
   // 0) Prisma validation errors (bad inputs / bad selects)
   if (err instanceof Prisma.PrismaClientValidationError) {
     logWithReq(req, "warn", "prisma_validation_error", {
@@ -66,6 +81,22 @@ export function errorHandler(
 
   // 3) Prisma known errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    // Missing tables/columns are usually a sign migrations haven't been applied.
+    if (err.code === "P2021") {
+      logWithReq(req, "error", "prisma_error", {
+        code: err.code,
+        meta: err.meta,
+      });
+
+      return fail(
+        res,
+        req,
+        500,
+        "DB_NOT_READY",
+        "Database schema is not ready. Run migrations and seed.",
+      );
+    }
+
     if (err.code === "P2002") {
       logWithReq(req, "warn", "prisma_error", {
         code: err.code,

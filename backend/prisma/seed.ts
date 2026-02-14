@@ -15,21 +15,37 @@ const PERMISSION_KEYS = [
   "audit.read",
 ] as const;
 
-const READ_ONLY_PERMISSION_KEYS = new Set<string>([
+const VIEWER_PERMISSION_KEYS = [
   "users.read",
   "projects.read",
   "audit.read",
-]);
+  "roles.read",
+  "permissions.read",
+] as const;
+
+const EDITOR_PERMISSION_KEYS = [
+  "users.read",
+  "users.edit",
+  "projects.read",
+  "projects.edit",
+  "audit.read",
+  "roles.read",
+  "permissions.read",
+] as const;
 
 async function main() {
-  const email = "admin@naxverse.local";
-  const password = "Admin@12345";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "rbac_admin@rbac.local";
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "rbac@1234";
 
-  const userEmail = "user@naxverse.local";
-  const userPassword = "User@12345";
+  const viewerEmail = process.env.SEED_VIEWER_EMAIL ?? "rbac_viewer@rbac.local";
+  const viewerPassword = process.env.SEED_VIEWER_PASSWORD ?? "rbac@1234";
+
+  const editorEmail = process.env.SEED_EDITOR_EMAIL ?? "rbac_editor@rbac.local";
+  const editorPassword = process.env.SEED_EDITOR_PASSWORD ?? "rbac@1234";
 
   const passwordHash = await hashPassword(password);
-  const userPasswordHash = await hashPassword(userPassword);
+  const viewerPasswordHash = await hashPassword(viewerPassword);
+  const editorPasswordHash = await hashPassword(editorPassword);
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -53,18 +69,18 @@ async function main() {
     },
   });
 
-  const readOnlyUser = await prisma.user.upsert({
-    where: { email: userEmail },
+  const viewerUser = await prisma.user.upsert({
+    where: { email: viewerEmail },
     update: {
-      passwordHash: userPasswordHash,
+      passwordHash: viewerPasswordHash,
       isActive: true,
-      firstName: "User",
+      firstName: "Viewer",
     },
     create: {
-      email: userEmail,
-      passwordHash: userPasswordHash,
+      email: viewerEmail,
+      passwordHash: viewerPasswordHash,
       isActive: true,
-      firstName: "User",
+      firstName: "Viewer",
     },
     select: {
       id: true,
@@ -75,7 +91,29 @@ async function main() {
     },
   });
 
-  const [adminRole, userRole] = await Promise.all([
+  const editorUser = await prisma.user.upsert({
+    where: { email: editorEmail },
+    update: {
+      passwordHash: editorPasswordHash,
+      isActive: true,
+      firstName: "Editor",
+    },
+    create: {
+      email: editorEmail,
+      passwordHash: editorPasswordHash,
+      isActive: true,
+      firstName: "Editor",
+    },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+    },
+  });
+
+  const [adminRole, viewerRole, editorRole] = await Promise.all([
     prisma.role.upsert({
       where: { name: "ADMIN" },
       update: { description: "Full system access" },
@@ -83,9 +121,15 @@ async function main() {
       select: { id: true, name: true },
     }),
     prisma.role.upsert({
-      where: { name: "USER" },
-      update: { description: "Limited read-only access" },
-      create: { name: "USER", description: "Limited read-only access" },
+      where: { name: "VIEWER" },
+      update: { description: "Read-only access" },
+      create: { name: "VIEWER", description: "Read-only access" },
+      select: { id: true, name: true },
+    }),
+    prisma.role.upsert({
+      where: { name: "EDITOR" },
+      update: { description: "Limited write access" },
+      create: { name: "EDITOR", description: "Limited write access" },
       select: { id: true, name: true },
     }),
   ]);
@@ -111,8 +155,15 @@ async function main() {
 
   await prisma.rolePermission.createMany({
     data: permissions
-      .filter((p) => READ_ONLY_PERMISSION_KEYS.has(p.key))
-      .map((p) => ({ roleId: userRole.id, permissionId: p.id })),
+      .filter((p) => VIEWER_PERMISSION_KEYS.includes(p.key as any))
+      .map((p) => ({ roleId: viewerRole.id, permissionId: p.id })),
+    skipDuplicates: true,
+  });
+
+  await prisma.rolePermission.createMany({
+    data: permissions
+      .filter((p) => EDITOR_PERMISSION_KEYS.includes(p.key as any))
+      .map((p) => ({ roleId: editorRole.id, permissionId: p.id })),
     skipDuplicates: true,
   });
 
@@ -122,23 +173,38 @@ async function main() {
   });
 
   await prisma.userRole.createMany({
-    data: [{ userId: readOnlyUser.id, roleId: userRole.id }],
+    data: [{ userId: viewerUser.id, roleId: viewerRole.id }],
     skipDuplicates: true,
   });
 
-  console.log("✅ Seeded admin user:", user);
-  console.log("✅ Seeded read-only user:", readOnlyUser);
-  console.log("✅ Seeded roles:", [adminRole.name, userRole.name]);
+  await prisma.userRole.createMany({
+    data: [{ userId: editorUser.id, roleId: editorRole.id }],
+    skipDuplicates: true,
+  });
+
+  console.log("Seeded admin user:", user);
+  console.log("Seeded viewer user:", viewerUser);
+  console.log("Seeded editor user:", editorUser);
+  console.log("Seeded roles:", [
+    adminRole.name,
+    viewerRole.name,
+    editorRole.name,
+  ]);
   console.log(
-    "✅ Seeded permissions:",
+    "Seeded permissions:",
     permissions.map((p) => p.key),
   );
-  console.log("✅ Assigned ADMIN role to:", user.email);
-  console.log("✅ Assigned USER role to:", readOnlyUser.email);
-  console.log("🔑 Login with:", { email, password });
-  console.log("🔑 Login (read-only) with:", {
-    email: userEmail,
-    password: userPassword,
+  console.log("Assigned ADMIN role to:", user.email);
+  console.log("Assigned VIEWER role to:", viewerUser.email);
+  console.log("Assigned EDITOR role to:", editorUser.email);
+  console.log("Admin login:", { email, password });
+  console.log("Viewer login:", {
+    email: viewerEmail,
+    password: viewerPassword,
+  });
+  console.log("Editor login:", {
+    email: editorEmail,
+    password: editorPassword,
   });
 }
 
