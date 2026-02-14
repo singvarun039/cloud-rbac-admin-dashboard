@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOG=/var/log/day18-userdata.log
+exec > >(tee -a "$LOG") 2>&1
+
+echo "[day18] user_data start: $(date -Is)"
+
+ENABLE_RDS="${enable_rds}"
+GITHUB_REPO_URL="${github_repo_url}"
+RDS_ENDPOINT="${rds_endpoint}"
+DB_NAME="${db_name}"
+DB_USERNAME="${db_username}"
+DB_PASSWORD="${db_password}"
+JWT_SECRET="${jwt_secret}"
+CORS_ORIGIN_INPUT="${cors_origin}"
+
+if [[ "$CORS_ORIGIN_INPUT" == "*" ]]; then
+  echo "[day18] ERROR: cors_origin must not be '*'" >&2
+  exit 1
+fi
+
+# Determine CORS origin
+if [[ -z "$CORS_ORIGIN_INPUT" || "$CORS_ORIGIN_INPUT" == "auto" ]]; then
+  PUBLIC_IP=$(curl -fsSL http://169.254.169.254/latest/meta-data/public-ipv4 || true)
+  if [[ -n "$PUBLIC_IP" ]]; then
+    CORS_ORIGIN="http://$PUBLIC_IP"
+  else
+    CORS_ORIGIN="http://localhost"
+  fi
+else
+  CORS_ORIGIN="$CORS_ORIGIN_INPUT"
+fi
+
+echo "[day18] Using CORS_ORIGIN=$CORS_ORIGIN"
+
+wait_for_tcp() {
+  local host="$1"
+  local port="$2"
+  local attempts="$3"
+  local sleep_s="$4"
+
+  local i=1
+  while [[ $i -le $attempts ]]; do
+    if timeout 2 bash -c "</dev/tcp/$host/$port" >/dev/null 2>&1; then
+      return 0
+    fi
+    echo "[day18] Waiting for $host:$port ($i/$attempts)"
+    sleep "$sleep_s"
+    i=$((i + 1))
+  done
+  return 1
+}
+
+# Install dependencies (idempotent-ish)
+if ! command -v docker >/dev/null 2>&1; then
+  echo "[day18] Installing Docker..."
+  apt-get update -y
+  apt-get install -y ca-certificates curl gnupg git
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" \
+    > /etc/apt/sources.list.d/docker.list
+  apt-get update -y
+  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  systemctl enable --now docker
+fi
+
+mkdir -p /opt/app
+
+if [[ ! -d /opt/app/.git ]]; then
+  echo "[day18] Cloning repo to /opt/app"
+  rm -rf /opt/app/*
+  git clone --depth 1 "$GITHUB_REPO_URL" /opt/app
+else
+  echo "[day18] Repo exists; pulling latest"
+  git -C /opt/app pull --ff-only || true
+fi
+
+cd /opt/app
+
+# Create .env.prod (do not commit)
+cat > /opt/app/.env.prod <<EOF
+NODE_ENV=production
+TRUST_PROXY=true
+FRONTEND_ORIGIN=$CORS_ORIGIN
+CORS_ORIGIN=$CORS_ORIGIN
+
+# Single-secret convenience (backend derives specific secrets below)
+JWT_SECRET=$JWT_SECRET
+
+# Derive all backend secrets from one Terraform var (minimal)
+JWT_ACCESS_SECRET=$JWT_SECRET
+JWT_REFRESH_SECRET=$JWT_SECRET
+REFRESH_TOKEN_HASH_SECRET=$JWT_SECRET
+
+# RDS Postgres (Prisma + pg). Use SSL for RDS.
+DATABASE_URL=postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require
+EOF
+chmod 600 /opt/app/.env.prod
+
+if [[ "$ENABLE_RDS" != "true" ]]; then
+  echo "[day18] enable_rds=false -> skipping compose up"
+  exit 0
+fi
+
+if [[ -z "$RDS_ENDPOINT" ]]; then
+  echo "[day18] ERROR: RDS endpoint is empty" >&2
+  exit 1
+fi
+
+echo "[day18] Waiting for RDS to accept TCP connections"
+if ! wait_for_tcp "$RDS_ENDPOINT" 5432 60 5; then
+  echo "[day18] ERROR: RDS not reachable on 5432 (check SGs/subnets)" >&2
+  exit 1
+fi
+
+# Migrations are safe to re-run; seed runs once.
+# IMPORTANT: The backend prod image prunes devDependencies, so Prisma CLI / ts-node may not exist there.
+# To ensure migrations+seed work reliably, run them in a temporary dev-target container.
+echo "[day18] Building migrator image (backend dev target)"
+/usr/bin/docker build -t day18-backend-migrator:latest --target dev /opt/app/backend
+
+echo "[day18] Running migrations (prisma migrate deploy)"
+/usr/bin/docker run --rm --network host \
+  -e NODE_ENV=production \
+  -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
+  day18-backend-migrator:latest sh -lc "npm run db:deploy"
+
+if [[ ! -f /opt/app/.seeded ]]; then
+  echo "[day18] Seeding database (one-time)"
+  /usr/bin/docker run --rm --network host \
+    -e NODE_ENV=production \
+    -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
+    day18-backend-migrator:latest sh -lc "npm run db:seed"
+  touch /opt/app/.seeded
+else
+  echo "[day18] Already seeded; skipping"
+fi
+
+echo "[day18] Starting docker compose (prod)"
+/usr/bin/docker compose -f /opt/app/docker-compose.prod.yml up -d --build
+
+echo "[day18] Waiting for nginx/API health"
+for i in {1..60}; do
+  if curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; then
+    echo "[day18] Health check OK"
+    break
+  fi
+  echo "[day18] Waiting for /api/health ($i/60)"
+  sleep 2
+done
+
+echo "[day18] user_data done: $(date -Is)"
