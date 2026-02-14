@@ -129,7 +129,10 @@ export default function Layout() {
                   disabled={loggingOut}
                   className="rounded-full border border-slate-200 bg-white/60 hover:bg-slate-50"
                 >
-                  <CircleUser className="h-5 w-5 text-slate-700" aria-hidden="true" />
+                  <CircleUser
+                    className="h-5 w-5 text-slate-700"
+                    aria-hidden="true"
+                  />
                 </Button>
               </PopoverTrigger>
 

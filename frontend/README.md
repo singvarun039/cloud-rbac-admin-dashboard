@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+Docker Compose dev workflow (db + api + web) is documented in the root README (`../README.md`).
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

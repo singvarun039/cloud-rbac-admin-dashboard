@@ -71,7 +71,7 @@ export const ReplaceRolePermissionsBodySchema = z
       (!Array.isArray(v.permissionKeys) && Array.isArray(v.permissionIds)),
     {
       message: "Provide exactly one of permissionKeys or permissionIds",
-    }
+    },
   );
 
 export const AssignRoleBodySchema = z.object({

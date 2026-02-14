@@ -13,6 +13,7 @@ export const CreateUserBodySchema = z.object({
   password: z.string().min(8),
   name: z.string().trim().min(1),
   status: UserStatusSchema.optional().default("ACTIVE"),
+  roleId: z.string().trim().min(1).optional(),
 });
 
 export const UserIdParamSchema = z.object({
@@ -29,6 +30,8 @@ export const UpdateUserBodySchema = z
       .optional(),
     name: z.string().trim().min(1).optional(),
     status: UserStatusSchema.optional(),
+    roleId: z.string().trim().min(1).optional(),
+    password: z.string().min(8).optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
     message: "At least one field must be provided",

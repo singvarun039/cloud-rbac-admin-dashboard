@@ -1,9 +1,6 @@
 # Dependencies
 node_modules/
 
-# Lockfiles (ignored by request)
-package-lock.json
-
 # Build output
 dist/
 dist-ssr/

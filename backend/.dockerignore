@@ -1,0 +1,26 @@
+# Docker build context ignore (backend)
+.git
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+
+# Prisma local artifacts
+prisma/dev.db
+
+# Tests / coverage
+coverage
+
+# Logs
+logs
+*.log
+
+# Env files
+.env
+.env.*
+
+# Editor / OS
+.vscode
+.DS_Store

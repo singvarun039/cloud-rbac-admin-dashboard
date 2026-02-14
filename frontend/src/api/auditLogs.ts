@@ -80,7 +80,7 @@ function unwrapAuditLogsResponse(payload: unknown): AuditLogsResponse {
 
 export async function getAuditLogs(
   params: GetAuditLogsParams,
-  options?: { signal?: AbortSignal }
+  options?: { signal?: AbortSignal },
 ): Promise<AuditLogsResponse> {
   const query: Record<string, unknown> = {
     page: params.page,

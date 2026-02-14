@@ -33,7 +33,13 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "../components/ui/pagination";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import {
@@ -113,11 +119,7 @@ export default function ProjectsPage() {
   }, [page, totalPages]);
 
   const fetchProjects = useCallback(
-    async (opts?: {
-      signal?: AbortSignal;
-      page?: number;
-      limit?: number;
-    }) => {
+    async (opts?: { signal?: AbortSignal; page?: number; limit?: number }) => {
       const seq = ++fetchSeqRef.current;
 
       const effectivePage = opts?.page ?? page;
@@ -233,29 +235,27 @@ export default function ProjectsPage() {
                 className="h-10 w-full placeholder:text-slate-400"
                 disabled
               />
-              <Select
-                defaultValue=""
-                className="h-10 w-full"
-                disabled
-                aria-label="Include archived"
-              >
-                <option value="" disabled>
-                  Include archived
-                </option>
-                <option value="false">No</option>
-                <option value="true">Yes</option>
+              <Select disabled>
+                <SelectTrigger
+                  className="h-10 w-full"
+                  aria-label="Include archived"
+                >
+                  <SelectValue placeholder="Include archived" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">No</SelectItem>
+                  <SelectItem value="true">Yes</SelectItem>
+                </SelectContent>
               </Select>
-              <Select
-                defaultValue=""
-                className="h-10 w-full"
-                disabled
-                aria-label="Archived"
-              >
-                <option value="" disabled>
-                  Archived
-                </option>
-                <option value="false">No</option>
-                <option value="true">Yes</option>
+
+              <Select disabled>
+                <SelectTrigger className="h-10 w-full" aria-label="Archived">
+                  <SelectValue placeholder="Archived" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">No</SelectItem>
+                  <SelectItem value="true">Yes</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -285,11 +285,7 @@ export default function ProjectsPage() {
                 className="hidden h-6 sm:block"
               />
 
-              <Button
-                type="button"
-                className="h-10 w-full sm:w-auto"
-                disabled
-              >
+              <Button type="button" className="h-10 w-full sm:w-auto" disabled>
                 Create Project
               </Button>
             </div>
@@ -473,16 +469,20 @@ export default function ProjectsPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>

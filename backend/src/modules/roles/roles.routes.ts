@@ -24,6 +24,8 @@ import { AppError } from "../../errors/AppError";
 
 export const rolesRouter = Router();
 
+const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
+
 function roleToApi(role: {
   id: string;
   name: string;
@@ -92,7 +94,7 @@ rolesRouter.get(
 
     const items = roles.map((r) => roleToApi(r));
     return ok(res, req, { roles: items, page, limit, total, totalPages }, 200);
-  })
+  }),
 );
 
 rolesRouter.post(
@@ -125,10 +127,15 @@ rolesRouter.post(
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
         const target = (err.meta as any)?.target;
         if (Array.isArray(target) && target.includes("name")) {
-          throw AppError.conflict("Role name already exists", { field: "name" });
+          throw AppError.conflict("Role name already exists", {
+            field: "name",
+          });
         }
         throw AppError.conflict("Conflict", { target });
       }
@@ -144,13 +151,13 @@ rolesRouter.post(
     });
 
     return ok(res, req, { role: roleToApi(role) }, 201);
-  })
+  }),
 );
 
 rolesRouter.patch(
   "/:id",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(PatchRoleParamsSchema),
   validateBody(PatchRoleBodySchema),
   asyncHandler(async (req, res) => {
@@ -175,7 +182,8 @@ rolesRouter.patch(
     const data: { name?: string; description?: string | null } = {};
     if (typeof input.name === "string") data.name = input.name;
     if (typeof input.description === "string") {
-      data.description = input.description.trim() === "" ? null : input.description;
+      data.description =
+        input.description.trim() === "" ? null : input.description;
     }
 
     let role;
@@ -192,20 +200,23 @@ rolesRouter.patch(
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
         const target = (err.meta as any)?.target;
         if (Array.isArray(target) && target.includes("name")) {
-          throw AppError.conflict("Role name already exists", { field: "name" });
+          throw AppError.conflict("Role name already exists", {
+            field: "name",
+          });
         }
         throw AppError.conflict("Conflict", { target });
       }
       throw err;
     }
 
-    const changes: Record<
-      string,
-      { from: string | null; to: string | null }
-    > = {};
+    const changes: Record<string, { from: string | null; to: string | null }> =
+      {};
 
     if (typeof input.name === "string" && before.name !== role.name) {
       changes.name = { from: before.name, to: role.name };
@@ -228,7 +239,7 @@ rolesRouter.patch(
     });
 
     return ok(res, req, { role: roleToApi(role) }, 200);
-  })
+  }),
 );
 
 rolesRouter.post(
@@ -267,12 +278,15 @@ rolesRouter.post(
     });
 
     return ok(res, req, { success: true }, 200);
-  })
+  }),
 );
 
 async function replaceRolePermissions(req: any, res: any) {
   const roleId = (req.params as any).id ?? (req.params as any).roleId;
-  const input = req.body as { permissionKeys?: string[]; permissionIds?: string[] };
+  const input = req.body as {
+    permissionKeys?: string[];
+    permissionIds?: string[];
+  };
 
   const result = await prisma.$transaction(async (tx) => {
     const role = await tx.role.findUnique({
@@ -304,7 +318,9 @@ async function replaceRolePermissions(req: any, res: any) {
         });
 
         const foundKeys = new Set(found.map((p) => p.key));
-        const invalidPermissionKeys = desiredKeys.filter((k) => !foundKeys.has(k));
+        const invalidPermissionKeys = desiredKeys.filter(
+          (k) => !foundKeys.has(k),
+        );
         if (invalidPermissionKeys.length > 0) {
           throw AppError.validation({ invalidPermissionKeys });
         }
@@ -321,7 +337,9 @@ async function replaceRolePermissions(req: any, res: any) {
         });
 
         const foundIds = new Set(found.map((p) => p.id));
-        const invalidPermissionIds = desiredIds.filter((id) => !foundIds.has(id));
+        const invalidPermissionIds = desiredIds.filter(
+          (id) => !foundIds.has(id),
+        );
         if (invalidPermissionIds.length > 0) {
           throw AppError.validation({ invalidPermissionIds });
         }
@@ -330,13 +348,19 @@ async function replaceRolePermissions(req: any, res: any) {
       }
     } else {
       // Should be unreachable due to Zod validation
-      throw AppError.validation({ message: "Provide permissionKeys or permissionIds" });
+      throw AppError.validation({
+        message: "Provide permissionKeys or permissionIds",
+      });
     }
 
-    desiredPermissions = desiredPermissions.sort((a, b) => a.key.localeCompare(b.key));
+    desiredPermissions = desiredPermissions.sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
 
     const desiredIds = new Set(desiredPermissions.map((p) => p.id));
-    const addedPermissions = desiredPermissions.filter((p) => !existingIds.has(p.id));
+    const addedPermissions = desiredPermissions.filter(
+      (p) => !existingIds.has(p.id),
+    );
     const removedPermissions = existing.filter((p) => !desiredIds.has(p.id));
 
     await tx.rolePermission.deleteMany({
@@ -389,25 +413,102 @@ async function replaceRolePermissions(req: any, res: any) {
       addedKeys: result.addedKeys,
       removedKeys: result.removedKeys,
     },
-    200
+    200,
   );
 }
 
 rolesRouter.post(
   "/:id/permissions",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(RoleIdOrIdParamSchema),
   validateBody(ReplaceRolePermissionsBodySchema),
-  asyncHandler(replaceRolePermissions)
+  asyncHandler(replaceRolePermissions),
 );
 
 // Back-compat: existing endpoint used PUT + :roleId param.
 rolesRouter.put(
   "/:roleId/permissions",
   authenticate,
-  requirePermission("roles.write"),
+  requirePermission(["roles.write", "roles.edit"]),
   validateParams(RoleIdOrIdParamSchema),
   validateBody(ReplaceRolePermissionsBodySchema),
-  asyncHandler(replaceRolePermissions)
+  asyncHandler(replaceRolePermissions),
+);
+
+rolesRouter.delete(
+  "/:id/permanent",
+  authenticate,
+  requirePermission("roles.write"),
+  validateParams(PatchRoleParamsSchema),
+  asyncHandler(async (req, res) => {
+    const roleId = (req.params as any).id as string;
+
+    const role = await prisma.role.findUnique({
+      where: { id: roleId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
+
+    if (!role) {
+      throw AppError.notFound("Role not found");
+    }
+
+    if (PROTECTED_ROLE_NAMES.has(role.name)) {
+      throw AppError.validation(
+        { roleName: role.name },
+        "System roles cannot be deleted",
+      );
+    }
+
+    const assignedCount = await prisma.userRole.count({
+      where: { roleId },
+    });
+
+    if (assignedCount > 0) {
+      throw AppError.validation(
+        { roleId, assignedCount },
+        "Role is assigned to users; reassign users before deleting",
+      );
+    }
+
+    const permissionsCount = await prisma.rolePermission.count({
+      where: { roleId },
+    });
+
+    await prisma.role.delete({
+      where: { id: roleId },
+    });
+
+    await writeAuditLog({
+      req,
+      action: "ROLE_DELETED",
+      entityType: "ROLE",
+      entityId: roleId,
+      meta: {
+        roleId,
+        name: role.name,
+        description: role.description,
+        permissionsCount,
+      },
+    });
+
+    return ok(
+      res,
+      req,
+      {
+        success: true,
+        role: {
+          id: roleId,
+          name: role.name,
+          description: role.description,
+          permissionsCount,
+        },
+      },
+      200,
+    );
+  }),
 );

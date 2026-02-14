@@ -21,13 +21,24 @@ export default function RoleModal(props: {
   open: boolean;
   mode: "create" | "edit";
   initialRole?: Role | null;
-  canWrite: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
   onClose: () => void;
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
-  const { open, mode, initialRole, canWrite, onClose, onSuccess, onError } =
-    props;
+  const {
+    open,
+    mode,
+    initialRole,
+    canCreate,
+    canEdit,
+    onClose,
+    onSuccess,
+    onError,
+  } = props;
+
+  const canSubmit = mode === "create" ? canCreate : canEdit;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -54,7 +65,7 @@ export default function RoleModal(props: {
   }, [open, mode, initialRole]);
 
   const onSubmit = useCallback(async () => {
-    if (!canWrite || submitting) return;
+    if (!canSubmit || submitting) return;
 
     setFieldError(null);
     setConflictError(null);
@@ -111,7 +122,7 @@ export default function RoleModal(props: {
       setSubmitting(false);
     }
   }, [
-    canWrite,
+    canSubmit,
     description,
     initialRole,
     mode,
@@ -125,9 +136,15 @@ export default function RoleModal(props: {
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!canWrite || (mode === "edit" && !initialRole) ? (
+      {!canSubmit || (mode === "edit" && !initialRole) ? (
         <div className="space-y-1 text-sm text-slate-500">
-          {!canWrite ? <p>Requires roles.write.</p> : null}
+          {!canSubmit ? (
+            <p>
+              {mode === "create"
+                ? "Requires roles.write."
+                : "Requires roles.write or roles.edit."}
+            </p>
+          ) : null}
           {mode === "edit" && !initialRole ? <p>No role selected.</p> : null}
         </div>
       ) : null}
@@ -140,7 +157,7 @@ export default function RoleModal(props: {
             onChange={(e) => setName(e.target.value)}
             type="text"
             disabled={
-              !canWrite || submitting || (mode === "edit" && !initialRole)
+              !canSubmit || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="e.g. ADMIN"
             className="h-10"
@@ -154,7 +171,7 @@ export default function RoleModal(props: {
             onChange={(e) => setDescription(e.target.value)}
             type="text"
             disabled={
-              !canWrite || submitting || (mode === "edit" && !initialRole)
+              !canSubmit || submitting || (mode === "edit" && !initialRole)
             }
             placeholder="Optional"
             className="h-10"
@@ -190,7 +207,7 @@ export default function RoleModal(props: {
           type="button"
           onClick={() => void onSubmit()}
           disabled={
-            !canWrite || submitting || (mode === "edit" && !initialRole)
+            !canSubmit || submitting || (mode === "edit" && !initialRole)
           }
         >
           {submitting

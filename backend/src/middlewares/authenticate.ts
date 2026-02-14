@@ -9,7 +9,7 @@ import {
 export async function authenticate(
   req: Request,
   _res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   const auth = req.headers.authorization;
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
-import { getRoles, type Role } from "../api/roles";
+import { getRoles, permanentlyDeleteRole, type Role } from "../api/roles";
 import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
@@ -15,10 +15,18 @@ import { Button } from "../components/ui/button";
 import { buttonVariants } from "../components/ui/button-variants";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Separator } from "../components/ui/separator";
 import { Skeleton } from "../components/ui/skeleton";
 import { toast } from "../components/ui/use-toast";
+import { DetailsSheet } from "../components/DetailsSheet";
+import { Badge } from "../components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,7 +62,9 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
-import { ChevronDown, Pencil, Shield } from "lucide-react";
+import { ChevronDown, Eye, Pencil, Shield, Trash2 } from "lucide-react";
+
+const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -91,11 +101,19 @@ function permissionCountLabel(role: Role): string {
   return `${count} permissions`;
 }
 
+function formatDate(value?: string): string {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
+}
+
 export default function RolesPage() {
   const { permissions } = useAuth();
 
   const canReadRoles = permissions.includes("roles.read");
   const canWriteRoles = permissions.includes("roles.write");
+  const canEditRoles = canWriteRoles || permissions.includes("roles.edit");
   const canReadPermissions = permissions.includes("permissions.read");
 
   const [page, setPage] = useState(1);
@@ -118,6 +136,14 @@ export default function RolesPage() {
 
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
   const [assignConfirmRole, setAssignConfirmRole] = useState<Role | null>(null);
+
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewRole, setViewRole] = useState<Role | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteRole, setDeleteRole] = useState<Role | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -187,7 +213,11 @@ export default function RolesPage() {
 
       try {
         const res = await getRoles(
-          { page: effectivePage, limit: effectiveLimit, search: effectiveSearch },
+          {
+            page: effectivePage,
+            limit: effectiveLimit,
+            search: effectiveSearch,
+          },
           { signal: opts?.signal },
         );
         if (fetchSeqRef.current !== seq) return;
@@ -273,6 +303,11 @@ export default function RolesPage() {
     setEditOpen(true);
   }, []);
 
+  const onRequestView = useCallback((r: Role) => {
+    setViewRole(r);
+    setViewOpen(true);
+  }, []);
+
   const onCloseEdit = useCallback(() => {
     setEditOpen(false);
     setEditingRole(null);
@@ -299,6 +334,47 @@ export default function RolesPage() {
     setAssignConfirmOpen(false);
     onOpenAssign(assignConfirmRole);
   }, [assignConfirmRole, onOpenAssign]);
+
+  const onRequestDelete = useCallback(
+    (r: Role) => {
+      if (!canWriteRoles) return;
+      setSuccess(null);
+      setError(null);
+      setDeleteRole(r);
+      setDeleteConfirmText("");
+      setDeleteOpen(true);
+    },
+    [canWriteRoles],
+  );
+
+  const onConfirmDelete = useCallback(async () => {
+    if (!canWriteRoles || !deleteRole || deleting) return;
+
+    const expected = deleteRole.name;
+    if (deleteConfirmText.trim() !== expected) {
+      toast.error("Delete blocked", {
+        description: "Confirmation did not match.",
+      });
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await permanentlyDeleteRole(deleteRole.id);
+      setDeleteOpen(false);
+      setDeleteRole(null);
+      setDeleteConfirmText("");
+      await fetchRoles();
+      setSuccess("Role deleted permanently.");
+      toast.success("Role deleted");
+    } catch (err) {
+      const msg = getApiErrorMessage(err, "Failed to delete role.");
+      setError(msg);
+      toast.error("Action failed", { description: msg });
+    } finally {
+      setDeleting(false);
+    }
+  }, [canWriteRoles, deleteConfirmText, deleteRole, deleting, fetchRoles]);
 
   if (!canReadRoles) {
     return <NotAuthorized />;
@@ -461,7 +537,7 @@ export default function RolesPage() {
                     </TableCell>
                     <TableCell>{permissionCountLabel(r)}</TableCell>
                     <TableCell className="text-right">
-                      {canWriteRoles ? (
+                      {canReadRoles ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -475,18 +551,55 @@ export default function RolesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
+                            <DropdownMenuItem onSelect={() => onRequestView(r)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onSelect={() => onRequestAssign(r)}
-                              disabled={!canReadPermissions}
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Assign Permissions
-                            </DropdownMenuItem>
+
+                            {canEditRoles ? (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() => onOpenEdit(r)}
+                                >
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() => onRequestAssign(r)}
+                                  disabled={!canReadPermissions}
+                                >
+                                  <Shield className="mr-2 h-4 w-4" />
+                                  Assign Permissions
+                                </DropdownMenuItem>
+                              </>
+                            ) : null}
+
+                            {canWriteRoles ? (
+                              <>
+                                {(() => {
+                                  const isProtected = PROTECTED_ROLE_NAMES.has(
+                                    r.name,
+                                  );
+                                  return (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onSelect={() => onRequestDelete(r)}
+                                        disabled={isProtected}
+                                        className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {isProtected
+                                          ? "Delete (system role)"
+                                          : "Delete"}
+                                      </DropdownMenuItem>
+                                    </>
+                                  );
+                                })()}
+                              </>
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : (
@@ -570,16 +683,20 @@ export default function RolesPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -616,10 +733,66 @@ export default function RolesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(open: boolean) => {
+          if (deleting) return;
+          setDeleteOpen(open);
+          if (!open) {
+            setDeleteRole(null);
+            setDeleteConfirmText("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete role permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteRole
+                ? `This will permanently delete role "${deleteRole.name}". This action is irreversible. Type the role name to confirm.`
+                : "This will permanently delete this role. This action is irreversible."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {deleteRole ? (
+            <div className="mt-3 space-y-2">
+              <Label>Confirm role name</Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={deleteRole.name}
+                autoComplete="off"
+              />
+            </div>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" disabled={deleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              type="button"
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={onConfirmDelete}
+              disabled={
+                deleting ||
+                !deleteRole ||
+                (deleteRole
+                  ? deleteConfirmText.trim() !== deleteRole.name
+                  : true)
+              }
+            >
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <RoleModal
         open={createOpen}
         mode="create"
-        canWrite={canWriteRoles}
+        canCreate={canWriteRoles}
+        canEdit={canEditRoles}
         onClose={() => setCreateOpen(false)}
         onSuccess={async () => {
           setCreateOpen(false);
@@ -637,7 +810,8 @@ export default function RolesPage() {
         open={editOpen}
         mode="edit"
         initialRole={editingRole}
-        canWrite={canWriteRoles}
+        canCreate={canWriteRoles}
+        canEdit={canEditRoles}
         onClose={onCloseEdit}
         onSuccess={async () => {
           onCloseEdit();
@@ -654,7 +828,7 @@ export default function RolesPage() {
       <AssignPermissionsModal
         open={assignOpen}
         role={assigningRole}
-        canWriteRoles={canWriteRoles}
+        canEditRoles={canEditRoles}
         canReadPermissions={canReadPermissions}
         onClose={onCloseAssign}
         onSuccess={async () => {
@@ -668,6 +842,63 @@ export default function RolesPage() {
           toast.error("Action failed", { description: msg });
         }}
       />
+
+      <DetailsSheet
+        open={viewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open);
+          if (!open) setViewRole(null);
+        }}
+        title="Role details"
+        description={viewRole ? viewRole.name : undefined}
+      >
+        {!viewRole ? (
+          <div className="text-sm text-slate-500">No role selected.</div>
+        ) : (
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label>Name</Label>
+              <div className="text-sm">{viewRole.name}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Description</Label>
+              <div className="text-sm">{viewRole.description || "—"}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Permissions</Label>
+              <div className="text-sm text-slate-700">
+                {permissionCountLabel(viewRole)}
+              </div>
+              {Array.isArray(viewRole.permissions) &&
+              viewRole.permissions.length > 0 ? (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {viewRole.permissions.map((p) => (
+                    <Badge key={p.id} variant="secondary">
+                      {p.key}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">No permissions.</div>
+              )}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-1">
+              <Label>Created</Label>
+              <div className="text-sm">{formatDate(viewRole.createdAt)}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Updated</Label>
+              <div className="text-sm">{formatDate(viewRole.updatedAt)}</div>
+            </div>
+          </div>
+        )}
+      </DetailsSheet>
     </div>
   );
 }

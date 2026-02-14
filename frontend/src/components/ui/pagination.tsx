@@ -59,7 +59,11 @@ type PaginationButtonProps = React.ComponentProps<"a">;
 const PaginationPrevious = ({ className, ...props }: PaginationButtonProps) => (
   <a
     aria-label="Go to previous page"
-    className={cn(buttonVariants({ variant: "ghost" }), "gap-1 pl-2.5 pr-3", className)}
+    className={cn(
+      buttonVariants({ variant: "ghost" }),
+      "gap-1 pl-2.5 pr-3",
+      className,
+    )}
     {...props}
   >
     <ChevronLeft className="h-4 w-4" />
@@ -71,7 +75,11 @@ PaginationPrevious.displayName = "PaginationPrevious";
 const PaginationNext = ({ className, ...props }: PaginationButtonProps) => (
   <a
     aria-label="Go to next page"
-    className={cn(buttonVariants({ variant: "ghost" }), "gap-1 pl-3 pr-2.5", className)}
+    className={cn(
+      buttonVariants({ variant: "ghost" }),
+      "gap-1 pl-3 pr-2.5",
+      className,
+    )}
     {...props}
   >
     <span>Next</span>

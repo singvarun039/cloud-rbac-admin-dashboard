@@ -46,13 +46,42 @@ export function getApiErrorMessage(
     const record = asRecord(data);
     const envelopeError = record?.error;
 
-    const messageFromEnvelope =
+    const envelopeErrorRecord =
       envelopeError &&
       typeof envelopeError === "object" &&
-      envelopeError !== null &&
-      "message" in envelopeError
-        ? (envelopeError as { message?: unknown }).message
+      envelopeError !== null
+        ? (envelopeError as Record<string, unknown>)
+        : null;
+
+    const messageFromEnvelope = envelopeErrorRecord?.message;
+
+    // Prefer field-level validation errors if available.
+    const codeFromEnvelope = envelopeErrorRecord?.code;
+    const detailsFromEnvelope = envelopeErrorRecord?.details;
+    const issues =
+      detailsFromEnvelope &&
+      typeof detailsFromEnvelope === "object" &&
+      detailsFromEnvelope !== null &&
+      "issues" in (detailsFromEnvelope as Record<string, unknown>)
+        ? (detailsFromEnvelope as { issues?: unknown }).issues
         : undefined;
+
+    if (codeFromEnvelope === "VALIDATION_ERROR" && Array.isArray(issues)) {
+      const first = issues[0] as
+        | { path?: unknown; message?: unknown }
+        | undefined;
+      const issueMessage =
+        first && typeof first.message === "string" && first.message.trim()
+          ? first.message
+          : null;
+      const issuePath =
+        first && typeof first.path === "string" && first.path.trim()
+          ? first.path
+          : null;
+
+      if (issueMessage && issuePath) return `${issuePath}: ${issueMessage}`;
+      if (issueMessage) return issueMessage;
+    }
 
     const message =
       (typeof messageFromEnvelope === "string" && messageFromEnvelope.trim()

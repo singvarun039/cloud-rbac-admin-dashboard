@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Modal from "../components/Modal";
 import { useAuth } from "../auth/useAuth";
 import { getApiErrorMessage } from "../api/client";
 import {
@@ -7,6 +6,7 @@ import {
   type AuditLogRow,
   type GetAuditLogsParams,
 } from "../api/auditLogs";
+import { DetailsSheet } from "../components/DetailsSheet";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import {
@@ -27,7 +27,13 @@ import {
   PaginationPrevious,
 } from "../components/ui/pagination";
 import { Separator } from "../components/ui/separator";
-import { Select } from "../components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Skeleton } from "../components/ui/skeleton";
 import {
   Table,
@@ -38,17 +44,30 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { StatsCard } from "../components/page/StatsCard";
+import { toast } from "../components/ui/use-toast";
 import { format } from "date-fns";
-import { DatePickerRange, type DateRange } from "../components/ui/date-picker-range";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../components/ui/sheet";
+  DatePickerRange,
+  type DateRange,
+} from "../components/ui/date-picker-range";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "../components/ui/drawer";
+import { ChevronDown, Copy, Eye } from "lucide-react";
 
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
@@ -115,6 +134,29 @@ function actorLabel(row: AuditLogRow): string {
   return row.actorUserId || "-";
 }
 
+function actorRoleFromMeta(meta: unknown): string | undefined {
+  if (!meta || typeof meta !== "object") return undefined;
+  const record = meta as Record<string, unknown>;
+
+  const actorRole = record.actorRole;
+  if (typeof actorRole === "string" && actorRole.trim())
+    return actorRole.trim();
+
+  const roleName = record.roleName;
+  if (typeof roleName === "string" && roleName.trim()) return roleName.trim();
+
+  const role = record.role;
+  if (typeof role === "string" && role.trim()) return role.trim();
+
+  const roles = record.roles;
+  if (Array.isArray(roles)) {
+    const first = roles.find((r) => typeof r === "string" && r.trim());
+    if (typeof first === "string") return first.trim();
+  }
+
+  return undefined;
+}
+
 function NotAuthorized() {
   return (
     <div className="w-full space-y-4">
@@ -135,6 +177,7 @@ const ACTION_OPTIONS = [
   "USER_CREATED",
   "USER_UPDATED",
   "USER_DELETED",
+  "USER_DEACTIVATED",
   "ROLE_CREATED",
   "ROLE_UPDATED",
   "ROLE_ASSIGNED",
@@ -189,8 +232,19 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selected, setSelected] = useState<AuditLogRow | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
+
+  const onCopyRequestId = useCallback(async (requestId: string) => {
+    try {
+      await navigator.clipboard.writeText(requestId);
+      toast.success("Copied", {
+        description: "requestId copied to clipboard.",
+      });
+    } catch {
+      toast.error("Copy failed", { description: "Could not copy requestId." });
+    }
+  }, []);
 
   const fetchSeqRef = useRef(0);
 
@@ -366,14 +420,9 @@ export default function AuditLogsPage() {
     setAppliedSeq((s) => s + 1);
   }, []);
 
-  const onOpenDetails = useCallback((row: AuditLogRow) => {
-    setSelected(row);
-    setDetailsOpen(true);
-  }, []);
-
-  const onCloseDetails = useCallback(() => {
-    setDetailsOpen(false);
-    setSelected(null);
+  const onOpenView = useCallback((row: AuditLogRow) => {
+    setSelectedLog(row);
+    setViewOpen(true);
   }, []);
 
   if (!canReadAuditLogs) {
@@ -422,15 +471,18 @@ export default function AuditLogsPage() {
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
               <Select
                 value={actionInput}
-                onChange={(e) => setActionInput(e.target.value)}
-                className="h-10 w-full"
-                aria-label="Action"
+                onValueChange={(value) => setActionInput(value)}
               >
-                {ACTION_OPTIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
+                <SelectTrigger className="h-10 w-full" aria-label="Action">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACTION_OPTIONS.map((a) => (
+                    <SelectItem key={a} value={a}>
+                      {a}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
 
               <Input
@@ -486,26 +538,34 @@ export default function AuditLogsPage() {
                 Reset Filters
               </Button>
 
-              <Separator orientation="vertical" className="hidden h-10 sm:block" />
+              <Separator
+                orientation="vertical"
+                className="hidden h-10 sm:block"
+              />
 
-              <Sheet open={advancedOpen} onOpenChange={setAdvancedOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    type="button"
-                    className="h-10 w-full sm:w-auto"
-                  >
+              <Drawer open={advancedOpen} onOpenChange={setAdvancedOpen} direction="right">
+                <DrawerTrigger asChild>
+                  <Button type="button" className="h-10 w-full sm:w-auto">
                     Advanced Filters
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="flex h-full flex-col">
-                  <SheetHeader>
-                    <SheetTitle>Advanced Filters</SheetTitle>
-                    <SheetDescription>
-                      Refine audit logs using additional fields.
-                    </SheetDescription>
-                  </SheetHeader>
+                </DrawerTrigger>
+                <DrawerContent className="inset-y-0 right-0 h-full w-3/4 border-l border-slate-200 sm:max-w-sm">
+                  <DrawerClose
+                    className="absolute right-2 top-2 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+                    aria-label="Close"
+                  >
+                    <span className="text-lg leading-none">×</span>
+                  </DrawerClose>
 
-                  <div className="flex-1 space-y-3 overflow-auto pt-4">
+                  <div className="flex h-full flex-col px-6 pb-6 pt-4">
+                    <DrawerHeader className="pr-10">
+                      <DrawerTitle>Advanced Filters</DrawerTitle>
+                      <DrawerDescription>
+                      Refine audit logs using additional fields.
+                      </DrawerDescription>
+                    </DrawerHeader>
+
+                    <div className="mt-4 flex-1 space-y-3 overflow-auto">
                     <Input
                       value={actorUserIdInput}
                       onChange={(e) => setActorUserIdInput(e.target.value)}
@@ -532,9 +592,9 @@ export default function AuditLogsPage() {
                       type="text"
                       className="h-10 w-full placeholder:text-slate-400"
                     />
-                  </div>
+                    </div>
 
-                  <SheetFooter className="border-t border-slate-200 pt-4">
+                    <DrawerFooter className="border-t border-slate-200 pt-4">
                     <Button
                       variant="outline"
                       type="button"
@@ -555,9 +615,10 @@ export default function AuditLogsPage() {
                     >
                       Apply Filters
                     </Button>
-                  </SheetFooter>
-                </SheetContent>
-              </Sheet>
+                    </DrawerFooter>
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
           </div>
         </CardContent>
@@ -641,17 +702,39 @@ export default function AuditLogsPage() {
                         {metaPreview(row.meta)}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          type="button"
-                          onClick={() => onOpenDetails(row)}
-                        >
-                          View
-                        </Button>
-                      </div>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            className="h-8 px-2"
+                          >
+                            Action
+                            <ChevronDown className="ml-1 h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => onOpenView(row)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
+                          </DropdownMenuItem>
+                          {row.requestId ? (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onSelect={() =>
+                                  void onCopyRequestId(row.requestId!)
+                                }
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copy requestId
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -730,16 +813,20 @@ export default function AuditLogsPage() {
                 <Label className="text-sm text-slate-600">Page size</Label>
                 <Select
                   value={String(limit)}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
                     setPage(1);
                   }}
-                  className="h-10 w-[92px]"
                 >
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
+                  <SelectTrigger className="h-10 w-[92px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -747,64 +834,109 @@ export default function AuditLogsPage() {
         </CardContent>
       </Card>
 
-      <Modal
-        title={selected ? `Audit Log ${selected.id}` : "Audit Log"}
-        isOpen={detailsOpen}
-        onClose={onCloseDetails}
+      <DetailsSheet
+        open={viewOpen}
+        onOpenChange={(open) => {
+          setViewOpen(open);
+          if (!open) setSelectedLog(null);
+        }}
+        title="Audit log details"
+        description={
+          selectedLog
+            ? selectedLog.requestId ||
+              `${selectedLog.action} • ${formatDate(selectedLog.createdAt)}`
+            : undefined
+        }
       >
-        {selected ? (
-          <div className="space-y-4">
-            <div className="grid gap-2 text-sm">
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Timestamp:</span>{" "}
-                {formatDate(selected.createdAt)}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Action:</span>{" "}
-                {selected.action}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Actor:</span>{" "}
-                {actorLabel(selected)}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">Entity:</span>{" "}
-                {selected.entityType}
-                {selected.entityId ? `: ${selected.entityId}` : ""}
-              </div>
-              <div className="text-slate-600">
-                <span className="font-medium text-slate-900">RequestId:</span>{" "}
-                {selected.requestId || "-"}
-              </div>
-              {typeof selected.ipAddress !== "undefined" ? (
-                <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">IP:</span>{" "}
-                  {selected.ipAddress || "-"}
-                </div>
-              ) : null}
-              {typeof selected.userAgent !== "undefined" ? (
-                <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">
-                    User-Agent:
-                  </span>{" "}
-                  {selected.userAgent || "-"}
-                </div>
-              ) : null}
+        {!selectedLog ? (
+          <div className="text-sm text-slate-500">No audit log selected.</div>
+        ) : (
+          <div className="max-h-[calc(100vh-8rem)] space-y-4 overflow-y-auto pr-1">
+            <div className="space-y-1">
+              <Label>Timestamp</Label>
+              <div className="text-sm">{formatDate(selectedLog.createdAt)}</div>
             </div>
+
+            <div className="space-y-1">
+              <Label>Action</Label>
+              <div className="text-sm">{selectedLog.action}</div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Actor</Label>
+              <div className="text-sm">{actorLabel(selectedLog)}</div>
+              {(() => {
+                const role = actorRoleFromMeta(selectedLog.meta);
+                return role ? (
+                  <div className="text-xs text-slate-500">Role: {role}</div>
+                ) : null;
+              })()}
+            </div>
+
+            <div className="space-y-1">
+              <Label>Entity</Label>
+              <div className="text-sm">
+                <span>{selectedLog.entityType || "—"}</span>
+                {selectedLog.entityId ? (
+                  <span className="text-slate-500">
+                    {" "}
+                    • {selectedLog.entityId}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label>Request ID</Label>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 truncate text-sm">
+                  {selectedLog.requestId || "—"}
+                </div>
+                {selectedLog.requestId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => void onCopyRequestId(selectedLog.requestId!)}
+                  >
+                    Copy
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+
+            {typeof selectedLog.ipAddress !== "undefined" ? (
+              <div className="space-y-1">
+                <Label>IP address</Label>
+                <div className="text-sm">{selectedLog.ipAddress || "—"}</div>
+              </div>
+            ) : null}
+
+            {typeof selectedLog.userAgent !== "undefined" ? (
+              <div className="space-y-1">
+                <Label>User agent</Label>
+                <div className="text-sm break-words">
+                  {selectedLog.userAgent || "—"}
+                </div>
+              </div>
+            ) : null}
+
+            <Separator />
 
             <Card>
               <CardHeader className="py-3">
                 <CardTitle className="text-sm">Meta</CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="max-h-[50vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs text-slate-50">
-                  {safePrettyJson(selected.meta)}
+                <pre className="max-h-[40vh] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs text-slate-50">
+                  {safePrettyJson(selectedLog.meta)}
                 </pre>
               </CardContent>
             </Card>
           </div>
-        ) : null}
-      </Modal>
+        )}
+      </DetailsSheet>
     </div>
   );
 }

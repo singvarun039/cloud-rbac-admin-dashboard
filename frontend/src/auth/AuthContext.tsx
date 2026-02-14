@@ -28,7 +28,7 @@ export type AuthContextValue = {
   isLoading: boolean;
   login: (
     email: string,
-    password: string
+    password: string,
   ) => Promise<{ ok: true } | { ok: false; error: string }>;
   logout: () => Promise<void>;
   refresh: () => Promise<string | null>;
@@ -36,7 +36,7 @@ export type AuthContextValue = {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextValue | undefined>(
-  undefined
+  undefined,
 );
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -86,9 +86,9 @@ function extractErrorMessage(err: unknown): string {
   };
 
   const data = anyErr?.response?.data;
-  const envelope = (data && typeof data === "object" ? data : null) as
-    | ApiErrorEnvelope
-    | null;
+  const envelope = (
+    data && typeof data === "object" ? data : null
+  ) as ApiErrorEnvelope | null;
 
   const serverMessage = envelope?.error?.message;
   if (typeof serverMessage === "string" && serverMessage.length > 0) {
@@ -156,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<MeUser | null>(null);
   const [permissionsState, setPermissionsState] = useState<string[]>([]);
   const [accessTokenState, setAccessTokenState] = useState<string | null>(() =>
-    getAccessToken()
+    getAccessToken(),
   );
   const [isLoading, setIsLoading] = useState(true);
 
@@ -398,7 +398,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       permissionsState,
       refresh,
       user,
-    ]
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

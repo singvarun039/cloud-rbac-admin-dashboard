@@ -13,7 +13,7 @@ export class AuthController {
 
     const result = await AuthService.login(
       { email, password },
-      { userAgent, ipAddress }
+      { userAgent, ipAddress },
     );
 
     if (!result) {
