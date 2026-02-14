@@ -22,11 +22,11 @@ const READ_ONLY_PERMISSION_KEYS = new Set<string>([
 ]);
 
 async function main() {
-  const email = "admin@naxverse.local";
-  const password = "Admin@12345";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "rbac_admin@rbac.local";
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "rbac@1234";
 
-  const userEmail = "user@naxverse.local";
-  const userPassword = "User@12345";
+  const userEmail = process.env.SEED_USER_EMAIL ?? "rbac_user@rbac.local";
+  const userPassword = process.env.SEED_USER_PASSWORD ?? "rbac@1234";
 
   const passwordHash = await hashPassword(password);
   const userPasswordHash = await hashPassword(userPassword);

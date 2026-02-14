@@ -39,12 +39,25 @@ Dockerfiles live next to the real sources:
 	- `docker compose ps`
 	- Retry curls until `api` is Up and (if shown) Healthy
 
+3) Initialize the database (first run / after `down -v`):
+
+	- `docker compose exec api npm run db:init`
+
+	Seeded credentials (dev):
+	- `rbac_admin@rbac.local` / `rbac@1234`
+
 ## Verify (Dev)
 
 ### Endpoints
 
 - `curl http://localhost:4000/api/health`
 - `curl http://localhost:5173/api/health`
+
+### Login (API)
+
+- `curl -i -sS -X POST http://localhost:4000/api/auth/login \
+	-H "Content-Type: application/json" \
+	-d '{"email":"rbac_admin@rbac.local","password":"rbac@1234"}'`
 
 ### Hot reload (Windows)
 
@@ -80,9 +93,21 @@ This removes the Postgres volume (data loss):
 - Web: http://localhost:${WEB_PORT:-5173}
 - API: http://localhost:${API_PORT:-4000}
 
+## DB access (local dev)
+
+Postgres is **not** an HTTP service, so opening `http://localhost:5432` in a browser will fail.
+
+Connect using `psql` or a GUI (pgAdmin/DBeaver) with:
+- Host: `localhost`
+- Port: `5432`
+- Database: `POSTGRES_DB` (default `crbad`)
+- User: `POSTGRES_USER` (default `postgres`)
+- Password: `POSTGRES_PASSWORD` (default `postgres`)
+
 ## Troubleshooting
 
 - **Port conflicts**: change `API_PORT`, `WEB_PORT`, or the `5432:5432` mapping in `docker-compose.yml`.
+- **Login returns `DB_NOT_READY`**: run `docker compose exec api npm run db:init`.
 - **Windows file watching**: if hot reload doesn’t trigger on bind mounts, rerun with polling:
 	- `CHOKIDAR_USEPOLLING=true docker compose up -d --build --wait`
 - **Rebuild images**: `docker compose build --no-cache` then `docker compose up`.

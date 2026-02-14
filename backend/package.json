@@ -8,6 +8,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "node --test -r ts-node/register test/hardening.test.ts",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:init": "npm run db:deploy && npm run db:seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

@@ -30,7 +30,7 @@ export class AuthController {
             .toLowerCase(),
         },
       });
-      throw AppError.unauthorized("Invalid email or password");
+      throw new AppError(401, "AUTH_INVALID_CREDENTIALS", "Invalid email or password");
     }
 
     await writeAuditLog({
