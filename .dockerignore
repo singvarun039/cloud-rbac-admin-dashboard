@@ -1,0 +1,18 @@
+.git
+**/.DS_Store
+
+# Node
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+
+# Build output
+backend/dist
+frontend/dist
+
+# Local env
+.env
+.env.*
+
+# Editor
+.vscode

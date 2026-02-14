@@ -1,7 +1,11 @@
 import "dotenv/config";
 
 export const env = {
-  PORT: process.env.PORT ? Number(process.env.PORT) : 4000,
+  PORT: process.env.API_PORT
+    ? Number(process.env.API_PORT)
+    : process.env.PORT
+      ? Number(process.env.PORT)
+      : 4000,
   NODE_ENV: process.env.NODE_ENV ?? "development",
   TRUST_PROXY: process.env.TRUST_PROXY === "true",
   DATABASE_URL: process.env.DATABASE_URL ?? "",

@@ -1,8 +1,5 @@
 node_modules/
 
-# Lockfiles (project preference)
-package-lock.json
-
 # Keep environment variables out of version control
 .env
 .env.*

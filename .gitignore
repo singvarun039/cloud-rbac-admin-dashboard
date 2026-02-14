@@ -1,0 +1,26 @@
+# Node
+node_modules/
+
+# Builds
+backend/dist/
+frontend/dist/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+
+# OS / Editor
+.DS_Store
+.vscode/
+
+# Vite cache
+frontend/.vite/
+frontend/.eslintcache
