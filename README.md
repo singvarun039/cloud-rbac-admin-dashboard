@@ -4,6 +4,11 @@ Monorepo:
 - `backend/` — Node.js + Express API (Prisma + Postgres)
 - `frontend/` — React (Vite)
 
+This repo is a minimal RBAC admin dashboard:
+
+- **API**: authentication, users, roles, permissions, projects, audit logs
+- **Web**: admin UI that talks to the API
+
 This repo includes a Docker Compose dev setup that runs:
 - Postgres (`db`)
 - API (`api`) with hot reload
@@ -43,8 +48,7 @@ Dockerfiles live next to the real sources:
 
 	- `docker compose exec api npm run db:init`
 
-	Seeded credentials (dev):
-	- `rbac_admin@rbac.local` / `rbac@1234`
+	This runs migrations and seeds initial data for local development.
 
 ## Verify (Dev)
 
@@ -57,7 +61,7 @@ Dockerfiles live next to the real sources:
 
 - `curl -i -sS -X POST http://localhost:4000/api/auth/login \
 	-H "Content-Type: application/json" \
-	-d '{"email":"rbac_admin@rbac.local","password":"rbac@1234"}'`
+	-d '{"email":"<admin-email>","password":"<admin-password>"}'`
 
 ### Hot reload (Windows)
 

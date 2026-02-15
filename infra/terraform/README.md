@@ -150,9 +150,7 @@ Note: Migrations/seed are executed in a temporary “migrator” container built
 A) Web
 
 - Open `http://<ec2-ip>/` → loads React app
-- Login using seeded admin credentials printed by seed script defaults:
-  - Email: `rbac_admin@rbac.local`
-  - Password: `rbac@1234`
+- Login with the admin user created by your seed script.
 - Navigate to pages: Users, Roles, Projects, Audit Logs
 
 B) API
