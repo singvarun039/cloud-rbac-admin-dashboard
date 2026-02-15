@@ -26,14 +26,16 @@ resource "aws_instance" "app" {
   associate_public_ip_address = true
 
   user_data = templatefile("${path.module}/userdata.tftpl", {
-    github_repo_url = var.github_repo_url
-    enable_rds      = var.enable_rds
-    rds_endpoint    = local.rds_endpoint
-    db_name         = var.db_name
-    db_username     = var.db_username
-    db_password     = var.db_password
-    jwt_secret      = var.jwt_secret
-    cors_origin     = var.cors_origin
+    github_repo_url    = var.github_repo_url
+    github_repo_branch = var.github_repo_branch
+    github_repo_token  = var.github_repo_token
+    enable_rds         = var.enable_rds
+    rds_endpoint       = local.rds_endpoint
+    db_name            = var.db_name
+    db_username        = var.db_username
+    db_password        = var.db_password
+    jwt_secret         = var.jwt_secret
+    cors_origin        = var.cors_origin
   })
 
   tags = merge(local.tags, { Name = "${var.project_name}-ec2" })

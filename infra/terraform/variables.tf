@@ -35,10 +35,23 @@ variable "github_repo_url" {
   description = "HTTPS Git URL to clone on the EC2 instance (public repo recommended)."
 }
 
+variable "github_repo_branch" {
+  type        = string
+  description = "Git branch to deploy on the EC2 instance."
+  default     = "main"
+}
+
+variable "github_repo_token" {
+  type        = string
+  description = "Optional GitHub token for cloning private repos. Keep this in terraform.tfvars (never commit). Prefer using an SSH deploy key if possible."
+  sensitive   = true
+  default     = ""
+}
+
 variable "ec2_instance_type" {
   type        = string
   description = "EC2 instance type. Keep free/low-cost (t3.micro or t2.micro)."
-  default     = "t3.micro"
+  default     = "t2.micro"
 }
 
 variable "db_instance_class" {

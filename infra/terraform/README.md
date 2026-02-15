@@ -56,6 +56,12 @@ allowed_ssh_cidr = "YOUR.IP.ADDR/32"
 key_pair_name    = "your-keypair"
 github_repo_url  = "https://github.com/singvarun039/cloud-rbac-admin-dashboard.git"
 
+# Branch to deploy (repo default is usually main)
+github_repo_branch = "main"
+
+# If your repo is private, provide a token via tfvars (never commit). Prefer an SSH deploy key if possible.
+github_repo_token = "CHANGEME_GITHUB_TOKEN"
+
 # Optional (default false): temporarily allow Postgres 5432 from allowed_ssh_cidr
 allow_db_from_my_ip = false
 
@@ -71,6 +77,8 @@ cors_origin = "http://TEMP"
 # Cost-safety: turn off to skip RDS (app will not start)
 enable_rds = true
 ```
+
+Security note: if you use `github_repo_token`, it will be embedded in the EC2 `user_data` rendered by Terraform and will exist on the instance during bootstrap. Treat the token as sensitive, use least-privilege scopes, and rotate it if exposed.
 
 ## Generate strong secrets
 
