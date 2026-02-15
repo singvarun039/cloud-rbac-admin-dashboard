@@ -1,4 +1,4 @@
-# Day 18: AWS — RDS Postgres + EC2 deploy (Docker) via Terraform (Free/Lowest-cost)
+# AWS — RDS Postgres + EC2 deploy (Docker) via Terraform (Free/Lowest-cost)
 
 This deploy is intentionally minimal (dev/portfolio):
 
@@ -51,7 +51,7 @@ WARNING: This file contains secrets (DB password, JWT secret). Never commit it, 
 
 ```hcl
 aws_region       = "us-east-1"
-project_name     = "cloud-rbac-day18"
+project_name     = "cloud-rbac"
 allowed_ssh_cidr = "YOUR.IP.ADDR/32"
 key_pair_name    = "your-keypair"
 github_repo_url  = "https://github.com/singvarun039/cloud-rbac-admin-dashboard.git"
@@ -205,7 +205,7 @@ sudo tail -n 200 /var/log/cloud-init-output.log
 - View user_data logs on the instance:
 
 ```bash
-sudo tail -n 200 /var/log/day18-userdata.log
+sudo tail -n 200 /var/log/userdata.log
 ```
 
 - Check containers:

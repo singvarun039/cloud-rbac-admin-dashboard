@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LOG=/var/log/day18-userdata.log
+LOG=/var/log/app-userdata.log
 exec > >(tee -a "$LOG") 2>&1
 
-echo "[day18] user_data start: $(date -Is)"
+echo "[deploy] user_data start: $(date -Is)"
 
 ENABLE_RDS="${enable_rds}"
 GITHUB_REPO_URL="${github_repo_url}"
@@ -16,7 +16,7 @@ JWT_SECRET="${jwt_secret}"
 CORS_ORIGIN_INPUT="${cors_origin}"
 
 if [[ "$CORS_ORIGIN_INPUT" == "*" ]]; then
-  echo "[day18] ERROR: cors_origin must not be '*'" >&2
+  echo "[deploy] ERROR: cors_origin must not be '*'" >&2
   exit 1
 fi
 
@@ -32,7 +32,7 @@ else
   CORS_ORIGIN="$CORS_ORIGIN_INPUT"
 fi
 
-echo "[day18] Using CORS_ORIGIN=$CORS_ORIGIN"
+echo "[deploy] Using CORS_ORIGIN=$CORS_ORIGIN"
 
 wait_for_tcp() {
   local host="$1"
@@ -45,7 +45,7 @@ wait_for_tcp() {
     if timeout 2 bash -c "</dev/tcp/$host/$port" >/dev/null 2>&1; then
       return 0
     fi
-    echo "[day18] Waiting for $host:$port ($i/$attempts)"
+    echo "[deploy] Waiting for $host:$port ($i/$attempts)"
     sleep "$sleep_s"
     i=$((i + 1))
   done
@@ -54,7 +54,7 @@ wait_for_tcp() {
 
 # Install dependencies (idempotent-ish)
 if ! command -v docker >/dev/null 2>&1; then
-  echo "[day18] Installing Docker..."
+  echo "[deploy] Installing Docker..."
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg git
   install -m 0755 -d /etc/apt/keyrings
@@ -72,11 +72,11 @@ fi
 mkdir -p /opt/app
 
 if [[ ! -d /opt/app/.git ]]; then
-  echo "[day18] Cloning repo to /opt/app"
+  echo "[deploy] Cloning repo to /opt/app"
   rm -rf /opt/app/*
   git clone --depth 1 "$GITHUB_REPO_URL" /opt/app
 else
-  echo "[day18] Repo exists; pulling latest"
+  echo "[deploy] Repo exists; pulling latest"
   git -C /opt/app pull --ff-only || true
 fi
 
@@ -103,55 +103,55 @@ EOF
 chmod 600 /opt/app/.env.prod
 
 if [[ "$ENABLE_RDS" != "true" ]]; then
-  echo "[day18] enable_rds=false -> skipping compose up"
+  echo "[deploy] enable_rds=false -> skipping compose up"
   exit 0
 fi
 
 if [[ -z "$RDS_ENDPOINT" ]]; then
-  echo "[day18] ERROR: RDS endpoint is empty" >&2
+  echo "[deploy] ERROR: RDS endpoint is empty" >&2
   exit 1
 fi
 
-echo "[day18] Waiting for RDS to accept TCP connections"
+echo "[deploy] Waiting for RDS to accept TCP connections"
 if ! wait_for_tcp "$RDS_ENDPOINT" 5432 60 5; then
-  echo "[day18] ERROR: RDS not reachable on 5432 (check SGs/subnets)" >&2
+  echo "[deploy] ERROR: RDS not reachable on 5432 (check SGs/subnets)" >&2
   exit 1
 fi
 
 # Migrations are safe to re-run; seed runs once.
 # IMPORTANT: The backend prod image prunes devDependencies, so Prisma CLI / ts-node may not exist there.
 # To ensure migrations+seed work reliably, run them in a temporary dev-target container.
-echo "[day18] Building migrator image (backend dev target)"
-/usr/bin/docker build -t day18-backend-migrator:latest --target dev /opt/app/backend
+echo "[deploy] Building migrator image (backend dev target)"
+/usr/bin/docker build -t backend-migrator:latest --target dev /opt/app/backend
 
-echo "[day18] Running migrations (prisma migrate deploy)"
+echo "[deploy] Running migrations (prisma migrate deploy)"
 /usr/bin/docker run --rm --network host \
   -e NODE_ENV=production \
   -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
-  day18-backend-migrator:latest sh -lc "npm run db:deploy"
+  backend-migrator:latest sh -lc "npm run db:deploy"
 
 if [[ ! -f /opt/app/.seeded ]]; then
-  echo "[day18] Seeding database (one-time)"
+  echo "[deploy] Seeding database (one-time)"
   /usr/bin/docker run --rm --network host \
     -e NODE_ENV=production \
     -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
-    day18-backend-migrator:latest sh -lc "npm run db:seed"
+    backend-migrator:latest sh -lc "npm run db:seed"
   touch /opt/app/.seeded
 else
-  echo "[day18] Already seeded; skipping"
+  echo "[deploy] Already seeded; skipping"
 fi
 
-echo "[day18] Starting docker compose (prod)"
+echo "[deploy] Starting docker compose (prod)"
 /usr/bin/docker compose -f /opt/app/docker-compose.prod.yml up -d --build
 
-echo "[day18] Waiting for nginx/API health"
+echo "[deploy] Waiting for nginx/API health"
 for i in {1..60}; do
   if curl -fsS http://127.0.0.1/api/health >/dev/null 2>&1; then
-    echo "[day18] Health check OK"
+    echo "[deploy] Health check OK"
     break
   fi
-  echo "[day18] Waiting for /api/health ($i/60)"
+  echo "[deploy] Waiting for /api/health ($i/60)"
   sleep 2
 done
 
-echo "[day18] user_data done: $(date -Is)"
+echo "[deploy] user_data done: $(date -Is)"

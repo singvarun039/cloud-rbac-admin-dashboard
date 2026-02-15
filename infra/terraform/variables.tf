@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   type        = string
   description = "Prefix for resource names/tags."
-  default     = "cloud-rbac-day18"
+  default     = "cloud-rbac"
 }
 
 variable "allowed_ssh_cidr" {
