@@ -134,7 +134,9 @@ async function main() {
     }),
   ]);
 
-  const permissions = await Promise.all(
+  type PermissionRow = { id: string; key: string };
+
+  const permissions: PermissionRow[] = await Promise.all(
     PERMISSION_KEYS.map((key) =>
       prisma.permission.upsert({
         where: { key },
