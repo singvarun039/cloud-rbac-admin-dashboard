@@ -8,6 +8,8 @@ echo "[deploy] user_data start: $(date -Is)"
 
 ENABLE_RDS="${enable_rds}"
 GITHUB_REPO_URL="${github_repo_url}"
+GITHUB_REPO_BRANCH="${github_repo_branch}"
+GITHUB_REPO_TOKEN="${github_repo_token}"
 RDS_ENDPOINT="${rds_endpoint}"
 DB_NAME="${db_name}"
 DB_USERNAME="${db_username}"
@@ -71,13 +73,34 @@ fi
 
 mkdir -p /opt/app
 
+# Optional: authenticate GitHub clone/pull for private repos.
+# NOTE: This token will be present in cloud-init user_data on the instance. Prefer an SSH deploy key if possible.
+NETRC_CREATED=false
+if [[ -n "$GITHUB_REPO_TOKEN" ]]; then
+  cat > /root/.netrc <<EOF
+machine github.com
+login x-access-token
+password $GITHUB_REPO_TOKEN
+EOF
+  chmod 600 /root/.netrc
+  export GIT_TERMINAL_PROMPT=0
+  NETRC_CREATED=true
+fi
+
 if [[ ! -d /opt/app/.git ]]; then
   echo "[deploy] Cloning repo to /opt/app"
   rm -rf /opt/app/*
-  git clone --depth 1 "$GITHUB_REPO_URL" /opt/app
+  git clone --depth 1 --branch "$GITHUB_REPO_BRANCH" "$GITHUB_REPO_URL" /opt/app
 else
   echo "[deploy] Repo exists; pulling latest"
-  git -C /opt/app pull --ff-only || true
+  git -C /opt/app fetch --all --prune || true
+  git -C /opt/app checkout "$GITHUB_REPO_BRANCH" || true
+  git -C /opt/app pull --ff-only origin "$GITHUB_REPO_BRANCH" || true
+fi
+
+if [[ "$NETRC_CREATED" == "true" ]]; then
+  rm -f /root/.netrc
+  unset GITHUB_REPO_TOKEN
 fi
 
 cd /opt/app
