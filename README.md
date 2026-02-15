@@ -115,3 +115,7 @@ Connect using `psql` or a GUI (pgAdmin/DBeaver) with:
 ## Production images
 
 - Web production stage uses **nginx** to serve the Vite `dist/` folder (see `frontend/Dockerfile` + `frontend/nginx.conf`).
+
+## AWS deploy (Terraform)
+
+See `infra/terraform/README.md` for the Terraform deployment.

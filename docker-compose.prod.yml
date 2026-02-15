@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: prod
+    env_file:
+      - ./.env.prod
+    environment:
+      # Backend reads PORT (and optionally API_PORT)
+      PORT: 4000
+      NODE_ENV: production
+    expose:
+      - "4000"
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped

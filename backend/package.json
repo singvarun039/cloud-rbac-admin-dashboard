@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "node --test -r ts-node/register test/hardening.test.ts",
+    "migrate": "npm run db:deploy",
+    "seed": "npm run db:seed",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:init": "npm run db:deploy && npm run db:seed",
