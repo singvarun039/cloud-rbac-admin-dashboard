@@ -105,6 +105,9 @@ fi
 
 cd /opt/app
 
+DATABASE_URL_APP="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public"
+DATABASE_URL_MIGRATE="$DATABASE_URL_APP&sslmode=require"
+
 # Create .env.prod (do not commit)
 cat > /opt/app/.env.prod <<EOF
 NODE_ENV=production
@@ -121,7 +124,7 @@ JWT_REFRESH_SECRET=$JWT_SECRET
 REFRESH_TOKEN_HASH_SECRET=$JWT_SECRET
 
 # RDS Postgres (Prisma + pg). Use SSL for RDS.
-DATABASE_URL=postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require
+DATABASE_URL=$DATABASE_URL_APP
 EOF
 chmod 600 /opt/app/.env.prod
 
@@ -150,15 +153,15 @@ echo "[deploy] Building migrator image (backend dev target)"
 echo "[deploy] Running migrations (prisma migrate deploy)"
 /usr/bin/docker run --rm --network host \
   -e NODE_ENV=production \
-  -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
-  backend-migrator:latest sh -lc "npm run db:deploy"
+  -e DATABASE_URL="$DATABASE_URL_MIGRATE" \
+  backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:deploy"
 
 if [[ ! -f /opt/app/.seeded ]]; then
   echo "[deploy] Seeding database (one-time)"
   /usr/bin/docker run --rm --network host \
     -e NODE_ENV=production \
-    -e DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require" \
-    backend-migrator:latest sh -lc "npm run db:seed"
+    -e DATABASE_URL="$DATABASE_URL_APP" \
+    backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:seed"
   touch /opt/app/.seeded
 else
   echo "[deploy] Already seeded; skipping"
