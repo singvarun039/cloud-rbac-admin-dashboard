@@ -118,4 +118,4 @@ Connect using `psql` or a GUI (pgAdmin/DBeaver) with:
 
 ## AWS deploy (Terraform)
 
-See `infra/terraform/README.md` for the lowest-cost Terraform deployment.
+See `infra/terraform/README.md` for the Terraform deployment.
