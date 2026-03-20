@@ -24,6 +24,14 @@ CMD ["sh","-c","npm run prisma:generate && npm run dev"]
 FROM base AS build
 WORKDIR /app
 
+# DATABASE_URL is required by prisma.config.ts during `prisma generate`.
+# prisma generate does NOT connect to a database — it only reads schema.prisma
+# to emit the Prisma Client types. A syntactically valid placeholder is enough.
+# The real DATABASE_URL is never baked into the image; it is injected at
+# container runtime via env_file in docker-compose.prod.yml.
+ARG DATABASE_URL=postgresql://build-placeholder:x@localhost:5432/build?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
