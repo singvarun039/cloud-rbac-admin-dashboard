@@ -108,15 +108,16 @@ variable "jwt_secret" {
 
 variable "cors_origin" {
   type        = string
-  description = "Origin allowlist for the API (FRONTEND_ORIGIN). Use http(s)://... . For first apply you may use the placeholder http://TEMP. Must not be '*'."
+  description = "Origin allowlist for the API (FRONTEND_ORIGIN). Use http(s)://... . You may also use 'auto' to derive http://<ec2_public_ip>, or use the placeholder http://TEMP for a first apply. Must not be '*'."
   default     = "http://TEMP"
 
   validation {
     condition = (
+      var.cors_origin == "auto" ||
       var.cors_origin == "http://TEMP" ||
       can(regex("^https?://", var.cors_origin))
     )
-    error_message = "cors_origin must start with http:// or https:// (or be exactly http://TEMP for the first apply)."
+    error_message = "cors_origin must be 'auto', start with http:// or https://, or be exactly http://TEMP for the first apply."
   }
 }
 
