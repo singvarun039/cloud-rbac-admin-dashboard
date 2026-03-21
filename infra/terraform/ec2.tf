@@ -25,6 +25,12 @@ resource "aws_instance" "app" {
   key_name                    = var.key_pair_name
   associate_public_ip_address = true
 
+  root_block_device {
+    volume_size           = 20    # GiB — default Ubuntu AMI gives 8GiB which fills up during Docker builds
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   user_data = templatefile("${path.module}/userdata.tftpl", {
     github_repo_url    = var.github_repo_url
     github_repo_branch = var.github_repo_branch

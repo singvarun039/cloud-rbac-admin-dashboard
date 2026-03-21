@@ -12,6 +12,8 @@ infra/terraform/terraform.tfvars
 infra/terraform/*.tfvars
 infra/terraform/terraform.tfstate*
 infra/terraform/crash.log*
+infra/terraform/tfplan
+infra/terraform/*.tfplan
 
 # Production env files
 .env.prod
