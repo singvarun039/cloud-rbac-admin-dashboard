@@ -168,19 +168,22 @@ echo "[deploy] Building migrator image (backend dev target)"
 /usr/bin/docker build -t backend-migrator:latest --target dev /opt/app/backend
 
 echo "[deploy] Running migrations (prisma migrate deploy)"
+# Run prisma:generate first so the Prisma Client types exist before ts-node executes.
+# The dev image only generates at CMD startup — overriding CMD skips that, so we must run it explicitly.
 # Uses PRISMA_DATABASE_URL (with sslmode=require) from the env file — required by Prisma CLI.
 /usr/bin/docker run --rm \
   --env-file /opt/app/.env.prod \
   -e NODE_ENV=production \
-  backend-migrator:latest sh -lc "npm run db:deploy"
+  backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:deploy"
 
 if [[ ! -f /opt/app/.seeded ]]; then
   echo "[deploy] Seeding database (one-time)"
+  # Run prisma:generate first — same reason as migrate (CMD override skips the startup generate).
   # Uses DATABASE_URL (no sslmode) from the env file — seed uses pg.Pool which handles ssl explicitly.
   /usr/bin/docker run --rm \
     --env-file /opt/app/.env.prod \
     -e NODE_ENV=production \
-    backend-migrator:latest sh -lc "npm run db:seed"
+    backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:seed"
   touch /opt/app/.seeded
 else
   echo "[deploy] Already seeded; skipping"
