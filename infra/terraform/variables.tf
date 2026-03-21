@@ -48,21 +48,44 @@ variable "github_repo_token" {
   default     = ""
 }
 
+variable "allow_db_from_my_ip" {
+  type        = bool
+  description = "If true, temporarily allow inbound Postgres (5432) from allowed_ssh_cidr for admin/debug. Default false."
+  default     = false
+}
+
 variable "ec2_instance_type" {
   type        = string
-  description = "EC2 instance type. Keep free/low-cost (t3.micro or t2.micro)."
-  default     = "t2.micro"
+  description = "EC2 instance type. t3.small is the recommended minimum — t2.micro is too weak for stable Docker builds."
+  default     = "t3.small"
+}
+
+variable "enable_swap" {
+  type        = bool
+  description = "If true, user_data creates a swap file. Recommended for t3.small/t2.micro to prevent OOM kills during Docker builds."
+  default     = true
+}
+
+variable "swap_size_gb" {
+  type        = number
+  description = "Size of the swap file in GiB. Only used when enable_swap = true."
+  default     = 2
+
+  validation {
+    condition     = var.swap_size_gb >= 1 && var.swap_size_gb <= 16
+    error_message = "swap_size_gb must be between 1 and 16."
+  }
 }
 
 variable "db_instance_class" {
   type        = string
-  description = "RDS instance class. Keep free/low-cost (db.t3.micro where available)."
+  description = "RDS instance class (db.t3.micro is free-tier eligible)."
   default     = "db.t3.micro"
 }
 
 variable "db_allocated_storage_gb" {
   type        = number
-  description = "RDS gp3 allocated storage in GB (minimum 20)."
+  description = "RDS gp2 allocated storage in GB (minimum 20)."
   default     = 20
 
   validation {
@@ -85,7 +108,7 @@ variable "db_username" {
 
 variable "db_password" {
   type        = string
-  description = "Master password for Postgres."
+  description = "Master password for Postgres — set in terraform.tfvars, never commit."
   sensitive   = true
 
   validation {
