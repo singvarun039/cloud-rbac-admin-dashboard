@@ -7,16 +7,19 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
+// Detects whether an API failure is a conflict response.
 function isConflictError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
   return status === 409;
 }
 
+// Detects whether an API failure is a not-found response.
 function isNotFoundError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
   return status === 404;
 }
 
+// Renders the create and edit role modal workflow.
 export default function RoleModal(props: {
   open: boolean;
   mode: "create" | "edit";

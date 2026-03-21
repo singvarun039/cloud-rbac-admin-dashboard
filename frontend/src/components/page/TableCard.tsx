@@ -3,6 +3,7 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
+// Wraps table content inside a shared card layout.
 export function TableCard(props: {
   title: string;
   children: React.ReactNode;

@@ -10,11 +10,13 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Skeleton } from "./ui/skeleton";
 
+// Detects whether a request was canceled by the caller.
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
   return code === "ERR_CANCELED";
 }
 
+// Renders the role permission assignment workflow.
 export default function AssignPermissionsModal(props: {
   open: boolean;
   role: Role | null;

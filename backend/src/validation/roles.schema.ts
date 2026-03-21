@@ -43,6 +43,7 @@ export const PatchRoleBodySchema = z
     message: "At least one field must be provided",
   });
 
+// Builds a unique trimmed string-array validator for permission payloads.
 const UniqueStringArray = (label: string) =>
   z
     .array(z.string().trim().min(1))

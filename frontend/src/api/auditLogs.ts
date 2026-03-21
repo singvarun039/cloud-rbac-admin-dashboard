@@ -44,12 +44,14 @@ export type GetAuditLogsParams = {
   requestId?: string;
 };
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Checks whether a value matches the backend's audit log list payload.
 function isAuditLogsData(value: unknown): value is {
   items: AuditLogRow[];
   meta: { page: number; limit: number; total: number; hasNext: boolean };
@@ -58,6 +60,7 @@ function isAuditLogsData(value: unknown): value is {
   return "items" in value && "meta" in value;
 }
 
+// Normalizes backend audit log list responses into the frontend shape.
 function unwrapAuditLogsResponse(payload: unknown): AuditLogsResponse {
   const unwrapped = unwrapData<unknown>(payload) ?? payload;
   if (isAuditLogsData(unwrapped)) {
@@ -78,6 +81,7 @@ function unwrapAuditLogsResponse(payload: unknown): AuditLogsResponse {
   throw new Error("Unexpected audit logs response format");
 }
 
+// Loads a paginated list of audit logs.
 export async function getAuditLogs(
   params: GetAuditLogsParams,
   options?: { signal?: AbortSignal },

@@ -31,6 +31,7 @@ import {
   YAxis,
 } from "recharts";
 
+// Formats an ISO timestamp for local display.
 function formatDateTime(value?: string): string {
   if (!value) return "—";
   const d = new Date(value);
@@ -38,6 +39,7 @@ function formatDateTime(value?: string): string {
   return d.toLocaleString();
 }
 
+// Formats a YYYY-MM-DD value for chart labels.
 function formatYmdLabel(value: string): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
@@ -51,6 +53,7 @@ type Kpi = {
   loading: boolean;
 };
 
+// Renders a single dashboard KPI card.
 function KpiCard(props: {
   label: string;
   value: number | null;
@@ -69,6 +72,7 @@ function KpiCard(props: {
   );
 }
 
+// Renders the summary dashboard and recent activity widgets.
 export default function DashboardPage() {
   const { isAuthenticated, user } = useAuth();
 

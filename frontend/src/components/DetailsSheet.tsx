@@ -8,6 +8,7 @@ import {
 } from "./ui/drawer";
 
 // TODO: Reuse this for Roles/Projects/AuditLogs "View" drawers.
+// Renders a reusable right-side details drawer.
 export function DetailsSheet(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;

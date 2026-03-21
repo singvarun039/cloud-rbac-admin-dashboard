@@ -8,6 +8,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { toast } from "../components/ui/use-toast";
 
+// Renders the login screen and handles sign-in submission.
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();

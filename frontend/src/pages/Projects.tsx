@@ -53,6 +53,7 @@ import {
 import { StatsCard } from "../components/page/StatsCard";
 import { ChevronDown } from "lucide-react";
 
+// Formats an ISO timestamp for local display.
 function formatDate(value?: string): string {
   if (!value) return "-";
   const d = new Date(value);
@@ -60,6 +61,7 @@ function formatDate(value?: string): string {
   return d.toLocaleString();
 }
 
+// Renders the projects listing page.
 export default function ProjectsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);

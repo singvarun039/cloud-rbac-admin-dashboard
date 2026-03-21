@@ -6,6 +6,7 @@ import {
   computeEffectivePermissionKeys,
 } from "../utils/rbac";
 
+// Authenticates the request and hydrates req.user with effective permissions.
 export async function authenticate(
   req: Request,
   _res: Response,

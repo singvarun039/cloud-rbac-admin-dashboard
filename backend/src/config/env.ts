@@ -12,6 +12,7 @@ const PLACEHOLDER_SECRETS = new Set([
   "",
 ]);
 
+// Validates required runtime environment variables before startup.
 function validateEnv(): void {
   const errors: string[] = [];
   const isProd = (process.env.NODE_ENV ?? "development") === "production";
@@ -73,10 +74,7 @@ function validateEnv(): void {
 // Run validation before any module accesses env values.
 validateEnv();
 
-/**
- * Returns only the hostname from DATABASE_URL — safe to log.
- * SECURITY: Never log DATABASE_URL directly; it contains the DB password.
- */
+// Returns the database hostname without exposing credentials.
 export function getDbHost(): string {
   try {
     return new URL(process.env.DATABASE_URL!).hostname;

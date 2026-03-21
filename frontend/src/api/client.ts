@@ -31,12 +31,14 @@ export type ApiErrorEnvelope = {
   [key: string]: unknown;
 };
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Extracts the most helpful error message from an API failure.
 export function getApiErrorMessage(
   err: unknown,
   fallback = "Something went wrong. Please try again.",
@@ -116,6 +118,7 @@ const pendingRequests: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
+// Detects whether a headers object is an AxiosHeaders instance.
 function isAxiosHeaders(value: unknown): value is AxiosHeaders {
   return (
     Boolean(value) &&
@@ -124,6 +127,7 @@ function isAxiosHeaders(value: unknown): value is AxiosHeaders {
   );
 }
 
+// Writes a bearer token onto a request config's headers.
 function setAuthorizationHeader(config: { headers?: unknown }, token: string) {
   const headerValue = `Bearer ${token}`;
   if (isAxiosHeaders(config.headers)) {
@@ -142,14 +146,17 @@ function setAuthorizationHeader(config: { headers?: unknown }, token: string) {
   };
 }
 
+// Returns the normalized request URL from an Axios config.
 function getRequestUrl(config: InternalAxiosRequestConfig | undefined): string {
   return String(config?.url ?? "");
 }
 
+// Checks whether a request is targeting the refresh endpoint.
 function isRefreshRequest(url: string): boolean {
   return url.includes("/auth/refresh");
 }
 
+// Replays queued requests after a refresh attempt completes.
 function flushPendingRequests(error: unknown, newToken: string | null) {
   const queued = pendingRequests.splice(0, pendingRequests.length);
 

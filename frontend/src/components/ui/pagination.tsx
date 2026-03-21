@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { buttonVariants } from "./button-variants";
 
+// Renders the pagination navigation container.
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
     role="navigation"
@@ -14,6 +15,7 @@ const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
 );
 Pagination.displayName = "Pagination";
 
+// Renders the pagination items list.
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<"ul">
@@ -26,6 +28,7 @@ const PaginationContent = React.forwardRef<
 ));
 PaginationContent.displayName = "PaginationContent";
 
+// Renders a pagination list item.
 const PaginationItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentProps<"li">
@@ -38,6 +41,7 @@ type PaginationLinkProps = {
   isActive?: boolean;
 } & React.ComponentProps<"a">;
 
+// Renders an individual pagination link.
 const PaginationLink = ({
   className,
   isActive,
@@ -56,6 +60,7 @@ PaginationLink.displayName = "PaginationLink";
 
 type PaginationButtonProps = React.ComponentProps<"a">;
 
+// Renders the previous-page pagination control.
 const PaginationPrevious = ({ className, ...props }: PaginationButtonProps) => (
   <a
     aria-label="Go to previous page"
@@ -72,6 +77,7 @@ const PaginationPrevious = ({ className, ...props }: PaginationButtonProps) => (
 );
 PaginationPrevious.displayName = "PaginationPrevious";
 
+// Renders the next-page pagination control.
 const PaginationNext = ({ className, ...props }: PaginationButtonProps) => (
   <a
     aria-label="Go to next page"
@@ -88,6 +94,7 @@ const PaginationNext = ({ className, ...props }: PaginationButtonProps) => (
 );
 PaginationNext.displayName = "PaginationNext";
 
+// Renders the collapsed pagination indicator.
 const PaginationEllipsis = ({
   className,
   ...props

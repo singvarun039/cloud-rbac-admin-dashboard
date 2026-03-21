@@ -16,6 +16,7 @@ export type DatePickerRangeProps = {
   className?: string;
 };
 
+// Builds the trigger label for a selected date range.
 function rangeLabel(range: DateRange | undefined, placeholder: string): string {
   if (!range?.from) return placeholder;
 
@@ -25,6 +26,7 @@ function rangeLabel(range: DateRange | undefined, placeholder: string): string {
   return `${from} - ${format(range.to, "LLL dd, y")}`;
 }
 
+// Renders the shared date-range picker control.
 function DatePickerRange({
   value,
   onChange,

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import crypto from "node:crypto";
 
+// Generates a unique request identifier for tracing.
 function generateRequestId(): string {
   if (typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
@@ -10,6 +11,7 @@ function generateRequestId(): string {
   return crypto.randomBytes(16).toString("hex");
 }
 
+// Attaches a request identifier to the request and response.
 export function requestId(req: Request, res: Response, next: NextFunction) {
   const id = generateRequestId();
   req.requestId = id;

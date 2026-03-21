@@ -4,6 +4,7 @@ import { cn } from "../../lib/utils";
 import { Card, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 
+// Displays a single KPI value with an optional loading state.
 export function StatsCard(props: {
   title: string;
   value: React.ReactNode;

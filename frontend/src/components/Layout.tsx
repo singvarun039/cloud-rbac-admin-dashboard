@@ -21,6 +21,7 @@ const navItems = [
   { to: "/audit-logs", label: "Audit Logs", icon: ScrollText },
 ];
 
+// Renders the main authenticated application shell.
 export default function Layout() {
   const { logout, permissions, user } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);

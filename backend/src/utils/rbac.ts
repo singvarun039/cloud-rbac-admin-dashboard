@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma";
 
+// Loads a user together with roles and nested permissions.
 export async function fetchUserWithRolesAndPermissions(params: {
   userId?: string;
   email?: string;
@@ -49,6 +50,7 @@ export async function fetchUserWithRolesAndPermissions(params: {
   });
 }
 
+// Flattens a user's role permissions into unique permission keys.
 export function computeEffectivePermissionKeys(user: {
   roles: Array<{
     role: {
@@ -69,6 +71,7 @@ export function computeEffectivePermissionKeys(user: {
   return Array.from(keys).sort();
 }
 
+// Returns effective permission keys for a user lookup.
 export async function getEffectivePermissionKeysForUser(params: {
   userId?: string;
   email?: string;

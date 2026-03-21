@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 
+// Ensures the authenticated user has at least one required permission.
 export function requirePermission(permissionKey: string | string[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user) {

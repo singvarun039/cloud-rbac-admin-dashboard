@@ -3,6 +3,7 @@ import type { ZodTypeAny } from "zod";
 import { ZodError } from "zod";
 import { AppError } from "../errors/AppError";
 
+// Converts a Zod error into a client-friendly validation payload.
 function zodDetails(error: ZodError) {
   return {
     issues: error.issues.map((issue) => ({
@@ -15,6 +16,7 @@ function zodDetails(error: ZodError) {
   };
 }
 
+// Validates a request section and replaces it with parsed data.
 function validatePart(
   part: "body" | "query" | "params",
   schema: ZodTypeAny,
@@ -48,14 +50,17 @@ function validatePart(
   };
 }
 
+// Validates and parses the request body.
 export function validateBody(schema: ZodTypeAny) {
   return validatePart("body", schema);
 }
 
+// Validates and parses the request query string.
 export function validateQuery(schema: ZodTypeAny) {
   return validatePart("query", schema);
 }
 
+// Validates and parses the request route params.
 export function validateParams(schema: ZodTypeAny) {
   return validatePart("params", schema);
 }

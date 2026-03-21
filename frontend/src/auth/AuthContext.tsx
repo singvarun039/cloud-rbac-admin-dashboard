@@ -39,12 +39,14 @@ export const AuthContext = createContext<AuthContextValue | undefined>(
   undefined,
 );
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Extracts an access token from several tolerated response shapes.
 function extractAccessToken(payload: unknown): string | null {
   const unwrapped = unwrapData<Record<string, unknown>>(payload);
   const candidate = asRecord(unwrapped ?? payload);
@@ -61,6 +63,7 @@ function extractAccessToken(payload: unknown): string | null {
   return typeof direct === "string" && direct.length > 0 ? direct : null;
 }
 
+// Extracts a refresh token from several tolerated response shapes.
 function extractRefreshToken(payload: unknown): string | null {
   const unwrapped = unwrapData<Record<string, unknown>>(payload);
   const candidate = asRecord(unwrapped ?? payload);
@@ -78,6 +81,7 @@ type ApiErrorEnvelope = {
   requestId: string;
 };
 
+// Converts a login failure into a user-facing message.
 function extractErrorMessage(err: unknown): string {
   const anyErr = err as {
     response?: {
@@ -98,6 +102,7 @@ function extractErrorMessage(err: unknown): string {
   return "Login failed. Please try again.";
 }
 
+// Normalizes a user-shaped payload into the MeUser type.
 function unwrapMeUser(payload: unknown): MeUser | null {
   const unwrapped = unwrapData<MeUser>(payload);
   const candidate = (unwrapped ?? payload) as unknown;
@@ -112,10 +117,12 @@ function unwrapMeUser(payload: unknown): MeUser | null {
   return null;
 }
 
+// Checks whether a value is a string array.
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((x) => typeof x === "string");
 }
 
+// Normalizes the /auth/me response into user and permission data.
 function unwrapMeResponse(payload: unknown): {
   user: MeUser | null;
   permissions: string[];
@@ -150,6 +157,7 @@ function unwrapMeResponse(payload: unknown): {
   return { user, permissions };
 }
 
+// Provides authentication state and token lifecycle helpers to the app.
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 

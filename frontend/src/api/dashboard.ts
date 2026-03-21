@@ -22,6 +22,7 @@ export type DashboardSummary = {
     | null;
 };
 
+// Loads the dashboard summary metrics and activity feed.
 export async function getDashboardSummary(
   windowDays = 14,
   options?: { signal?: AbortSignal },

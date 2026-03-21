@@ -1,3 +1,4 @@
+// Formats a Date as a UTC YYYY-MM-DD string.
 export function formatDateUtcYYYYMMDD(date: Date): string {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -5,12 +6,14 @@ export function formatDateUtcYYYYMMDD(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+// Returns the UTC start-of-day for a given Date.
 export function startOfUtcDay(date: Date): Date {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
   );
 }
 
+// Adds whole UTC days to a Date while preserving day boundaries.
 export function addUtcDays(date: Date, days: number): Date {
   const start = startOfUtcDay(date);
   return new Date(
@@ -22,6 +25,7 @@ export function addUtcDays(date: Date, days: number): Date {
   );
 }
 
+// Builds a UTC date window and label set for dashboard trend queries.
 export function utcDayRangeWindow(
   windowDays: number,
   now = new Date(),

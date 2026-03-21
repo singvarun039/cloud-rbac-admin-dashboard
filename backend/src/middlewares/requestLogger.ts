@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { logWithReq } from "../lib/logger";
 
+// Logs the start and end of each request with timing information.
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const start = process.hrtime.bigint();
 

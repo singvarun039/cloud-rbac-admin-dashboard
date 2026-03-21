@@ -3,6 +3,7 @@ import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "../../lib/utils";
 
+// Renders the shared drawer root component.
 const Drawer = ({
   shouldScaleBackground = true,
   ...props
@@ -20,6 +21,7 @@ const DrawerTrigger = DrawerPrimitive.Trigger;
 const DrawerPortal = DrawerPrimitive.Portal;
 const DrawerClose = DrawerPrimitive.Close;
 
+// Renders the drawer backdrop.
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -35,6 +37,7 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
+// Renders the drawer surface.
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -55,6 +58,7 @@ const DrawerContent = React.forwardRef<
 ));
 DrawerContent.displayName = DrawerPrimitive.Content.displayName;
 
+// Renders the drawer header layout.
 const DrawerHeader = ({
   className,
   ...props
@@ -66,6 +70,7 @@ const DrawerHeader = ({
 );
 DrawerHeader.displayName = "DrawerHeader";
 
+// Renders the drawer footer actions layout.
 const DrawerFooter = ({
   className,
   ...props
@@ -80,6 +85,7 @@ const DrawerFooter = ({
 );
 DrawerFooter.displayName = "DrawerFooter";
 
+// Renders the drawer title text.
 const DrawerTitle = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
@@ -95,6 +101,7 @@ const DrawerTitle = React.forwardRef<
 ));
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName;
 
+// Renders the drawer description text.
 const DrawerDescription = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>

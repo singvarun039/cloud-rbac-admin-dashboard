@@ -15,6 +15,7 @@ type SessionMeta = {
 };
 
 export class AuthService {
+  // Validates credentials and creates a new session token pair.
   static async login(input: LoginInput, meta: SessionMeta = {}) {
     const email = input.email.trim().toLowerCase();
 
@@ -63,6 +64,7 @@ export class AuthService {
     };
   }
 
+  // Rotates a valid refresh token into a new access and refresh token pair.
   static async refresh(refreshToken: string, meta: SessionMeta = {}) {
     // 1) Verify signature/expiry first (cheap reject before DB).
     let payload: { sub: string };
@@ -130,6 +132,7 @@ export class AuthService {
     }
   }
 
+  // Revokes a refresh token session without exposing whether it existed.
   static async logout(refreshToken: string) {
     // SECURITY: Don't require the token to be valid JWT to revoke; we revoke by hash if present.
     const refreshTokenHash = hashRefreshToken(refreshToken);
@@ -144,6 +147,7 @@ export class AuthService {
     return { success: true };
   }
 
+  // Loads the current authenticated user's profile record.
   static async getMe(userId: string) {
     return prisma.user.findUnique({
       where: { id: userId },

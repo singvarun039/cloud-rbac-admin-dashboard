@@ -66,11 +66,13 @@ import { ChevronDown, Eye, Pencil, Shield, Trash2 } from "lucide-react";
 
 const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
 
+// Detects whether a request was canceled by the caller.
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
   return code === "ERR_CANCELED";
 }
 
+// Renders the unauthorized state for the roles page.
 function NotAuthorized() {
   return (
     <div className="space-y-4">
@@ -88,6 +90,7 @@ function NotAuthorized() {
   );
 }
 
+// Builds a readable permission count label for a role.
 function permissionCountLabel(role: Role): string {
   const countFromArray = Array.isArray(role.permissions)
     ? role.permissions.length
@@ -101,6 +104,7 @@ function permissionCountLabel(role: Role): string {
   return `${count} permissions`;
 }
 
+// Formats an ISO timestamp for local display.
 function formatDate(value?: string): string {
   if (!value) return "-";
   const d = new Date(value);
@@ -108,6 +112,7 @@ function formatDate(value?: string): string {
   return d.toLocaleString();
 }
 
+// Renders the roles management page.
 export default function RolesPage() {
   const { permissions } = useAuth();
 

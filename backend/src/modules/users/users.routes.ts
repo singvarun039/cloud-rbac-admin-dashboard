@@ -29,6 +29,7 @@ const DEFAULT_ROLE_PERMISSION_KEYS = [
   "audit.read",
 ] as const;
 
+// Ensures the fallback read-only user role exists and has baseline permissions.
 async function ensureDefaultUserRole() {
   const role = await prisma.role.upsert({
     where: { name: DEFAULT_ROLE_NAME },
@@ -56,6 +57,7 @@ async function ensureDefaultUserRole() {
   return role;
 }
 
+// Splits a display name into first and last name fields.
 function nameToFirstLast(name: string): {
   firstName: string;
   lastName: string | null;
@@ -69,6 +71,7 @@ function nameToFirstLast(name: string): {
   return { firstName, lastName };
 }
 
+// Maps a Prisma user record into the API response shape.
 function userToApi(user: {
   id: string;
   email: string;

@@ -19,6 +19,7 @@ const alertVariants = cva(
   },
 );
 
+// Renders a styled alert container.
 const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
@@ -32,6 +33,7 @@ const Alert = React.forwardRef<
 ));
 Alert.displayName = "Alert";
 
+// Renders the title inside an alert.
 const AlertTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
@@ -44,6 +46,7 @@ const AlertTitle = React.forwardRef<
 ));
 AlertTitle.displayName = "AlertTitle";
 
+// Renders the descriptive content inside an alert.
 const AlertDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>

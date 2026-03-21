@@ -12,12 +12,14 @@ export type RefreshJwtPayload = {
   typ: "refresh";
 };
 
+// Signs a short-lived access token for the given user.
 export function signAccessToken(userId: string): string {
   const payload: JwtPayload = { sub: userId };
   const expiresIn = env.ACCESS_TOKEN_TTL as jwt.SignOptions["expiresIn"];
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn });
 }
 
+// Verifies and normalizes an access token payload.
 export function verifyAccessToken(token: string): JwtPayload {
   const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as jwt.JwtPayload;
   if (!decoded?.sub || typeof decoded.sub !== "string") {
@@ -26,6 +28,7 @@ export function verifyAccessToken(token: string): JwtPayload {
   return { sub: decoded.sub };
 }
 
+// Signs a refresh token and returns its derived expiry.
 export function signRefreshToken(userId: string): {
   token: string;
   expiresAt: Date;
@@ -47,6 +50,7 @@ export function signRefreshToken(userId: string): {
   return { token, expiresAt: new Date(decoded.exp * 1000) };
 }
 
+// Verifies and normalizes a refresh token payload.
 export function verifyRefreshToken(token: string): RefreshJwtPayload {
   const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as jwt.JwtPayload;
 

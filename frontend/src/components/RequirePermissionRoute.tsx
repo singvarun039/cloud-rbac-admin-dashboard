@@ -3,6 +3,7 @@ import { useAuth } from "../auth/useAuth";
 import Forbidden from "./Forbidden";
 import { Skeleton } from "./ui/skeleton";
 
+// Blocks route access unless the current user has the required permission.
 export default function RequirePermissionRoute(props: {
   permission: string;
   pageTitle: string;

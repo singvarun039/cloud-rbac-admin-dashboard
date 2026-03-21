@@ -5,6 +5,7 @@ import { AppError } from "../errors/AppError";
 import { fail } from "../utils/apiResponse";
 import { logWithReq } from "../lib/logger";
 
+// Converts a Zod error into structured validation details.
 function zodDetails(error: ZodError) {
   return {
     issues: error.issues.map((issue) => ({
@@ -17,6 +18,7 @@ function zodDetails(error: ZodError) {
   };
 }
 
+// Maps application and infrastructure errors into API responses.
 export function errorHandler(
   err: unknown,
   req: Request,

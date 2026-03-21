@@ -17,6 +17,7 @@ import { auditLogsRouter } from "./modules/auditLogs/auditLogs.routes";
 import { env } from "./config/env";
 import { ok } from "./utils/apiResponse";
 
+// Splits the configured CORS allowlist into normalized origin strings.
 function parseAllowedOrigins(value: string): string[] {
   return value
     .split(",")
@@ -24,6 +25,7 @@ function parseAllowedOrigins(value: string): string[] {
     .filter(Boolean);
 }
 
+// Creates and configures the Express application instance.
 export function createApp() {
   const app = express();
 

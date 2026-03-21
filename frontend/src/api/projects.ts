@@ -28,12 +28,14 @@ export type GetProjectsParams = {
   includeArchived?: boolean;
 };
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Checks whether a value matches the backend's projects list payload.
 function isProjectsListData(value: unknown): value is {
   items: Project[];
   meta: ProjectsResponse["meta"];
@@ -42,6 +44,7 @@ function isProjectsListData(value: unknown): value is {
   return "items" in value && "meta" in value;
 }
 
+// Normalizes backend project list responses into the frontend shape.
 function unwrapProjectsResponse(payload: unknown): ProjectsResponse {
   const unwrapped = unwrapData<unknown>(payload) ?? payload;
   if (isProjectsListData(unwrapped)) {
@@ -62,6 +65,7 @@ function unwrapProjectsResponse(payload: unknown): ProjectsResponse {
   throw new Error("Unexpected projects list response format");
 }
 
+// Loads a paginated list of projects.
 export async function getProjects(
   params: GetProjectsParams,
   options?: { signal?: AbortSignal },

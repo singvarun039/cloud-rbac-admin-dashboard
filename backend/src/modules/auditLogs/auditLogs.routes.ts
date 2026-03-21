@@ -9,21 +9,25 @@ import { AuditLogsListQuerySchema } from "../../validation/auditLogs.schema";
 
 export const auditLogsRouter = Router();
 
+// Checks whether a filter value is a YYYY-MM-DD date string.
 function isDateOnly(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+// Converts a date-only string into a UTC start-of-day Date.
 function startOfDayUtc(dateOnly: string): Date {
   // Interpret YYYY-MM-DD as UTC midnight.
   return new Date(`${dateOnly}T00:00:00.000Z`);
 }
 
+// Converts a date-only string into the next UTC day boundary.
 function startOfNextDayUtc(dateOnly: string): Date {
   const d = startOfDayUtc(dateOnly);
   d.setUTCDate(d.getUTCDate() + 1);
   return d;
 }
 
+// Shapes an audit actor relation for the API response.
 function actorToApi(actor: {
   id: string;
   email: string;

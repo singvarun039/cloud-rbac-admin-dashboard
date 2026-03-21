@@ -19,6 +19,7 @@ export type ApiErrorEnvelope = {
 
 type Meta = Record<string, unknown>;
 
+// Sends a standardized success envelope for API responses.
 export function ok<T>(
   res: Response,
   req: Request,
@@ -42,6 +43,7 @@ export function ok<T>(
   return res.status(status).json(payload);
 }
 
+// Sends a standardized error envelope for API responses.
 export function fail(
   res: Response,
   req: Request,

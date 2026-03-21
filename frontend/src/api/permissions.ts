@@ -12,12 +12,14 @@ export type PermissionsResponse = {
   data: Permission[];
 };
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Loads the permission catalog from the backend.
 export async function getPermissions(options?: {
   signal?: AbortSignal;
 }): Promise<PermissionsResponse> {

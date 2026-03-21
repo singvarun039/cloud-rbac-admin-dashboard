@@ -12,6 +12,7 @@ export type WriteAuditLogInput = {
   meta?: Prisma.InputJsonValue;
 };
 
+// Persists an audit log entry without blocking the caller on write failures.
 export async function writeAuditLog(input: WriteAuditLogInput): Promise<void> {
   const { req, action, entityType } = input;
 

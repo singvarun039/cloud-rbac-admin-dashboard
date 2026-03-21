@@ -21,10 +21,12 @@ import { writeAuditLog } from "../../services/auditLog.service";
 
 export const projectsRouter = Router();
 
+// Normalizes project names before persistence.
 function normalizeProjectName(name: string) {
   return name.trim().replace(/\s+/g, " ");
 }
 
+// Maps a Prisma project record into the API response shape.
 function projectToApi(project: {
   id: string;
   name: string;

@@ -10,6 +10,7 @@ import ProjectsPage from "../pages/Projects";
 import RolesPage from "../pages/Roles";
 import UsersPage from "../pages/Users";
 
+// Declares the application's authenticated and public routes.
 export default function AppRouter() {
   return (
     <BrowserRouter>

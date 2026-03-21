@@ -15,6 +15,7 @@ export const logger = pino({
   },
 });
 
+// Logs a message with request-scoped metadata attached.
 export function logWithReq(
   req: Request,
   level: LogLevel,

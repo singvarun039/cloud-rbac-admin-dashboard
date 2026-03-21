@@ -1,5 +1,6 @@
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
+// Renders the globally styled toast container.
 export function Toaster(props: ToasterProps) {
   return (
     <Sonner

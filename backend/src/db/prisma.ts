@@ -17,6 +17,7 @@ import { env } from "../config/env";
 // the explicit ssl option below. SSL encryption of data in transit remains
 // fully active — only the CA chain verification is relaxed via rejectUnauthorized:false.
 // ---------------------------------------------------------------------------
+// Builds a pg pool config that preserves the intended SSL behavior.
 function buildPoolConfig(databaseUrl: string) {
   // Strip any sslmode/ssl query params the URL may carry to prevent pg from
   // overriding the explicit ssl option below.

@@ -5,6 +5,7 @@ import { writeAuditLog } from "../../services/auditLog.service";
 import { AppError } from "../../errors/AppError";
 
 export class AuthController {
+  // Authenticates a user and returns new access and refresh tokens.
   static async login(req: Request, res: Response) {
     const { email, password } = req.body as { email: string; password: string };
 
@@ -45,6 +46,7 @@ export class AuthController {
     return ok(res, req, result, 200);
   }
 
+  // Rotates a refresh token pair and returns fresh tokens.
   static async refresh(req: Request, res: Response) {
     const { refreshToken } = req.body as { refreshToken: string };
 
@@ -63,6 +65,7 @@ export class AuthController {
     return ok(res, req, result, 200);
   }
 
+  // Revokes the supplied refresh token session.
   static async logout(req: Request, res: Response) {
     const { refreshToken } = req.body as { refreshToken: string };
 
@@ -70,6 +73,7 @@ export class AuthController {
     return ok(res, req, result, 200);
   }
 
+  // Returns the authenticated user's profile and permissions.
   static async me(req: Request, res: Response) {
     if (!req.user) {
       throw AppError.unauthorized();

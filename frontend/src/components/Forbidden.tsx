@@ -6,6 +6,7 @@ type ForbiddenProps = {
   description?: string;
 };
 
+// Renders a reusable forbidden-state panel.
 export default function Forbidden(props: ForbiddenProps) {
   const pageTitle = props.pageTitle ?? "Forbidden";
   const title = props.title ?? "Forbidden (403)";

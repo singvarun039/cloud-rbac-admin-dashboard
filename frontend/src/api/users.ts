@@ -32,12 +32,14 @@ export type GetUsersParams = {
   status?: "ALL" | UserStatus;
 };
 
+// Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object"
     ? (value as Record<string, unknown>)
     : null;
 }
 
+// Checks whether a value already matches the normalized users response shape.
 function isUsersResponse(value: unknown): value is UsersResponse {
   return (
     value !== null &&
@@ -47,6 +49,7 @@ function isUsersResponse(value: unknown): value is UsersResponse {
   );
 }
 
+// Checks whether a value matches the backend's users list payload.
 function isUsersListData(value: unknown): value is {
   items: User[];
   meta: UsersResponse["meta"];
@@ -55,6 +58,7 @@ function isUsersListData(value: unknown): value is {
   return "items" in value && "meta" in value;
 }
 
+// Builds a readable error message for malformed user responses.
 function getUsersFormatErrorMessage(payload: unknown): string {
   const record = asRecord(payload);
   const error = record?.error;
@@ -75,6 +79,7 @@ function getUsersFormatErrorMessage(payload: unknown): string {
   return "Failed to load users.";
 }
 
+// Normalizes backend user list responses into the frontend shape.
 function unwrapUsersResponse(payload: unknown): UsersResponse {
   // Accept:
   // - { data, meta } (legacy / normalized)
@@ -97,6 +102,7 @@ function unwrapUsersResponse(payload: unknown): UsersResponse {
   throw new Error(msg);
 }
 
+// Loads a paginated list of users.
 export async function getUsers(
   params: GetUsersParams,
   options?: { signal?: AbortSignal },
@@ -137,6 +143,7 @@ export type UpdateUserRequest = {
   password?: string;
 };
 
+// Creates a new user record through the API.
 export async function createUser(payload: CreateUserRequest): Promise<User> {
   const res = await api.post("/api/users", payload);
 
@@ -149,6 +156,7 @@ export async function createUser(payload: CreateUserRequest): Promise<User> {
   return body as User;
 }
 
+// Updates an existing user through the API.
 export async function updateUser(
   id: string,
   payload: UpdateUserRequest,
@@ -162,10 +170,12 @@ export async function updateUser(
   return body as User;
 }
 
+// Soft-deletes a user through the API.
 export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}`);
 }
 
+// Permanently deletes a user through the API.
 export async function permanentlyDeleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}/permanent`);
 }

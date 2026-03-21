@@ -10,6 +10,7 @@ import { ZodError } from "zod";
 
 export const dashboardRouter = Router();
 
+// Converts a Zod error into structured validation details.
 function zodDetails(error: ZodError) {
   return {
     issues: error.issues.map((issue) => ({

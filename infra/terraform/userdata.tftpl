@@ -38,6 +38,7 @@ fi
 
 echo "[deploy] Using CORS_ORIGIN=$CORS_ORIGIN"
 
+## Waits for a TCP endpoint to start accepting connections.
 wait_for_tcp() {
   local host="$1"
   local port="$2"

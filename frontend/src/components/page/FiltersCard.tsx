@@ -3,6 +3,7 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
+// Wraps filter controls and page actions inside a shared card layout.
 export function FiltersCard(props: {
   title?: string;
   filters: React.ReactNode;

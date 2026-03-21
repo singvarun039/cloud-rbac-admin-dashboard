@@ -10,6 +10,7 @@ type LogoutHandler = () => void | Promise<void>;
 let refreshHandler: RefreshHandler | null = null;
 let logoutHandler: LogoutHandler | null = null;
 
+// Returns the current access token from memory or storage.
 export function getAccessToken(): string | null {
   if (inMemoryAccessToken) return inMemoryAccessToken;
   try {
@@ -21,6 +22,7 @@ export function getAccessToken(): string | null {
   }
 }
 
+// Updates the current access token in memory and storage.
 export function setAccessToken(token: string | null): void {
   inMemoryAccessToken = token;
   try {
@@ -31,10 +33,12 @@ export function setAccessToken(token: string | null): void {
   }
 }
 
+// Clears the current access token from memory and storage.
 export function clearAccessToken(): void {
   setAccessToken(null);
 }
 
+// Returns the current refresh token from memory or storage.
 export function getRefreshToken(): string | null {
   if (inMemoryRefreshToken) return inMemoryRefreshToken;
   try {
@@ -46,6 +50,7 @@ export function getRefreshToken(): string | null {
   }
 }
 
+// Updates the current refresh token in memory and storage.
 export function setRefreshToken(token: string | null): void {
   inMemoryRefreshToken = token;
   try {
@@ -56,28 +61,34 @@ export function setRefreshToken(token: string | null): void {
   }
 }
 
+// Clears the current refresh token from memory and storage.
 export function clearRefreshToken(): void {
   setRefreshToken(null);
 }
 
+// Clears both stored authentication tokens.
 export function clearTokens(): void {
   clearAccessToken();
   clearRefreshToken();
 }
 
+// Registers the refresh callback used by the Axios client.
 export function registerRefreshHandler(handler: RefreshHandler | null): void {
   refreshHandler = handler;
 }
 
+// Registers the logout callback used by the Axios client.
 export function registerLogoutHandler(handler: LogoutHandler | null): void {
   logoutHandler = handler;
 }
 
+// Invokes the registered refresh callback if one exists.
 export async function refreshAccessToken(): Promise<string | null> {
   if (!refreshHandler) return null;
   return refreshHandler();
 }
 
+// Logs the user out through the registered logout handler or fallback flow.
 export async function logout(): Promise<void> {
   if (logoutHandler) {
     await logoutHandler();

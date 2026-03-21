@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { Skeleton } from "./ui/skeleton";
 
+// Redirects unauthenticated users away from protected routes.
 export default function ProtectedRoute() {
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();

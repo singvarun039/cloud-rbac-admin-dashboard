@@ -2,6 +2,7 @@ const ACCESS_TOKEN_KEY = "cr_rbac_access_token";
 
 // Day 11: simplest approach is localStorage.
 // We'll improve this later (Day 12+) with a safer strategy.
+// Reads the stored access token from localStorage.
 export function getAccessToken(): string | null {
   try {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -10,6 +11,7 @@ export function getAccessToken(): string | null {
   }
 }
 
+// Stores the access token in localStorage.
 export function setAccessToken(token: string): void {
   try {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
@@ -18,6 +20,7 @@ export function setAccessToken(token: string): void {
   }
 }
 
+// Removes the stored access token from localStorage.
 export function clearAccessToken(): void {
   try {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
@@ -26,6 +29,7 @@ export function clearAccessToken(): void {
   }
 }
 
+// Reports whether an access token is currently stored.
 export function isAuthed(): boolean {
   return Boolean(getAccessToken());
 }

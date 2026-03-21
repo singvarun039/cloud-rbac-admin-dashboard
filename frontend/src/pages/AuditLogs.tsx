@@ -69,11 +69,13 @@ import {
 } from "../components/ui/drawer";
 import { ChevronDown, Copy, Eye } from "lucide-react";
 
+// Detects whether a request was canceled by the caller.
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
   return code === "ERR_CANCELED";
 }
 
+// Formats an ISO timestamp for local display.
 function formatDate(value?: string): string {
   if (!value) return "-";
   const d = new Date(value);
@@ -81,6 +83,7 @@ function formatDate(value?: string): string {
   return d.toLocaleString();
 }
 
+// Parses a date-only string into a local Date object.
 function parseDateOnly(value: string): Date | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
@@ -89,6 +92,7 @@ function parseDateOnly(value: string): Date | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
+// Pretty-prints meta payloads for the detail drawer.
 function safePrettyJson(value: unknown): string {
   if (value === null || typeof value === "undefined") return "-";
   if (typeof value === "string") {
@@ -109,6 +113,7 @@ function safePrettyJson(value: unknown): string {
   }
 }
 
+// Builds a short preview string for meta payloads.
 function metaPreview(value: unknown): string {
   if (value === null || typeof value === "undefined") return "-";
   if (typeof value === "string")
@@ -125,6 +130,7 @@ function metaPreview(value: unknown): string {
   return String(value);
 }
 
+// Builds a readable actor label for an audit row.
 function actorLabel(row: AuditLogRow): string {
   if (row.actor?.email) {
     return row.actor.name
@@ -134,6 +140,7 @@ function actorLabel(row: AuditLogRow): string {
   return row.actorUserId || "-";
 }
 
+// Attempts to extract an actor role hint from audit meta.
 function actorRoleFromMeta(meta: unknown): string | undefined {
   if (!meta || typeof meta !== "object") return undefined;
   const record = meta as Record<string, unknown>;
@@ -157,6 +164,7 @@ function actorRoleFromMeta(meta: unknown): string | undefined {
   return undefined;
 }
 
+// Renders the unauthorized state for the audit logs page.
 function NotAuthorized() {
   return (
     <div className="w-full space-y-4">
@@ -189,6 +197,7 @@ const ACTION_OPTIONS = [
 
 const DEFAULT_PAGE_SIZE = 10;
 
+// Renders the audit logs page and filter workflow.
 export default function AuditLogsPage() {
   const { permissions } = useAuth();
   const canReadAuditLogs = permissions.includes("audit.read");

@@ -74,16 +74,19 @@ import { ChevronDown, Eye, EyeOff, Pencil, Trash2, UserX } from "lucide-react";
 
 type StatusFilter = "ALL" | UserStatus;
 
+// Detects whether an API failure is a conflict response.
 function isConflictError(err: unknown): boolean {
   const status = (err as { response?: { status?: number } })?.response?.status;
   return status === 409;
 }
 
+// Detects whether a request was canceled by the caller.
 function isCanceledError(err: unknown): boolean {
   const code = (err as { code?: unknown })?.code;
   return code === "ERR_CANCELED";
 }
 
+// Formats an ISO timestamp for local display.
 function formatDate(value?: string): string {
   if (!value) return "-";
   const d = new Date(value);
@@ -91,6 +94,7 @@ function formatDate(value?: string): string {
   return d.toLocaleString();
 }
 
+// Renders the unauthorized state for the users page.
 function NotAuthorized() {
   return (
     <div className="space-y-4">
@@ -108,6 +112,7 @@ function NotAuthorized() {
   );
 }
 
+// Renders the users management page.
 export default function UsersPage() {
   const { permissions, user: me } = useAuth();
 
@@ -942,6 +947,7 @@ export default function UsersPage() {
   );
 }
 
+// Renders the create-user modal workflow.
 function CreateUserModal(props: {
   isOpen: boolean;
   onClose: () => void;
@@ -1208,6 +1214,7 @@ function CreateUserModal(props: {
   );
 }
 
+// Renders the edit-user modal workflow.
 function EditUserModal(props: {
   isOpen: boolean;
   onClose: () => void;

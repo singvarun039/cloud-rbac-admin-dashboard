@@ -26,6 +26,7 @@ export const rolesRouter = Router();
 
 const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
 
+// Maps a Prisma role record into the API response shape.
 function roleToApi(role: {
   id: string;
   name: string;
@@ -281,6 +282,7 @@ rolesRouter.post(
   }),
 );
 
+// Replaces the full permission set assigned to a role.
 async function replaceRolePermissions(req: any, res: any) {
   const roleId = (req.params as any).id ?? (req.params as any).roleId;
   const input = req.body as {

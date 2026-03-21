@@ -7,6 +7,7 @@ import { buttonVariants } from "./button-variants";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+// Renders the shared date picker calendar.
 function Calendar({
   className,
   classNames,
