@@ -22,7 +22,7 @@ resource "aws_security_group" "ec2" {
   }
 
   ingress {
-    description = "SSH — admin only"
+    description = "SSH - admin only"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -51,7 +51,7 @@ resource "aws_security_group" "ec2" {
 
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
-  description = "RDS: allow Postgres 5432 from EC2 SG only — never from 0.0.0.0/0"
+  description = "RDS: allow Postgres 5432 from EC2 SG only - never from 0.0.0.0/0"
   vpc_id      = aws_vpc.main.id
 
   ingress {
