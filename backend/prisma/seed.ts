@@ -199,6 +199,24 @@ async function main() {
   console.log("Assigned ADMIN role to:", user.email);
   console.log("Assigned VIEWER role to:", viewerUser.email);
   console.log("Assigned EDITOR role to:", editorUser.email);
+
+  // Demo projects — give reviewers something to see in the Projects page.
+  // Guard: skip if already seeded (idempotent re-runs).
+  const existingProjectCount = await prisma.project.count();
+  if (existingProjectCount === 0) {
+    await prisma.project.createMany({
+      data: [
+        { name: "Platform Core", ownerId: user.id, isArchived: false },
+        { name: "Marketing Website", ownerId: editorUser.id, isArchived: false },
+        { name: "Internal Tooling", ownerId: user.id, isArchived: false },
+        { name: "Legacy API", ownerId: user.id, isArchived: true },
+      ],
+    });
+    console.log("Seeded 4 demo projects (Platform Core, Marketing Website, Internal Tooling, Legacy API)");
+  } else {
+    console.log(`Skipped project seed — ${existingProjectCount} project(s) already exist`);
+  }
+
   console.log("Admin login:", { email, password });
   console.log("Viewer login:", {
     email: viewerEmail,
