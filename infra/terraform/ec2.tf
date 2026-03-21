@@ -4,7 +4,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*"]
   }
 
   filter {
@@ -36,6 +36,8 @@ resource "aws_instance" "app" {
     db_password        = var.db_password
     jwt_secret         = var.jwt_secret
     cors_origin        = var.cors_origin
+    enable_swap        = var.enable_swap
+    swap_size_gb       = var.swap_size_gb
   })
 
   tags = merge(local.tags, { Name = "${var.project_name}-ec2" })

@@ -1,12 +1,8 @@
-variable "allow_db_from_my_ip" {
-  type        = bool
-  description = "If true, temporarily allow inbound Postgres (5432) from allowed_ssh_cidr for admin/debug. Default false."
-  default     = false
-}
+# allow_db_from_my_ip is defined in variables.tf
 
 resource "aws_security_group" "ec2" {
   name        = "${var.project_name}-ec2-sg"
-  description = "EC2: allow HTTP from world, SSH only from allowed CIDR"
+  description = "EC2: HTTP/HTTPS from world, SSH from admin CIDR only, port 4000 for API debug"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -18,11 +14,29 @@ resource "aws_security_group" "ec2" {
   }
 
   ingress {
-    description = "SSH"
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "SSH — admin only"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = [var.allowed_ssh_cidr]
+  }
+
+  # API direct access — useful during initial deployment verification.
+  # Remove or restrict once nginx proxying is confirmed stable.
+  ingress {
+    description = "API debug port"
+    from_port   = 4000
+    to_port     = 4000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -37,11 +51,11 @@ resource "aws_security_group" "ec2" {
 
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
-  description = "RDS: allow Postgres only from EC2 SG"
+  description = "RDS: allow Postgres 5432 from EC2 SG only — never from 0.0.0.0/0"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "Postgres from EC2"
+    description     = "Postgres from EC2 SG"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
@@ -58,11 +72,13 @@ resource "aws_security_group" "rds" {
   tags = merge(local.tags, { Name = "${var.project_name}-rds-sg" })
 }
 
+# Optional: temporary admin access to RDS from your IP (e.g. to run psql from
+# your machine). Only created when allow_db_from_my_ip = true.
 resource "aws_security_group_rule" "rds_admin_from_my_ip" {
   count = var.allow_db_from_my_ip ? 1 : 0
 
   type              = "ingress"
-  description       = "TEMP admin/debug access from allowed_ssh_cidr"
+  description       = "TEMP admin/debug Postgres from allowed_ssh_cidr"
   from_port         = 5432
   to_port           = 5432
   protocol          = "tcp"

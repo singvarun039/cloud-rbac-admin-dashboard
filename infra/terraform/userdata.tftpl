@@ -16,6 +16,8 @@ DB_USERNAME="${db_username}"
 DB_PASSWORD="${db_password}"
 JWT_SECRET="${jwt_secret}"
 CORS_ORIGIN_INPUT="${cors_origin}"
+ENABLE_SWAP="${enable_swap}"
+SWAP_SIZE_GB="${swap_size_gb}"
 
 if [[ "$CORS_ORIGIN_INPUT" == "*" ]]; then
   echo "[deploy] ERROR: cors_origin must not be '*'" >&2
@@ -58,17 +60,28 @@ wait_for_tcp() {
 if ! command -v docker >/dev/null 2>&1; then
   echo "[deploy] Installing Docker..."
   apt-get update -y
-  apt-get install -y ca-certificates curl gnupg git
+  apt-get install -y ca-certificates curl gnupg git tmux
   install -m 0755 -d /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   chmod a+r /etc/apt/keyrings/docker.gpg
   echo \
     "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-    $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable" \
+    $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
     > /etc/apt/sources.list.d/docker.list
   apt-get update -y
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   systemctl enable --now docker
+fi
+
+# Create swap file (reduces OOM risk during Docker builds on small instances)
+if [[ "$ENABLE_SWAP" == "true" ]] && [[ ! -f /swapfile ]]; then
+  echo "[deploy] Creating $${SWAP_SIZE_GB}GiB swap file"
+  fallocate -l "$${SWAP_SIZE_GB}G" /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  echo "[deploy] Swap enabled: $(swapon --show)"
 fi
 
 mkdir -p /opt/app
@@ -105,10 +118,11 @@ fi
 
 cd /opt/app
 
-DATABASE_URL_APP="postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public"
-DATABASE_URL_MIGRATE="$DATABASE_URL_APP&sslmode=require"
-
 # Create .env.prod (do not commit)
+# DATABASE_URL has NO sslmode — pg.Pool handles ssl explicitly via ssl:{rejectUnauthorized:false}.
+# PRISMA_DATABASE_URL has sslmode=require — used only by Prisma CLI (migrate/generate).
+# The split is required because pg's Object.assign merge order overrides any explicit
+# ssl option when sslmode is present as a URL query param (see backend/src/db/prisma.ts).
 cat > /opt/app/.env.prod <<EOF
 NODE_ENV=production
 TRUST_PROXY=true
@@ -123,8 +137,10 @@ JWT_ACCESS_SECRET=$JWT_SECRET
 JWT_REFRESH_SECRET=$JWT_SECRET
 REFRESH_TOKEN_HASH_SECRET=$JWT_SECRET
 
-# RDS Postgres (Prisma + pg). Use SSL for RDS.
-DATABASE_URL=$DATABASE_URL_APP
+# Runtime connection URL (no sslmode param — ssl is set explicitly in code)
+DATABASE_URL=postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public
+# Prisma CLI connection URL (sslmode=require for migrate/generate)
+PRISMA_DATABASE_URL=postgresql://$DB_USERNAME:$DB_PASSWORD@$RDS_ENDPOINT:5432/$DB_NAME?schema=public&sslmode=require
 EOF
 chmod 600 /opt/app/.env.prod
 
@@ -151,17 +167,19 @@ echo "[deploy] Building migrator image (backend dev target)"
 /usr/bin/docker build -t backend-migrator:latest --target dev /opt/app/backend
 
 echo "[deploy] Running migrations (prisma migrate deploy)"
-/usr/bin/docker run --rm --network host \
+# Uses PRISMA_DATABASE_URL (with sslmode=require) from the env file — required by Prisma CLI.
+/usr/bin/docker run --rm \
+  --env-file /opt/app/.env.prod \
   -e NODE_ENV=production \
-  -e DATABASE_URL="$DATABASE_URL_MIGRATE" \
-  backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:deploy"
+  backend-migrator:latest sh -lc "npm run db:deploy"
 
 if [[ ! -f /opt/app/.seeded ]]; then
   echo "[deploy] Seeding database (one-time)"
-  /usr/bin/docker run --rm --network host \
+  # Uses DATABASE_URL (no sslmode) from the env file — seed uses pg.Pool which handles ssl explicitly.
+  /usr/bin/docker run --rm \
+    --env-file /opt/app/.env.prod \
     -e NODE_ENV=production \
-    -e DATABASE_URL="$DATABASE_URL_APP" \
-    backend-migrator:latest sh -lc "npm run prisma:generate && npm run db:seed"
+    backend-migrator:latest sh -lc "npm run db:seed"
   touch /opt/app/.seeded
 else
   echo "[deploy] Already seeded; skipping"
