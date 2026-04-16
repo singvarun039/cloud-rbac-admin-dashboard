@@ -28,6 +28,8 @@ Why it matters:
 Goal:
 - Detect suspicious or operationally important patterns in audit logs.
 
+Status: implemented in this branch as an AI-generated dashboard insight panel.
+
 Examples:
 - unusual spikes in permission changes
 - repeated failed login or refresh activity

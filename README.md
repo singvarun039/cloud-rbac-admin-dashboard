@@ -7,7 +7,9 @@ A full-stack Role-Based Access Control (RBAC) admin dashboard. Users, roles, and
 This project now includes a first AI integration:
 
 - dashboard-level RBAC assistant for authenticated users
+- dashboard-level audit anomaly insights for users with `audit.read`
 - backend OpenAI Responses API route at `/api/ai/assistant`
+- backend OpenAI Responses API route at `/api/ai/audit-insights`
 - environment-based configuration with `OPENAI_API_KEY` and `OPENAI_MODEL`
 
 Setup:

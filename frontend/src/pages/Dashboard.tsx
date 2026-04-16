@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { getDashboardSummary, type DashboardSummary } from "../api/dashboard";
 import { askAdminAssistant } from "../api/ai";
+import {
+  getAuditInsights,
+  type AuditInsightsResponse,
+} from "../api/auditInsights";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
 import {
@@ -75,7 +79,7 @@ function KpiCard(props: {
 
 // Renders the summary dashboard and recent activity widgets.
 export default function DashboardPage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, permissions, user } = useAuth();
 
   const windowDays = 14;
 
@@ -86,9 +90,17 @@ export default function DashboardPage() {
   const [assistantAnswer, setAssistantAnswer] = useState("");
   const [assistantError, setAssistantError] = useState<string | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
+  const [auditInsights, setAuditInsights] =
+    useState<AuditInsightsResponse | null>(null);
+  const [auditInsightsLoading, setAuditInsightsLoading] = useState(false);
+  const [auditInsightsError, setAuditInsightsError] = useState<string | null>(
+    null,
+  );
 
   const fetchSeqRef = useRef(0);
   const assistantAbortRef = useRef<AbortController | null>(null);
+  const auditInsightsAbortRef = useRef<AbortController | null>(null);
+  const auditInsightsLoadedRef = useRef(false);
 
   const loadSummary = useCallback(
     async (opts?: { userInitiated?: boolean }) => {
@@ -128,7 +140,10 @@ export default function DashboardPage() {
   }, [loadSummary]);
 
   useEffect(() => {
-    return () => assistantAbortRef.current?.abort();
+    return () => {
+      assistantAbortRef.current?.abort();
+      auditInsightsAbortRef.current?.abort();
+    };
   }, []);
 
   const kpis = useMemo<Kpi[]>(() => {
@@ -198,6 +213,13 @@ export default function DashboardPage() {
     return rows.slice(0, 5);
   }, [summary?.recentAudit]);
 
+  const canReadAudit = useMemo(
+    () =>
+      permissions.includes("audit.read") &&
+      Boolean(summary?.auditTrend && summary?.recentAudit),
+    [permissions, summary?.auditTrend, summary?.recentAudit],
+  );
+
   const suggestedPrompts = useMemo(
     () => [
       "Summarize what this dashboard says about access health.",
@@ -245,6 +267,47 @@ export default function DashboardPage() {
     },
     [],
   );
+
+  const loadAuditInsights = useCallback(
+    async (opts?: { userInitiated?: boolean }) => {
+      auditInsightsAbortRef.current?.abort();
+      const controller = new AbortController();
+      auditInsightsAbortRef.current = controller;
+
+      setAuditInsightsLoading(true);
+      setAuditInsightsError(null);
+
+      try {
+        const res = await getAuditInsights(windowDays, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        setAuditInsights(res);
+        auditInsightsLoadedRef.current = true;
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to load audit anomaly insights.";
+        setAuditInsightsError(msg);
+        if (opts?.userInitiated) {
+          toast.error("Audit insights failed", { description: msg });
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setAuditInsightsLoading(false);
+        }
+      }
+    },
+    [windowDays],
+  );
+
+  useEffect(() => {
+    if (!canReadAudit) return;
+    if (auditInsightsLoadedRef.current) return;
+    void loadAuditInsights();
+  }, [canReadAudit, loadAuditInsights]);
 
   return (
     <div className="w-full space-y-4">
@@ -339,6 +402,106 @@ export default function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-4">
           <div className="w-full space-y-4">
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Audit anomaly insights
+                </CardTitle>
+                <CardDescription>
+                  AI-generated review of the last {windowDays} days of audit
+                  activity.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      void loadAuditInsights({ userInitiated: true })
+                    }
+                    disabled={auditInsightsLoading}
+                  >
+                    {auditInsightsLoading
+                      ? "Refreshing..."
+                      : "Refresh insights"}
+                  </Button>
+                </div>
+
+                {auditInsightsError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Insights unavailable</AlertTitle>
+                    <AlertDescription>{auditInsightsError}</AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Total events
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-900">
+                      {auditInsightsLoading && !auditInsights
+                        ? "..."
+                        : (auditInsights?.analytics.totalEvents ?? "—")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Failures
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-900">
+                      {auditInsightsLoading && !auditInsights
+                        ? "..."
+                        : (auditInsights?.analytics.totalFailures ?? "—")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    AI summary
+                  </div>
+                  {auditInsightsLoading && !auditInsights ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-11/12" />
+                      <Skeleton className="h-4 w-4/5" />
+                      <Skeleton className="h-4 w-5/6" />
+                    </div>
+                  ) : auditInsights?.answer ? (
+                    <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                      {auditInsights.answer}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">
+                      No insight summary yet.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Top actions
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(auditInsights?.analytics.topActions ?? [])
+                      .slice(0, 4)
+                      .map((item) => (
+                        <Badge key={item.action} variant="secondary">
+                          {item.action}: {item.count}
+                        </Badge>
+                      ))}
+                    {!auditInsights?.analytics.topActions?.length &&
+                    !auditInsightsLoading ? (
+                      <span className="text-sm text-slate-500">Not available.</span>
+                    ) : null}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-base">RBAC AI Assistant</CardTitle>
