@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "./Modal";
 import { getPermissions, type Permission } from "../api/permissions";
 import { replaceRolePermissions, type Role } from "../api/roles";
+import { simulateRolePolicyChange, type PolicySimulationResponse } from "../api/policySimulation";
 import { getApiErrorMessage } from "../api/client";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -46,10 +47,16 @@ export default function AssignPermissionsModal(props: {
 
   const [submitting, setSubmitting] = useState(false);
   const [hydratedFromKeys, setHydratedFromKeys] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simulation, setSimulation] = useState<PolicySimulationResponse | null>(
+    null,
+  );
+  const [simulationError, setSimulationError] = useState<string | null>(null);
 
   const fetchSeqRef = useRef(0);
   const pendingKeysRef = useRef<string[]>([]);
   const hydratedFromKeysRef = useRef(false);
+  const simulateSeqRef = useRef(0);
 
   function extractRolePermissionRefs(input: unknown): {
     ids: string[];
@@ -87,6 +94,9 @@ export default function AssignPermissionsModal(props: {
     setLoadError(null);
     setSubmitting(false);
     setHydratedFromKeys(false);
+    setSimulating(false);
+    setSimulation(null);
+    setSimulationError(null);
 
     hydratedFromKeysRef.current = false;
     pendingKeysRef.current = [];
@@ -110,6 +120,11 @@ export default function AssignPermissionsModal(props: {
       setInitialIds([]);
     }
   }, [open, role]);
+
+  useEffect(() => {
+    setSimulation(null);
+    setSimulationError(null);
+  }, [role?.id, selectedIds]);
 
   useEffect(() => {
     if (!open) return;
@@ -218,6 +233,34 @@ export default function AssignPermissionsModal(props: {
     const controller = new AbortController();
     void fetchPermissions({ signal: controller.signal });
   }, [fetchPermissions]);
+
+  const onSimulate = useCallback(async () => {
+    if (!canEditRoles || !role) return;
+
+    const seq = ++simulateSeqRef.current;
+    setSimulating(true);
+    setSimulationError(null);
+
+    try {
+      const res = await simulateRolePolicyChange({
+        roleId: role.id,
+        permissionIds: selectedIds,
+      });
+      if (simulateSeqRef.current !== seq) return;
+      setSimulation(res);
+    } catch (err) {
+      if (simulateSeqRef.current !== seq) return;
+      setSimulationError(
+        err instanceof Error
+          ? err.message
+          : "Failed to simulate policy impact.",
+      );
+    } finally {
+      if (simulateSeqRef.current === seq) {
+        setSimulating(false);
+      }
+    }
+  }, [canEditRoles, role, selectedIds]);
 
   const onSave = useCallback(async () => {
     if (!canEditRoles || submitting) return;
@@ -386,12 +429,147 @@ export default function AssignPermissionsModal(props: {
               Hydrated from keys
             </div>
           ) : null}
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Policy simulation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void onSimulate()}
+                  disabled={!role || !canEditRoles || simulating}
+                >
+                  {simulating ? "Simulating..." : "Simulate impact"}
+                </Button>
+                <div className="text-sm text-slate-500">
+                  Preview what this permission change would remove or unlock before saving.
+                </div>
+              </div>
+
+              {simulationError ? (
+                <Alert variant="destructive">
+                  <AlertDescription>{simulationError}</AlertDescription>
+                </Alert>
+              ) : null}
+
+              {simulation ? (
+                <div className="space-y-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Summary
+                    </div>
+                    <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                      {simulation.summary}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                        Losing access
+                      </div>
+                      <div className="mt-1 text-lg font-semibold text-red-900">
+                        {simulation.impacts.losingAccess.length}
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {simulation.impacts.losingAccess.slice(0, 5).map((item) => (
+                          <div key={item.key} className="text-sm text-red-900">
+                            {item.label}
+                          </div>
+                        ))}
+                        {simulation.impacts.losingAccess.length === 0 ? (
+                          <div className="text-sm text-red-900">
+                            No modeled surfaces would lose access.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                        Gaining access
+                      </div>
+                      <div className="mt-1 text-lg font-semibold text-emerald-900">
+                        {simulation.impacts.gainingAccess.length}
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {simulation.impacts.gainingAccess.slice(0, 5).map((item) => (
+                          <div key={item.key} className="text-sm text-emerald-900">
+                            {item.label}
+                          </div>
+                        ))}
+                        {simulation.impacts.gainingAccess.length === 0 ? (
+                          <div className="text-sm text-emerald-900">
+                            No newly accessible modeled surfaces.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Permissions being removed
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {simulation.removedPermissionKeys.map((key) => (
+                          <span
+                            key={key}
+                            className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800"
+                          >
+                            {key}
+                          </span>
+                        ))}
+                        {simulation.removedPermissionKeys.length === 0 ? (
+                          <span className="text-sm text-slate-500">None</span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Permissions being added
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {simulation.addedPermissionKeys.map((key) => (
+                          <span
+                            key={key}
+                            className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800"
+                          >
+                            {key}
+                          </span>
+                        ))}
+                        {simulation.addedPermissionKeys.length === 0 ? (
+                          <span className="text-sm text-slate-500">None</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  Run a simulation to preview the impact of your changes.
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       )}
 
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => void onSimulate()}
+          disabled={!role || !canEditRoles || !canReadPermissions || simulating}
+        >
+          {simulating ? "Simulating..." : "Simulate"}
         </Button>
         <Button
           type="button"

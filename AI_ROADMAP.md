@@ -61,6 +61,8 @@ Guardrails:
 Goal:
 - Let admins test a proposed RBAC change before applying it.
 
+Status: implemented in this branch as a pre-save simulation inside the role permission editor.
+
 Examples:
 - “If I remove `projects.edit` from EDITOR, what workflows are likely affected?”
 - “What screens become inaccessible if I create a read-only support role?”

@@ -19,6 +19,7 @@ import { ok } from "./utils/apiResponse";
 import { aiRouter } from "./modules/ai/ai.routes";
 import { aiAuditRouter } from "./modules/ai/aiAudit.routes";
 import { aiRolesRouter } from "./modules/ai/aiRoles.routes";
+import { aiPolicyRouter } from "./modules/ai/aiPolicy.routes";
 
 // Splits the configured CORS allowlist into normalized origin strings.
 function parseAllowedOrigins(value: string): string[] {
@@ -99,6 +100,7 @@ export function createApp() {
   app.use("/api/ai", aiRouter);
   app.use("/api/ai", aiAuditRouter);
   app.use("/api/ai", aiRolesRouter);
+  app.use("/api/ai", aiPolicyRouter);
 
   // Back-compat / convenience aliases (optional):
   app.use("/users", usersRouter);
