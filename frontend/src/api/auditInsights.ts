@@ -4,6 +4,11 @@ import { unwrapData } from "../types/api";
 export type AuditInsightsResponse = {
   windowDays: number;
   answer: string;
+  sources: Array<{
+    key: string;
+    label: string;
+    description: string;
+  }>;
   analytics: {
     totalEvents: number;
     totalFailures: number;

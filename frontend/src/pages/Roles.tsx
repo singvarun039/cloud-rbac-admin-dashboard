@@ -116,6 +116,26 @@ function formatDate(value?: string): string {
   return d.toLocaleString();
 }
 
+function renderSources(
+  sources:
+    | Array<{ key: string; label: string; description: string }>
+    | undefined,
+) {
+  if (!sources?.length) {
+    return <div className="text-sm text-slate-500">No source metadata.</div>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sources.map((source) => (
+        <Badge key={source.key} variant="secondary" title={source.description}>
+          {source.label}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 // Renders the roles management page.
 export default function RolesPage() {
   const { permissions } = useAuth();
@@ -566,6 +586,13 @@ export default function RolesPage() {
                 No recommendation summary yet.
               </div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Data sources
+            </div>
+            {renderSources(roleRecommendations?.sources)}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

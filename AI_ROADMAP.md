@@ -76,6 +76,8 @@ Implementation ideas:
 Goal:
 - Make AI safe enough for a real admin product.
 
+Status: implemented in this branch with AI usage audit logs, AI route rate limits, and visible data-source attribution in the UI.
+
 Needed work:
 - persist AI request/response metadata in audit logs
 - add prompt redaction for secrets and tokens

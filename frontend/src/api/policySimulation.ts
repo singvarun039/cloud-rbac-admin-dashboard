@@ -7,6 +7,11 @@ export type PolicySimulationResponse = {
     name: string;
     description: string | null;
   };
+  sources: Array<{
+    key: string;
+    label: string;
+    description: string;
+  }>;
   currentPermissionKeys: string[];
   proposedPermissionKeys: string[];
   addedPermissionKeys: string[];

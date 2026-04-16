@@ -4,6 +4,11 @@ import { unwrapData } from "../types/api";
 export type RoleRecommendationsResponse = {
   windowDays: number;
   answer: string;
+  sources: Array<{
+    key: string;
+    label: string;
+    description: string;
+  }>;
   analytics: {
     totalRoles: number;
     totalDistinctPermissions: number;

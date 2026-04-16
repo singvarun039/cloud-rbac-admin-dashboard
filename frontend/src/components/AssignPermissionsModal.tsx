@@ -17,6 +17,30 @@ function isCanceledError(err: unknown): boolean {
   return code === "ERR_CANCELED";
 }
 
+function renderSources(
+  sources:
+    | Array<{ key: string; label: string; description: string }>
+    | undefined,
+) {
+  if (!sources?.length) {
+    return <div className="text-sm text-slate-500">No source metadata.</div>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sources.map((source) => (
+        <span
+          key={source.key}
+          className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700"
+          title={source.description}
+        >
+          {source.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // Renders the role permission assignment workflow.
 export default function AssignPermissionsModal(props: {
   open: boolean;
@@ -547,6 +571,13 @@ export default function AssignPermissionsModal(props: {
                         ) : null}
                       </div>
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Data sources
+                    </div>
+                    {renderSources(simulation.sources)}
                   </div>
                 </div>
               ) : (

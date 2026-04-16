@@ -5,12 +5,18 @@ import { ok } from "../../utils/apiResponse";
 import { AppError } from "../../errors/AppError";
 import { generateAuditInsights } from "../../services/auditInsights.service";
 import { DashboardSummaryQuerySchema } from "../../validation/dashboard.schema";
+import {
+  AI_DATA_SOURCES,
+  aiRateLimiter,
+  writeAiUsageAuditLog,
+} from "../../services/aiGovernance.service";
 
 export const aiAuditRouter = Router();
 
 aiAuditRouter.get(
   "/audit-insights",
   authenticate,
+  aiRateLimiter,
   asyncHandler(async (req, res) => {
     const perms = new Set(req.user?.permissions ?? []);
     if (!perms.has("audit.read")) {
@@ -27,6 +33,18 @@ aiAuditRouter.get(
     }
 
     const insights = await generateAuditInsights(parsed.data.windowDays);
-    return ok(res, req, insights, 200);
+    const sources = [AI_DATA_SOURCES.auditAggregates];
+
+    await writeAiUsageAuditLog({
+      req,
+      feature: "audit-insights",
+      model: "openai",
+      dataSources: sources,
+      meta: {
+        windowDays: parsed.data.windowDays,
+      },
+    });
+
+    return ok(res, req, { ...insights, sources }, 200);
   }),
 );

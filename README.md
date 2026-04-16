@@ -10,6 +10,7 @@ This project now includes a first AI integration:
 - dashboard-level audit anomaly insights for users with `audit.read`
 - roles-page AI recommendations grounded in the current role matrix
 - pre-save policy simulation for role permission changes
+- AI usage audit logging, route rate limits, and visible data-source attribution
 - backend OpenAI Responses API route at `/api/ai/assistant`
 - backend OpenAI Responses API route at `/api/ai/audit-insights`
 - backend OpenAI Responses API route at `/api/ai/role-recommendations`

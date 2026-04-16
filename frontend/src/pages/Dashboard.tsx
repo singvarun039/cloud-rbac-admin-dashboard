@@ -51,6 +51,26 @@ function formatYmdLabel(value: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function renderSources(
+  sources:
+    | Array<{ key: string; label: string; description: string }>
+    | undefined,
+) {
+  if (!sources?.length) {
+    return <div className="text-sm text-slate-500">No source metadata.</div>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {sources.map((source) => (
+        <Badge key={source.key} variant="secondary" title={source.description}>
+          {source.label}
+        </Badge>
+      ))}
+    </div>
+  );
+}
+
 type Kpi = {
   key: "users" | "projects" | "roles" | "audit";
   label: string;
@@ -88,6 +108,9 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [assistantPrompt, setAssistantPrompt] = useState("");
   const [assistantAnswer, setAssistantAnswer] = useState("");
+  const [assistantSources, setAssistantSources] = useState<
+    Array<{ key: string; label: string; description: string }>
+  >([]);
   const [assistantError, setAssistantError] = useState<string | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [auditInsights, setAuditInsights] =
@@ -251,6 +274,7 @@ export default function DashboardPage() {
           signal: controller.signal,
         });
         setAssistantAnswer(res.answer);
+        setAssistantSources(res.sources ?? []);
       } catch (err) {
         if (controller.signal.aborted) return;
         const msg =
@@ -483,6 +507,13 @@ export default function DashboardPage() {
 
                 <div className="space-y-2">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Data sources
+                  </div>
+                  {renderSources(auditInsights?.sources)}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Top actions
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -561,6 +592,7 @@ export default function DashboardPage() {
                     onClick={() => {
                       setAssistantPrompt("");
                       setAssistantAnswer("");
+                      setAssistantSources([]);
                       setAssistantError(null);
                     }}
                     disabled={assistantLoading}
@@ -595,6 +627,13 @@ export default function DashboardPage() {
                       No answer yet. Try one of the starter prompts above.
                     </div>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Data sources
+                  </div>
+                  {renderSources(assistantSources)}
                 </div>
               </CardContent>
             </Card>

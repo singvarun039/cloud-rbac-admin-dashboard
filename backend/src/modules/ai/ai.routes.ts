@@ -7,12 +7,18 @@ import { AiAssistantBodySchema } from "../../validation/ai.schema";
 import { utcDayRangeWindow } from "../../utils/dateWindow";
 import { getDashboardSummaryForPermissions } from "../../services/dashboardSummary.service";
 import { generateAdminAssistantReply } from "../../services/aiAssistant.service";
+import {
+  AI_DATA_SOURCES,
+  aiRateLimiter,
+  writeAiUsageAuditLog,
+} from "../../services/aiGovernance.service";
 
 export const aiRouter = Router();
 
 aiRouter.post(
   "/assistant",
   authenticate,
+  aiRateLimiter,
   validateBody(AiAssistantBodySchema),
   asyncHandler(async (req, res) => {
     const { start, endExclusive, dates } = utcDayRangeWindow(14);
@@ -34,12 +40,28 @@ aiRouter.post(
       summary,
     });
 
+    const sources = [
+      AI_DATA_SOURCES.dashboardSummary,
+      AI_DATA_SOURCES.signedInUserPermissions,
+    ];
+
+    await writeAiUsageAuditLog({
+      req,
+      feature: "assistant",
+      model: "openai",
+      dataSources: sources,
+      meta: {
+        promptLength: String(req.body.prompt ?? "").length,
+      },
+    });
+
     return ok(
       res,
       req,
       {
         answer,
         model: "openai",
+        sources,
       },
       200,
     );

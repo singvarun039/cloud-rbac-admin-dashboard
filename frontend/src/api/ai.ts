@@ -4,6 +4,11 @@ import { unwrapData } from "../types/api";
 export type AdminAssistantResponse = {
   answer: string;
   model: string;
+  sources: Array<{
+    key: string;
+    label: string;
+    description: string;
+  }>;
 };
 
 // Sends a dashboard assistant question to the backend AI route.

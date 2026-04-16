@@ -118,6 +118,12 @@ export const env = {
   AUTH_REFRESH_RATE_LIMIT_MAX: process.env.AUTH_REFRESH_RATE_LIMIT_MAX
     ? Number(process.env.AUTH_REFRESH_RATE_LIMIT_MAX)
     : 30,
+  AI_RATE_LIMIT_WINDOW_MS: process.env.AI_RATE_LIMIT_WINDOW_MS
+    ? Number(process.env.AI_RATE_LIMIT_WINDOW_MS)
+    : 5 * 60 * 1000,
+  AI_RATE_LIMIT_MAX: process.env.AI_RATE_LIMIT_MAX
+    ? Number(process.env.AI_RATE_LIMIT_MAX)
+    : 20,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
   OPENAI_MODEL: process.env.OPENAI_MODEL ?? "gpt-5-nano",
   OPENAI_API_BASE_URL:
