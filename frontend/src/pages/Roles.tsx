@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { getRoles, permanentlyDeleteRole, type Role } from "../api/roles";
+import {
+  getRoleRecommendations,
+  type RoleRecommendationsResponse,
+} from "../api/roleRecommendations";
 import { getApiErrorMessage } from "../api/client";
 import RoleModal from "../components/RoleModal";
 import AssignPermissionsModal from "../components/AssignPermissionsModal";
@@ -149,6 +153,12 @@ export default function RolesPage() {
   const [deleteRole, setDeleteRole] = useState<Role | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [roleRecommendations, setRoleRecommendations] =
+    useState<RoleRecommendationsResponse | null>(null);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [recommendationsError, setRecommendationsError] = useState<string | null>(
+    null,
+  );
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -198,6 +208,8 @@ export default function RolesPage() {
 
   const fetchSeqRef = useRef(0);
   const skipAutoFetchRef = useRef(false);
+  const recommendationsAbortRef = useRef<AbortController | null>(null);
+  const recommendationsLoadedRef = useRef(false);
 
   const fetchRoles = useCallback(
     async (opts?: {
@@ -245,6 +257,10 @@ export default function RolesPage() {
   }, [page, totalPages]);
 
   useEffect(() => {
+    return () => recommendationsAbortRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
     if (!canReadRoles) return;
     if (skipAutoFetchRef.current) {
       skipAutoFetchRef.current = false;
@@ -260,6 +276,47 @@ export default function RolesPage() {
     const controller = new AbortController();
     void fetchRoles({ signal: controller.signal });
   }, [fetchRoles]);
+
+  const loadRoleRecommendations = useCallback(
+    async (opts?: { userInitiated?: boolean }) => {
+      recommendationsAbortRef.current?.abort();
+      const controller = new AbortController();
+      recommendationsAbortRef.current = controller;
+
+      setRecommendationsLoading(true);
+      setRecommendationsError(null);
+
+      try {
+        const res = await getRoleRecommendations(30, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        setRoleRecommendations(res);
+        recommendationsLoadedRef.current = true;
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to load role recommendations.";
+        setRecommendationsError(msg);
+        if (opts?.userInitiated) {
+          toast.error("Role recommendations failed", { description: msg });
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setRecommendationsLoading(false);
+        }
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!canReadRoles) return;
+    if (recommendationsLoadedRef.current) return;
+    void loadRoleRecommendations();
+  }, [canReadRoles, loadRoleRecommendations]);
 
   const onApplyFilters = useCallback(() => {
     setSuccess(null);
@@ -421,6 +478,164 @@ export default function RolesPage() {
           <StatsCard title="Page Size" value={limit} loading={loading} />
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">AI role recommendations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                void loadRoleRecommendations({ userInitiated: true })
+              }
+              disabled={recommendationsLoading}
+            >
+              {recommendationsLoading
+                ? "Refreshing..."
+                : "Refresh recommendations"}
+            </Button>
+            {roleRecommendations?.analytics.roleAuditVisible === false ? (
+              <span className="text-sm text-slate-500">
+                Audit-based grounding is limited for this user.
+              </span>
+            ) : null}
+          </div>
+
+          {recommendationsError ? (
+            <Alert variant="destructive">
+              <AlertDescription>{recommendationsError}</AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Distinct permissions
+              </div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                {recommendationsLoading && !roleRecommendations
+                  ? "..."
+                  : (roleRecommendations?.analytics.totalDistinctPermissions ??
+                    "—")}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Roles with no permissions
+              </div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                {recommendationsLoading && !roleRecommendations
+                  ? "..."
+                  : (roleRecommendations?.analytics.rolesWithNoPermissions
+                      .length ?? "—")}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                High-overlap pairs
+              </div>
+              <div className="mt-1 text-lg font-semibold text-slate-900">
+                {recommendationsLoading && !roleRecommendations
+                  ? "..."
+                  : (roleRecommendations?.analytics.overlapPairs.length ??
+                    "—")}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              AI summary
+            </div>
+            {recommendationsLoading && !roleRecommendations ? (
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-11/12" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
+            ) : roleRecommendations?.answer ? (
+              <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                {roleRecommendations.answer}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500">
+                No recommendation summary yet.
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Overlap pairs
+              </div>
+              {roleRecommendations?.analytics.overlapPairs.length ? (
+                <div className="space-y-2">
+                  {roleRecommendations.analytics.overlapPairs
+                    .slice(0, 3)
+                    .map((pair) => (
+                      <div
+                        key={`${pair.roleA}-${pair.roleB}`}
+                        className="rounded-lg border border-slate-200 p-3"
+                      >
+                        <div className="text-sm font-medium text-slate-900">
+                          {pair.roleA} x {pair.roleB}
+                        </div>
+                        <div className="mt-1 text-sm text-slate-600">
+                          Shared permissions: {pair.overlapCount}
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {pair.sharedPermissions.slice(0, 4).map((key) => (
+                            <Badge key={key} variant="secondary">
+                              {key}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  No overlap analysis available yet.
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Broadest roles
+              </div>
+              {roleRecommendations?.analytics.broadestRoles.length ? (
+                <div className="space-y-2">
+                  {roleRecommendations.analytics.broadestRoles
+                    .slice(0, 4)
+                    .map((item) => (
+                      <div
+                        key={item.role}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+                      >
+                        <span className="text-sm font-medium text-slate-900">
+                          {item.role}
+                        </span>
+                        <Badge variant="secondary">
+                          {item.permissionCount} permissions
+                        </Badge>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-500">
+                  No role breadth data available.
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="pt-6">

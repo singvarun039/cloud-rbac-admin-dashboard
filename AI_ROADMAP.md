@@ -45,6 +45,8 @@ Implementation ideas:
 Goal:
 - Help admins tighten or simplify access decisions.
 
+Status: implemented in this branch as an AI recommendations panel on the Roles page.
+
 Examples:
 - “These roles overlap heavily and could be merged.”
 - “This user appears to hold broader access than recent activity suggests they need.”

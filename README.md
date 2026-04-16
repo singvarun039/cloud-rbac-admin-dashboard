@@ -8,8 +8,10 @@ This project now includes a first AI integration:
 
 - dashboard-level RBAC assistant for authenticated users
 - dashboard-level audit anomaly insights for users with `audit.read`
+- roles-page AI recommendations grounded in the current role matrix
 - backend OpenAI Responses API route at `/api/ai/assistant`
 - backend OpenAI Responses API route at `/api/ai/audit-insights`
+- backend OpenAI Responses API route at `/api/ai/role-recommendations`
 - environment-based configuration with `OPENAI_API_KEY` and `OPENAI_MODEL`
 
 Setup:
