@@ -118,4 +118,8 @@ export const env = {
   AUTH_REFRESH_RATE_LIMIT_MAX: process.env.AUTH_REFRESH_RATE_LIMIT_MAX
     ? Number(process.env.AUTH_REFRESH_RATE_LIMIT_MAX)
     : 30,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
+  OPENAI_MODEL: process.env.OPENAI_MODEL ?? "gpt-5-nano",
+  OPENAI_API_BASE_URL:
+    process.env.OPENAI_API_BASE_URL ?? "https://api.openai.com/v1",
 };

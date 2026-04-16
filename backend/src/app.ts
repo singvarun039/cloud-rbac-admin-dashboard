@@ -16,6 +16,7 @@ import { AppError } from "./errors/AppError";
 import { auditLogsRouter } from "./modules/auditLogs/auditLogs.routes";
 import { env } from "./config/env";
 import { ok } from "./utils/apiResponse";
+import { aiRouter } from "./modules/ai/ai.routes";
 
 // Splits the configured CORS allowlist into normalized origin strings.
 function parseAllowedOrigins(value: string): string[] {
@@ -93,6 +94,7 @@ export function createApp() {
   app.use("/api/projects", projectsRouter);
   app.use("/api/audit-logs", auditLogsRouter);
   app.use("/api/dashboard", dashboardRouter);
+  app.use("/api/ai", aiRouter);
 
   // Back-compat / convenience aliases (optional):
   app.use("/users", usersRouter);

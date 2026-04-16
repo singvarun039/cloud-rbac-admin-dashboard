@@ -2,6 +2,24 @@
 
 A full-stack Role-Based Access Control (RBAC) admin dashboard. Users, roles, and permissions are fully manageable through a React UI backed by a Node.js/TypeScript API and PostgreSQL — deployed on AWS EC2 + RDS via Terraform.
 
+## AI
+
+This project now includes a first AI integration:
+
+- dashboard-level RBAC assistant for authenticated users
+- backend OpenAI Responses API route at `/api/ai/assistant`
+- environment-based configuration with `OPENAI_API_KEY` and `OPENAI_MODEL`
+
+Setup:
+
+- copy `.env.example` values into your local `.env`
+- set `OPENAI_API_KEY`
+- optionally change `OPENAI_MODEL` from the default `gpt-5-nano`
+
+Roadmap:
+
+- see `AI_ROADMAP.md` for the phased plan
+
 Monorepo:
 - `backend/` — Node.js + Express API (Prisma + PostgreSQL)
 - `frontend/` — React + Vite SPA

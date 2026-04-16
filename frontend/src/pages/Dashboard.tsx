@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../auth/useAuth";
 import { getDashboardSummary, type DashboardSummary } from "../api/dashboard";
+import { askAdminAssistant } from "../api/ai";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
 import {
@@ -81,8 +82,13 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assistantPrompt, setAssistantPrompt] = useState("");
+  const [assistantAnswer, setAssistantAnswer] = useState("");
+  const [assistantError, setAssistantError] = useState<string | null>(null);
+  const [assistantLoading, setAssistantLoading] = useState(false);
 
   const fetchSeqRef = useRef(0);
+  const assistantAbortRef = useRef<AbortController | null>(null);
 
   const loadSummary = useCallback(
     async (opts?: { userInitiated?: boolean }) => {
@@ -120,6 +126,10 @@ export default function DashboardPage() {
   useEffect(() => {
     void loadSummary();
   }, [loadSummary]);
+
+  useEffect(() => {
+    return () => assistantAbortRef.current?.abort();
+  }, []);
 
   const kpis = useMemo<Kpi[]>(() => {
     const k = summary?.kpis;
@@ -187,6 +197,54 @@ export default function DashboardPage() {
     if (!rows || !Array.isArray(rows)) return null;
     return rows.slice(0, 5);
   }, [summary?.recentAudit]);
+
+  const suggestedPrompts = useMemo(
+    () => [
+      "Summarize what this dashboard says about access health.",
+      "What risks or anomalies stand out from recent audit activity?",
+      "Based on these metrics, what RBAC improvements should I prioritize next?",
+    ],
+    [],
+  );
+
+  const submitAssistantPrompt = useCallback(
+    async (prompt: string) => {
+      const trimmed = prompt.trim();
+      if (trimmed.length < 5) {
+        setAssistantError(
+          "Ask a slightly longer question so the assistant has enough context.",
+        );
+        return;
+      }
+
+      assistantAbortRef.current?.abort();
+      const controller = new AbortController();
+      assistantAbortRef.current = controller;
+
+      setAssistantLoading(true);
+      setAssistantError(null);
+
+      try {
+        const res = await askAdminAssistant(trimmed, {
+          signal: controller.signal,
+        });
+        setAssistantAnswer(res.answer);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        const msg =
+          err instanceof Error
+            ? err.message
+            : "Failed to get an AI assistant response.";
+        setAssistantError(msg);
+        toast.error("AI assistant failed", { description: msg });
+      } finally {
+        if (!controller.signal.aborted) {
+          setAssistantLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   return (
     <div className="w-full space-y-4">
@@ -281,6 +339,103 @@ export default function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-4">
           <div className="w-full space-y-4">
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="text-base">RBAC AI Assistant</CardTitle>
+                <CardDescription>
+                  Ask for summaries, risks, or next-step recommendations grounded
+                  in your visible dashboard data.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {suggestedPrompts.map((prompt) => (
+                    <Button
+                      key={prompt}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-auto whitespace-normal text-left"
+                      onClick={() => {
+                        setAssistantPrompt(prompt);
+                        void submitAssistantPrompt(prompt);
+                      }}
+                      disabled={assistantLoading}
+                    >
+                      {prompt}
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="assistant-prompt"
+                    className="text-sm font-medium text-slate-700"
+                  >
+                    Your question
+                  </label>
+                  <textarea
+                    id="assistant-prompt"
+                    className="min-h-[110px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+                    placeholder="Example: Explain whether our current roles look too broad for a production admin dashboard."
+                    value={assistantPrompt}
+                    onChange={(e) => setAssistantPrompt(e.target.value)}
+                    disabled={assistantLoading}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => void submitAssistantPrompt(assistantPrompt)}
+                    disabled={assistantLoading}
+                  >
+                    {assistantLoading ? "Thinking..." : "Ask assistant"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setAssistantPrompt("");
+                      setAssistantAnswer("");
+                      setAssistantError(null);
+                    }}
+                    disabled={assistantLoading}
+                  >
+                    Clear
+                  </Button>
+                </div>
+
+                {assistantError ? (
+                  <Alert variant="destructive">
+                    <AlertTitle>Assistant unavailable</AlertTitle>
+                    <AlertDescription>{assistantError}</AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Latest answer
+                  </div>
+                  {assistantLoading ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-11/12" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ) : assistantAnswer ? (
+                    <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                      {assistantAnswer}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">
+                      No answer yet. Try one of the starter prompts above.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-base">Signed in user</CardTitle>
