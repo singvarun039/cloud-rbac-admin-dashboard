@@ -3,7 +3,7 @@ import { authenticate } from "../../middlewares/authenticate";
 import { asyncHandler } from "../../middlewares/asyncHandler";
 import { ok } from "../../utils/apiResponse";
 import { AppError } from "../../errors/AppError";
-import { generateAuditInsights } from "../../services/auditInsights.service";
+import { generateAuditInsights } from "../../services/auditInsights";
 import { DashboardSummaryQuerySchema } from "../../validation/dashboard.schema";
 import {
   AI_DATA_SOURCES,

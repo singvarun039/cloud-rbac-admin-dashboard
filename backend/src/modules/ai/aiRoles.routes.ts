@@ -4,7 +4,7 @@ import { asyncHandler } from "../../middlewares/asyncHandler";
 import { ok } from "../../utils/apiResponse";
 import { AppError } from "../../errors/AppError";
 import { DashboardSummaryQuerySchema } from "../../validation/dashboard.schema";
-import { generateRoleRecommendations } from "../../services/roleRecommendations.service";
+import { generateRoleRecommendations } from "../../services/roleRecommendations";
 import {
   AI_DATA_SOURCES,
   aiRateLimiter,

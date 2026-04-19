@@ -5,7 +5,7 @@ import { validateBody } from "../../middlewares/validate";
 import { ok } from "../../utils/apiResponse";
 import { requirePermission } from "../../middlewares/requirePermission";
 import { PolicySimulationBodySchema } from "../../validation/policySimulation.schema";
-import { simulateRolePolicyChange } from "../../services/policySimulation.service";
+import { simulateRolePolicyChange } from "../../services/policySimulation";
 import {
   AI_DATA_SOURCES,
   aiRateLimiter,
