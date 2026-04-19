@@ -1,21 +1,7 @@
 import { prisma } from "../db/prisma";
 import { AppError } from "../errors/AppError";
 import { env } from "../config/env";
-
-type OpenAITextContent = {
-  type?: string;
-  text?: string;
-};
-
-type OpenAIOutputItem = {
-  type?: string;
-  content?: OpenAITextContent[];
-};
-
-type OpenAIResponsePayload = {
-  output_text?: string;
-  output?: OpenAIOutputItem[];
-};
+import { extractOpenAiResponseText } from "./openaiResponseText.service";
 
 type AccessSurface = {
   kind: "page" | "api";
@@ -173,27 +159,17 @@ function hasAnyPermission(
   return requiredAnyOf.some((key) => permissionKeys.has(key));
 }
 
-function extractOutputText(payload: OpenAIResponsePayload): string {
-  if (typeof payload.output_text === "string" && payload.output_text.trim()) {
-    return payload.output_text.trim();
-  }
+function extractOutputText(payload: unknown): string {
+  return extractOpenAiResponseText(payload);
+}
 
-  const chunks =
-    payload.output
-      ?.flatMap((item) =>
-        item.type === "message"
-          ? (item.content ?? [])
-              .filter(
-                (content): content is OpenAITextContent =>
-                  content.type === "output_text" &&
-                  typeof content.text === "string",
-              )
-              .map((content) => content.text ?? "")
-          : [],
-      )
-      .filter((text) => text.trim().length > 0) ?? [];
-
-  return chunks.join("\n").trim();
+function isUsablePolicySummary(summary: string): boolean {
+  const trimmed = summary.trim();
+  if (!trimmed) return false;
+  if (trimmed.includes("<bullet 1>")) return false;
+  if (trimmed.includes("rs_")) return false;
+  if (trimmed.includes("resp_")) return false;
+  return true;
 }
 
 function buildFallbackSummary(input: {
@@ -270,7 +246,6 @@ async function generateSimulationSummary(input: {
         ].join("\n"),
         input: JSON.stringify(input, null, 2),
         max_output_tokens: 350,
-        temperature: 0.2,
       }),
     });
   } catch {
@@ -281,8 +256,11 @@ async function generateSimulationSummary(input: {
     return buildFallbackSummary(input);
   }
 
-  const payload = (await response.json()) as OpenAIResponsePayload;
-  return extractOutputText(payload) || buildFallbackSummary(input);
+  const payload = (await response.json()) as unknown;
+  const extractedSummary = extractOutputText(payload);
+  return isUsablePolicySummary(extractedSummary)
+    ? extractedSummary
+    : buildFallbackSummary(input);
 }
 
 // Simulates the impact of replacing a role's permission set before saving it.

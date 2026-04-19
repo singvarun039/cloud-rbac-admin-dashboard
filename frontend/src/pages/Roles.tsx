@@ -20,6 +20,15 @@ import { buttonVariants } from "../components/ui/button-variants";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "../components/ui/drawer";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -179,6 +188,7 @@ export default function RolesPage() {
   const [recommendationsError, setRecommendationsError] = useState<string | null>(
     null,
   );
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(total / limit));
@@ -334,9 +344,10 @@ export default function RolesPage() {
 
   useEffect(() => {
     if (!canReadRoles) return;
+    if (!showRecommendations) return;
     if (recommendationsLoadedRef.current) return;
     void loadRoleRecommendations();
-  }, [canReadRoles, loadRoleRecommendations]);
+  }, [canReadRoles, loadRoleRecommendations, showRecommendations]);
 
   const onApplyFilters = useCallback(() => {
     setSuccess(null);
@@ -500,174 +511,9 @@ export default function RolesPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">AI role recommendations</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                void loadRoleRecommendations({ userInitiated: true })
-              }
-              disabled={recommendationsLoading}
-            >
-              {recommendationsLoading
-                ? "Refreshing..."
-                : "Refresh recommendations"}
-            </Button>
-            {roleRecommendations?.analytics.roleAuditVisible === false ? (
-              <span className="text-sm text-slate-500">
-                Audit-based grounding is limited for this user.
-              </span>
-            ) : null}
-          </div>
-
-          {recommendationsError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{recommendationsError}</AlertDescription>
-            </Alert>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Distinct permissions
-              </div>
-              <div className="mt-1 text-lg font-semibold text-slate-900">
-                {recommendationsLoading && !roleRecommendations
-                  ? "..."
-                  : (roleRecommendations?.analytics.totalDistinctPermissions ??
-                    "—")}
-              </div>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Roles with no permissions
-              </div>
-              <div className="mt-1 text-lg font-semibold text-slate-900">
-                {recommendationsLoading && !roleRecommendations
-                  ? "..."
-                  : (roleRecommendations?.analytics.rolesWithNoPermissions
-                      .length ?? "—")}
-              </div>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                High-overlap pairs
-              </div>
-              <div className="mt-1 text-lg font-semibold text-slate-900">
-                {recommendationsLoading && !roleRecommendations
-                  ? "..."
-                  : (roleRecommendations?.analytics.overlapPairs.length ??
-                    "—")}
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              AI summary
-            </div>
-            {recommendationsLoading && !roleRecommendations ? (
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-11/12" />
-                <Skeleton className="h-4 w-4/5" />
-              </div>
-            ) : roleRecommendations?.answer ? (
-              <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                {roleRecommendations.answer}
-              </div>
-            ) : (
-              <div className="text-sm text-slate-500">
-                No recommendation summary yet.
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Data sources
-            </div>
-            {renderSources(roleRecommendations?.sources)}
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Overlap pairs
-              </div>
-              {roleRecommendations?.analytics.overlapPairs.length ? (
-                <div className="space-y-2">
-                  {roleRecommendations.analytics.overlapPairs
-                    .slice(0, 3)
-                    .map((pair) => (
-                      <div
-                        key={`${pair.roleA}-${pair.roleB}`}
-                        className="rounded-lg border border-slate-200 p-3"
-                      >
-                        <div className="text-sm font-medium text-slate-900">
-                          {pair.roleA} x {pair.roleB}
-                        </div>
-                        <div className="mt-1 text-sm text-slate-600">
-                          Shared permissions: {pair.overlapCount}
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {pair.sharedPermissions.slice(0, 4).map((key) => (
-                            <Badge key={key} variant="secondary">
-                              {key}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500">
-                  No overlap analysis available yet.
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Broadest roles
-              </div>
-              {roleRecommendations?.analytics.broadestRoles.length ? (
-                <div className="space-y-2">
-                  {roleRecommendations.analytics.broadestRoles
-                    .slice(0, 4)
-                    .map((item) => (
-                      <div
-                        key={item.role}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
-                      >
-                        <span className="text-sm font-medium text-slate-900">
-                          {item.role}
-                        </span>
-                        <Badge variant="secondary">
-                          {item.permissionCount} permissions
-                        </Badge>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500">
-                  No role breadth data available.
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 xl:flex-1">
               <Input
                 value={searchInput}
                 onChange={(e) => {
@@ -676,44 +522,59 @@ export default function RolesPage() {
                 placeholder="Search name or description"
                 aria-label="Search"
                 type="text"
-                className="h-10 w-full placeholder:text-slate-400 sm:col-span-2 lg:col-span-4"
+                className="h-10 w-full placeholder:text-slate-400 sm:col-span-2"
               />
             </div>
 
-            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
-              <Button
-                type="button"
-                onClick={onApplyFilters}
-                disabled={loading}
-                className="h-10 w-full sm:w-auto"
-              >
-                Apply Filters
-              </Button>
+            <div className="flex w-full flex-col gap-3 xl:w-auto xl:min-w-fit">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center xl:justify-end">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    onClick={onApplyFilters}
+                    disabled={loading}
+                    className="h-10 w-full sm:w-auto"
+                  >
+                    Apply Filters
+                  </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onResetFilters}
-                disabled={loading}
-                className="h-10 w-full sm:w-auto"
-              >
-                Reset Filters
-              </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onResetFilters}
+                    disabled={loading}
+                    className="h-10 w-full sm:w-auto"
+                  >
+                    Reset
+                  </Button>
+                </div>
 
-              <Separator orientation="horizontal" className="sm:hidden" />
-              <Separator
-                orientation="vertical"
-                className="hidden h-6 sm:block"
-              />
+                <Separator orientation="horizontal" className="sm:hidden" />
+                <Separator
+                  orientation="vertical"
+                  className="hidden h-6 sm:block"
+                />
 
-              <Button
-                type="button"
-                onClick={onOpenCreate}
-                className="h-10 w-full sm:w-auto"
-                disabled={!canWriteRoles}
-              >
-                Create Role
-              </Button>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRecommendations(true)}
+                    className="h-10 w-full sm:w-auto"
+                  >
+                    AI Recommendations
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={onOpenCreate}
+                    className="h-10 w-full sm:w-auto"
+                    disabled={!canWriteRoles}
+                  >
+                    Create Role
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -979,6 +840,196 @@ export default function RolesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Drawer open={showRecommendations} onOpenChange={setShowRecommendations}>
+        <DrawerContent className="inset-y-0 right-0 left-auto h-full w-full max-w-[720px] border-l border-slate-200">
+          <div className="flex h-full flex-col">
+            <div className="border-b border-slate-200 px-6 py-5">
+              <DrawerHeader className="space-y-2">
+                <DrawerTitle>AI role recommendations</DrawerTitle>
+                <DrawerDescription>
+                  Review overlap, broad roles, and least-privilege cleanup without taking over the main Roles page.
+                </DrawerDescription>
+              </DrawerHeader>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      void loadRoleRecommendations({ userInitiated: true })
+                    }
+                    disabled={recommendationsLoading}
+                  >
+                    {recommendationsLoading
+                      ? "Refreshing..."
+                      : "Refresh recommendations"}
+                  </Button>
+                  {roleRecommendations?.analytics.roleAuditVisible === false ? (
+                    <span className="text-sm text-slate-500">
+                      Audit-based grounding is limited for this user.
+                    </span>
+                  ) : null}
+                </div>
+
+                {recommendationsError ? (
+                  <Alert variant="destructive">
+                    <AlertDescription>{recommendationsError}</AlertDescription>
+                  </Alert>
+                ) : null}
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Distinct permissions
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-900">
+                      {recommendationsLoading && !roleRecommendations
+                        ? "..."
+                        : (roleRecommendations?.analytics.totalDistinctPermissions ??
+                          "—")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Roles with no permissions
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-900">
+                      {recommendationsLoading && !roleRecommendations
+                        ? "..."
+                        : (roleRecommendations?.analytics.rolesWithNoPermissions
+                            .length ?? "—")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      High-overlap pairs
+                    </div>
+                    <div className="mt-1 text-lg font-semibold text-slate-900">
+                      {recommendationsLoading && !roleRecommendations
+                        ? "..."
+                        : (roleRecommendations?.analytics.overlapPairs.length ??
+                          "—")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    AI summary
+                  </div>
+                  {recommendationsLoading && !roleRecommendations ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-11/12" />
+                      <Skeleton className="h-4 w-4/5" />
+                    </div>
+                  ) : roleRecommendations?.answer ? (
+                    <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                      {roleRecommendations.answer}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-slate-500">
+                      No recommendation summary yet.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Data sources
+                  </div>
+                  {renderSources(roleRecommendations?.sources)}
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Overlap pairs
+                    </div>
+                    {roleRecommendations?.analytics.overlapPairs.length ? (
+                      <div className="space-y-2">
+                        {roleRecommendations.analytics.overlapPairs
+                          .slice(0, 3)
+                          .map((pair) => (
+                            <div
+                              key={`${pair.roleA}-${pair.roleB}`}
+                              className="rounded-lg border border-slate-200 p-3"
+                            >
+                              <div className="text-sm font-medium text-slate-900">
+                                {pair.roleA} x {pair.roleB}
+                              </div>
+                              <div className="mt-1 text-sm text-slate-600">
+                                Shared permissions: {pair.overlapCount}
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {pair.sharedPermissions.slice(0, 4).map((key) => (
+                                  <Badge key={key} variant="secondary">
+                                    {key}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500">
+                        No overlap analysis available yet.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Broadest roles
+                    </div>
+                    {roleRecommendations?.analytics.broadestRoles.length ? (
+                      <div className="space-y-2">
+                        {roleRecommendations.analytics.broadestRoles
+                          .slice(0, 4)
+                          .map((item) => (
+                            <div
+                              key={item.role}
+                              className="flex items-center justify-between rounded-lg border border-slate-200 p-3"
+                            >
+                              <span className="text-sm font-medium text-slate-900">
+                                {item.role}
+                              </span>
+                              <Badge variant="secondary">
+                                {item.permissionCount} permissions
+                              </Badge>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-slate-500">
+                        No role breadth data available.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-200 px-6 py-4">
+              <DrawerFooter className="sm:justify-between">
+                <div className="text-sm text-slate-500">
+                  AI recommendations stay out of the main table flow until needed.
+                </div>
+                <DrawerClose asChild>
+                  <Button type="button" variant="outline">
+                    Close
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <AlertDialog
         open={deleteOpen}

@@ -2,21 +2,10 @@ import { prisma } from "../db/prisma";
 import { AppError } from "../errors/AppError";
 import { env } from "../config/env";
 import { utcDayRangeWindow } from "../utils/dateWindow";
-
-type OpenAITextContent = {
-  type?: string;
-  text?: string;
-};
-
-type OpenAIOutputItem = {
-  type?: string;
-  content?: OpenAITextContent[];
-};
-
-type OpenAIResponsePayload = {
-  output_text?: string;
-  output?: OpenAIOutputItem[];
-};
+import {
+  extractOpenAiResponseText,
+  summarizeOpenAiPayload,
+} from "./openaiResponseText.service";
 
 type RoleSnapshot = {
   id: string;
@@ -37,6 +26,16 @@ type RoleAuditSignal = {
   count: number;
 };
 
+type RoleRecommendationContext = {
+  windowDays: number;
+  roles: RoleSnapshot[];
+  overlapPairs: RoleOverlapPair[];
+  rolesWithNoPermissions: string[];
+  broadestRoles: Array<{ role: string; permissionCount: number }>;
+  auditSignals: RoleAuditSignal[];
+  roleAuditVisible: boolean;
+};
+
 export type RoleRecommendationsResult = {
   windowDays: number;
   answer: string;
@@ -51,27 +50,8 @@ export type RoleRecommendationsResult = {
   };
 };
 
-function extractOutputText(payload: OpenAIResponsePayload): string {
-  if (typeof payload.output_text === "string" && payload.output_text.trim()) {
-    return payload.output_text.trim();
-  }
-
-  const chunks =
-    payload.output
-      ?.flatMap((item) =>
-        item.type === "message"
-          ? (item.content ?? [])
-              .filter(
-                (content): content is OpenAITextContent =>
-                  content.type === "output_text" &&
-                  typeof content.text === "string",
-              )
-              .map((content) => content.text ?? "")
-          : [],
-      )
-      .filter((text) => text.trim().length > 0) ?? [];
-
-  return chunks.join("\n").trim();
+function extractOutputText(payload: unknown): string {
+  return extractOpenAiResponseText(payload);
 }
 
 function buildRoleRecommendationInstructions(input: {
@@ -114,6 +94,97 @@ function buildRoleRecommendationInput(input: {
     "Role recommendation context JSON:",
     JSON.stringify(input, null, 2),
   ].join("\n");
+}
+
+function buildDeterministicRoleRecommendations(
+  context: RoleRecommendationContext,
+): string {
+  const summaryParts: string[] = [
+    `The role matrix currently contains ${context.roles.length} role(s) and ${new Set(context.roles.flatMap((role) => role.permissions)).size} distinct permission key(s).`,
+  ];
+
+  if (context.rolesWithNoPermissions.length > 0) {
+    summaryParts.push(
+      `${context.rolesWithNoPermissions.length} role(s) have no permissions assigned.`,
+    );
+  }
+
+  if (context.overlapPairs.length > 0) {
+    const topOverlap = context.overlapPairs[0];
+    summaryParts.push(
+      `The highest overlap is between ${topOverlap.roleA} and ${topOverlap.roleB} with ${topOverlap.overlapCount} shared permission(s).`,
+    );
+  }
+
+  const recommendations: string[] = [];
+  const risks: string[] = [];
+
+  if (context.rolesWithNoPermissions.length > 0) {
+    recommendations.push(
+      `Review ${context.rolesWithNoPermissions.join(", ")} and either assign a clear responsibility set or remove unused roles.`,
+    );
+    risks.push(
+      "Empty roles usually indicate incomplete setup or stale access design that can confuse admins.",
+    );
+  }
+
+  if (context.overlapPairs.length > 0) {
+    const topOverlap = context.overlapPairs[0];
+    recommendations.push(
+      `Compare ${topOverlap.roleA} and ${topOverlap.roleB} to confirm whether both roles are still needed as separate access boundaries.`,
+    );
+    risks.push(
+      `High permission overlap between ${topOverlap.roleA} and ${topOverlap.roleB} may make the policy harder to maintain and review.`,
+    );
+  }
+
+  if (context.broadestRoles.length > 0) {
+    const broadest = context.broadestRoles[0];
+    recommendations.push(
+      `Validate whether ${broadest.role} still needs ${broadest.permissionCount} permissions or whether some privileges can move into a narrower role.`,
+    );
+    risks.push(
+      `${broadest.role} currently has the broadest access footprint in the matrix.`,
+    );
+  }
+
+  if (context.roleAuditVisible && context.auditSignals.length > 0) {
+    const topSignal = context.auditSignals[0];
+    recommendations.push(
+      `Use the recent ${topSignal.action} audit activity to sanity-check whether role changes are happening in a controlled way.`,
+    );
+  } else if (!context.roleAuditVisible) {
+    recommendations.push(
+      "Audit-backed role evidence is limited for this user, so rely on the role matrix first and verify changes with an audit-enabled admin when needed.",
+    );
+  }
+
+  if (!recommendations.length) {
+    recommendations.push(
+      "No immediate structural cleanup stands out; keep reviewing roles against real job boundaries and least-privilege expectations.",
+    );
+  }
+
+  if (!risks.length) {
+    risks.push("No major role design risk is obvious from current data.");
+  }
+
+  return [
+    `Summary: ${summaryParts.join(" ")}`,
+    "Recommendations:",
+    ...recommendations.slice(0, 3).map((line) => `- ${line}`),
+    "Risks:",
+    ...risks.slice(0, 3).map((line) => `- ${line}`),
+  ].join("\n");
+}
+
+function isUsableRoleRecommendationAnswer(answer: string): boolean {
+  const trimmed = answer.trim();
+  if (!trimmed) return false;
+  if (!trimmed.includes("Summary:")) return false;
+  if (trimmed.includes("<one short paragraph>")) return false;
+  if (trimmed.includes("<bullet 1>")) return false;
+  return true;
 }
 
 function computeOverlapPairs(roles: RoleSnapshot[]): RoleOverlapPair[] {
@@ -230,6 +301,15 @@ export async function generateRoleRecommendations(input: {
   const auditSignals = input.includeAuditSignals
     ? await getRoleAuditSignals(input.windowDays)
     : [];
+  const recommendationContext: RoleRecommendationContext = {
+    windowDays: input.windowDays,
+    roles: roleSnapshots,
+    overlapPairs,
+    rolesWithNoPermissions,
+    broadestRoles,
+    auditSignals,
+    roleAuditVisible: input.includeAuditSignals,
+  };
 
   let response: Response;
   try {
@@ -245,16 +325,9 @@ export async function generateRoleRecommendations(input: {
           roleAuditVisible: input.includeAuditSignals,
         }),
         input: buildRoleRecommendationInput({
-          windowDays: input.windowDays,
-          roles: roleSnapshots,
-          overlapPairs,
-          rolesWithNoPermissions,
-          broadestRoles,
-          auditSignals,
-          roleAuditVisible: input.includeAuditSignals,
+          ...recommendationContext,
         }),
-        max_output_tokens: 500,
-        temperature: 0.2,
+        max_output_tokens: 700,
       }),
     });
   } catch {
@@ -275,14 +348,18 @@ export async function generateRoleRecommendations(input: {
     );
   }
 
-  const payload = (await response.json()) as OpenAIResponsePayload;
-  const answer = extractOutputText(payload);
+  const payload = (await response.json()) as unknown;
+  const extractedAnswer = extractOutputText(payload);
+  const answer = isUsableRoleRecommendationAnswer(extractedAnswer)
+    ? extractedAnswer
+    : buildDeterministicRoleRecommendations(recommendationContext);
 
   if (!answer) {
     throw new AppError(
       502,
       "AI_EMPTY_RESPONSE",
       "The AI provider returned an empty response.",
+      summarizeOpenAiPayload(payload),
     );
   }
 

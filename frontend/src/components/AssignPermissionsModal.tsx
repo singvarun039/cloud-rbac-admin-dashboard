@@ -6,6 +6,7 @@ import { simulateRolePolicyChange, type PolicySimulationResponse } from "../api/
 import { getApiErrorMessage } from "../api/client";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -39,6 +40,11 @@ function renderSources(
       ))}
     </div>
   );
+}
+
+function getPermissionFamily(key: string): string {
+  const [family] = key.split(".");
+  return family || "other";
 }
 
 // Renders the role permission assignment workflow.
@@ -217,6 +223,18 @@ export default function AssignPermissionsModal(props: {
     });
   }, [catalog, search]);
 
+  const selectedPermissions = useMemo(() => {
+    const byId = new Map(catalog.map((permission) => [permission.id, permission]));
+    return selectedIds
+      .map((id) => byId.get(id))
+      .filter((permission): permission is Permission => Boolean(permission));
+  }, [catalog, selectedIds]);
+
+  const changedCount = useMemo(() => {
+    const initial = new Set(initialIds);
+    return selectedIds.filter((id) => !initial.has(id)).length;
+  }, [initialIds, selectedIds]);
+
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const hasChanges = useMemo(() => {
@@ -317,7 +335,31 @@ export default function AssignPermissionsModal(props: {
     : "Assign permissions";
 
   return (
-    <Modal title={title} isOpen={open} onClose={onClose}>
+    <Modal
+      title={title}
+      isOpen={open}
+      onClose={onClose}
+      contentClassName="max-h-[92vh] max-w-6xl overflow-hidden p-0"
+    >
+      <div className="flex max-h-[92vh] flex-col">
+        <div className="border-b border-slate-200 px-6 py-5">
+          <div className="space-y-1">
+            <div className="text-sm text-slate-500">
+              Update role access with a denser editor and preview the impact before saving.
+            </div>
+            {role ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{role.name}</Badge>
+                <Badge variant="secondary">Selected: {selectedIds.length}</Badge>
+                <Badge variant="secondary">
+                  {hasChanges ? "Unsaved changes" : "No pending changes"}
+                </Badge>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden px-6 py-5">
       {!role || !canEditRoles ? (
         <div className="space-y-1 text-sm text-slate-500">
           {!role ? <p>No role selected.</p> : null}
@@ -338,41 +380,6 @@ export default function AssignPermissionsModal(props: {
         </Card>
       ) : (
         <>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="filter by key or description"
-                type="text"
-                disabled={loading || !role}
-                className="h-10"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={onSelectAllFiltered}
-                disabled={loading || filtered.length === 0}
-                className="h-10"
-              >
-                Select all filtered
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={onClearFiltered}
-                disabled={loading || filtered.length === 0}
-                className="h-10"
-              >
-                Clear filtered
-              </Button>
-            </div>
-          </div>
-
           {loadError ? (
             <Alert variant="destructive">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -391,206 +398,304 @@ export default function AssignPermissionsModal(props: {
             </Alert>
           ) : null}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Permissions</CardTitle>
-            </CardHeader>
-            <CardContent className="max-h-[45vh] overflow-y-auto">
-              {loading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
+          <div className="grid h-full gap-5 xl:grid-cols-[1.35fr_0.9fr]">
+            <Card className="overflow-hidden">
+              <CardHeader className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">Permission catalog</CardTitle>
+                    <div className="mt-1 text-sm text-slate-500">
+                      Filter and toggle permissions for this role.
+                    </div>
+                  </div>
+                  {hydratedFromKeys ? (
+                    <Badge variant="secondary">Hydrated from keys</Badge>
+                  ) : null}
                 </div>
-              ) : catalog.length === 0 ? (
-                <div className="py-10 text-center text-sm text-slate-500">
-                  No permissions found.
+
+                <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                  <div className="space-y-2">
+                    <Label>Search</Label>
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="filter by key or description"
+                      type="text"
+                      disabled={loading || !role}
+                      className="h-10"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={onSelectAllFiltered}
+                      disabled={loading || filtered.length === 0}
+                      className="h-10"
+                    >
+                      Select visible
+                    </Button>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={onClearFiltered}
+                      disabled={loading || filtered.length === 0}
+                      className="h-10"
+                    >
+                      Clear visible
+                    </Button>
+                  </div>
                 </div>
-              ) : filtered.length === 0 ? (
-                <div className="py-10 text-center text-sm text-slate-500">
-                  No permissions match your search.
+              </CardHeader>
+
+              <CardContent className="pb-5">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">Visible: {filtered.length}</Badge>
+                  <Badge variant="secondary">Selected: {selectedIds.length}</Badge>
+                  <Badge variant="secondary">
+                    Added since open: {changedCount}
+                  </Badge>
                 </div>
-              ) : (
-                <div className="grid gap-2">
-                  {filtered.map((p) => {
-                    const checked = selectedSet.has(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm transition-colors hover:bg-slate-50"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggle(p.id)}
-                          disabled={!canEditRoles || submitting || !role}
-                          className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900"
-                        />
-                        <div className="min-w-0">
-                          <div className="font-medium text-slate-900">
-                            {p.key}
-                          </div>
-                          {p.description ? (
-                            <div className="mt-0.5 text-sm text-slate-600">
-                              {p.description}
+
+                <div className="max-h-[52vh] overflow-y-auto pr-1">
+                  {loading ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                  ) : catalog.length === 0 ? (
+                    <div className="py-10 text-center text-sm text-slate-500">
+                      No permissions found.
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="py-10 text-center text-sm text-slate-500">
+                      No permissions match your search.
+                    </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {filtered.map((p) => {
+                        const checked = selectedSet.has(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                              checked
+                                ? "border-slate-900 bg-slate-50"
+                                : "border-slate-200 bg-white hover:bg-slate-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggle(p.id)}
+                              disabled={!canEditRoles || submitting || !role}
+                              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <div className="font-medium text-slate-900">
+                                  {p.key}
+                                </div>
+                                <Badge variant="secondary" className="text-[11px]">
+                                  {getPermissionFamily(p.key)}
+                                </Badge>
+                              </div>
+                              {p.description ? (
+                                <div className="mt-1 text-sm text-slate-600">
+                                  {p.description}
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null}
-                        </div>
-                      </label>
-                    );
-                  })}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <div className="text-sm text-slate-500">
-            Selected: {selectedIds.length}
-          </div>
-          {hydratedFromKeys ? (
-            <div className="-mt-2 text-sm text-slate-500">
-              Hydrated from keys
-            </div>
-          ) : null}
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Policy simulation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void onSimulate()}
-                  disabled={!role || !canEditRoles || simulating}
-                >
-                  {simulating ? "Simulating..." : "Simulate impact"}
-                </Button>
-                <div className="text-sm text-slate-500">
-                  Preview what this permission change would remove or unlock before saving.
-                </div>
-              </div>
-
-              {simulationError ? (
-                <Alert variant="destructive">
-                  <AlertDescription>{simulationError}</AlertDescription>
-                </Alert>
-              ) : null}
-
-              {simulation ? (
-                <div className="space-y-4">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Summary
-                    </div>
-                    <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                      {simulation.summary}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-red-700">
-                        Losing access
+            <div className="space-y-5">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Selection summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Selected
                       </div>
-                      <div className="mt-1 text-lg font-semibold text-red-900">
-                        {simulation.impacts.losingAccess.length}
-                      </div>
-                      <div className="mt-2 space-y-2">
-                        {simulation.impacts.losingAccess.slice(0, 5).map((item) => (
-                          <div key={item.key} className="text-sm text-red-900">
-                            {item.label}
-                          </div>
-                        ))}
-                        {simulation.impacts.losingAccess.length === 0 ? (
-                          <div className="text-sm text-red-900">
-                            No modeled surfaces would lose access.
-                          </div>
-                        ) : null}
+                      <div className="mt-1 text-2xl font-semibold text-slate-900">
+                        {selectedIds.length}
                       </div>
                     </div>
-
-                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                        Gaining access
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Initial
                       </div>
-                      <div className="mt-1 text-lg font-semibold text-emerald-900">
-                        {simulation.impacts.gainingAccess.length}
-                      </div>
-                      <div className="mt-2 space-y-2">
-                        {simulation.impacts.gainingAccess.slice(0, 5).map((item) => (
-                          <div key={item.key} className="text-sm text-emerald-900">
-                            {item.label}
-                          </div>
-                        ))}
-                        {simulation.impacts.gainingAccess.length === 0 ? (
-                          <div className="text-sm text-emerald-900">
-                            No newly accessible modeled surfaces.
-                          </div>
-                        ) : null}
+                      <div className="mt-1 text-2xl font-semibold text-slate-900">
+                        {initialIds.length}
                       </div>
                     </div>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Permissions being removed
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Status
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {simulation.removedPermissionKeys.map((key) => (
-                          <span
-                            key={key}
-                            className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800"
-                          >
-                            {key}
-                          </span>
-                        ))}
-                        {simulation.removedPermissionKeys.length === 0 ? (
-                          <span className="text-sm text-slate-500">None</span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Permissions being added
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {simulation.addedPermissionKeys.map((key) => (
-                          <span
-                            key={key}
-                            className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800"
-                          >
-                            {key}
-                          </span>
-                        ))}
-                        {simulation.addedPermissionKeys.length === 0 ? (
-                          <span className="text-sm text-slate-500">None</span>
-                        ) : null}
+                      <div className="mt-1 text-sm font-medium text-slate-900">
+                        {hasChanges ? "Unsaved changes" : "No changes yet"}
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Data sources
+                      Selected permissions
                     </div>
-                    {renderSources(simulation.sources)}
+                    <div className="max-h-[20vh] overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-3">
+                      {selectedPermissions.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedPermissions.map((permission) => (
+                            <Badge key={permission.id} variant="secondary">
+                              {permission.key}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">
+                          No permissions selected yet.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="text-sm text-slate-500">
-                  Run a simulation to preview the impact of your changes.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Policy simulation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void onSimulate()}
+                      disabled={!role || !canEditRoles || simulating}
+                    >
+                      {simulating ? "Simulating..." : "Simulate impact"}
+                    </Button>
+                    <div className="text-sm text-slate-500">
+                      Preview what this change removes or unlocks.
+                    </div>
+                  </div>
+
+                  {simulationError ? (
+                    <Alert variant="destructive">
+                      <AlertDescription>{simulationError}</AlertDescription>
+                    </Alert>
+                  ) : null}
+
+                  {simulation ? (
+                    <div className="space-y-4">
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Summary
+                        </div>
+                        <div className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                          {simulation.summary}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                            Losing access
+                          </div>
+                          <div className="mt-1 text-lg font-semibold text-red-900">
+                            {simulation.impacts.losingAccess.length}
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                            Gaining access
+                          </div>
+                          <div className="mt-1 text-lg font-semibold text-emerald-900">
+                            {simulation.impacts.gainingAccess.length}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Permission delta
+                        </div>
+                        <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                          <div>
+                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Removed
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {simulation.removedPermissionKeys.map((key) => (
+                                <span
+                                  key={key}
+                                  className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800"
+                                >
+                                  {key}
+                                </span>
+                              ))}
+                              {simulation.removedPermissionKeys.length === 0 ? (
+                                <span className="text-sm text-slate-500">None</span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Added
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {simulation.addedPermissionKeys.map((key) => (
+                                <span
+                                  key={key}
+                                  className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800"
+                                >
+                                  {key}
+                                </span>
+                              ))}
+                              {simulation.addedPermissionKeys.length === 0 ? (
+                                <span className="text-sm text-slate-500">None</span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Data sources
+                        </div>
+                        {renderSources(simulation.sources)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+                      Run a simulation to preview the impact of your changes.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </>
       )}
+        </div>
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="border-t border-slate-200 px-6 py-4">
+        <div className="flex justify-end gap-2">
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>
@@ -615,6 +720,8 @@ export default function AssignPermissionsModal(props: {
         >
           {submitting ? "Saving…" : "Save"}
         </Button>
+        </div>
+      </div>
       </div>
     </Modal>
   );
