@@ -1,4 +1,4 @@
-import Modal from '../Modal';
+import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import type { Role } from '../../api/roles';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
@@ -23,31 +23,35 @@ export default function AssignPermissionsModal(props: {
   const title = role ? `Assign permissions: ${role.name}` : 'Assign permissions';
 
   return (
-    <Modal
-      title={title}
-      isOpen={open}
-      onClose={onClose}
-      contentClassName="max-h-[92vh] max-w-6xl overflow-hidden p-0"
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
     >
-      <div className="flex max-h-[92vh] flex-col">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <div className="space-y-1">
-            <div className="text-sm text-slate-500">
-              Update role access with a denser editor and preview the impact before saving.
+      {/* h-[92vh] gives flex-1 a concrete parent height so the footer is always visible */}
+      <DialogContent className="flex h-[92vh] max-w-6xl flex-col overflow-hidden p-0">
+        {/* ── Header ──────────────────────────────────────────────── */}
+        <div className="flex-none border-b border-slate-200 pl-6 pr-12 pt-5 pb-4">
+          <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
+            {title}
+          </DialogTitle>
+          <p className="mt-1 text-sm text-slate-500">
+            Update role access with a denser editor and preview the impact before saving.
+          </p>
+          {role ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{role.name}</Badge>
+              <Badge variant="secondary">Selected: {m.selectedIds.length}</Badge>
+              <Badge variant="secondary">
+                {m.hasChanges ? 'Unsaved changes' : 'No pending changes'}
+              </Badge>
             </div>
-            {role ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{role.name}</Badge>
-                <Badge variant="secondary">Selected: {m.selectedIds.length}</Badge>
-                <Badge variant="secondary">
-                  {m.hasChanges ? 'Unsaved changes' : 'No pending changes'}
-                </Badge>
-              </div>
-            ) : null}
-          </div>
+          ) : null}
         </div>
 
-        <div className="flex-1 overflow-hidden px-6 py-5">
+        {/* ── Scrollable content ──────────────────────────────────── */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-5">
           {!role || !canEditRoles ? (
             <div className="space-y-1 text-sm text-slate-500">
               {!role ? <p>No role selected.</p> : null}
@@ -66,7 +70,7 @@ export default function AssignPermissionsModal(props: {
           ) : (
             <>
               {m.loadError ? (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="mb-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <AlertDescription className="sm:pr-4">{m.loadError}</AlertDescription>
                     <Button
@@ -83,7 +87,7 @@ export default function AssignPermissionsModal(props: {
                   </div>
                 </Alert>
               ) : null}
-              <div className="grid h-full gap-5 xl:grid-cols-[1.35fr_0.9fr]">
+              <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[1.35fr_0.9fr]">
                 <PermissionCatalog
                   catalog={m.catalog}
                   filtered={m.filtered}
@@ -101,7 +105,7 @@ export default function AssignPermissionsModal(props: {
                   onSelectAllFiltered={m.onSelectAllFiltered}
                   onClearFiltered={m.onClearFiltered}
                 />
-                <div className="space-y-5">
+                <div className="space-y-5 overflow-y-auto">
                   <SelectionSummary
                     selectedIds={m.selectedIds}
                     initialIds={[]}
@@ -122,8 +126,9 @@ export default function AssignPermissionsModal(props: {
           )}
         </div>
 
-        <div className="border-t border-slate-200 px-6 py-4">
-          <div className="flex justify-end gap-2">
+        {/* ── Footer (always visible) ──────────────────────────────── */}
+        <div className="flex-none border-t border-slate-200 px-6 py-4">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" type="button" onClick={onClose}>
               Cancel
             </Button>
@@ -146,7 +151,7 @@ export default function AssignPermissionsModal(props: {
             </Button>
           </div>
         </div>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -81,7 +81,7 @@ Monorepo:
 
 | Layer    | Technology                                       | Notes                                                          |
 | -------- | ------------------------------------------------ | -------------------------------------------------------------- |
-| Frontend | React + Vite + Tailwind CSS                      | SPA, React Router, same-origin API calls via nginx proxy       |
+| Frontend | React + Vite + Tailwind CSS + shadcn/ui          | SPA, React Router, responsive UI, same-origin API via nginx    |
 | API      | Node.js + Express + TypeScript                   | Pino structured JSON logs, Helmet, rate limiting, CORS         |
 | ORM      | Prisma + PostgreSQL                              | Typed schema, incremental migrations                           |
 | Auth     | JWT access tokens + bcrypt-hashed refresh tokens | Token rotation on every refresh, DB-backed sessions            |
@@ -276,98 +276,22 @@ Connect using `psql` or a GUI (pgAdmin/DBeaver) with:
 
 See `infra/terraform/README.md` for the full Terraform deployment guide.
 
-- Docker Desktop (Docker Compose v2)
+---
 
-## Run (Dev)
+## Code formatting
 
-1. Create a `.env` from the example:
+Each workspace has its own Prettier config and `format` script. Run from the relevant folder:
 
-- Copy `.env.example` → `.env`
+```bash
+# Frontend
+cd frontend
+npm run format        # write
+npm run format:check  # check only
 
-2. Start everything:
+# Backend
+cd backend
+npm run format        # write
+npm run format:check  # check only
+```
 
-- Preferred (deterministic):
-  - `docker compose up -d --build --wait`
-
-- If your Docker Compose doesn't support `--wait`:
-  - `docker compose up -d --build`
-  - `docker compose ps`
-  - Retry curls until `api` is Up and (if shown) Healthy
-
-3. Initialize the database (first run / after `down -v`):
-   - `docker compose exec api npm run db:init`
-
-   This runs migrations and seeds initial data for local development.
-
-## Verify (Dev)
-
-### Endpoints
-
-- `curl http://localhost:4000/api/health`
-- `curl http://localhost:5173/api/health`
-
-### Login (API)
-
-- `curl -i -sS -X POST http://localhost:4000/api/auth/login \
--H "Content-Type: application/json" \
--d '{"email":"<admin-email>","password":"<admin-password>"}'`
-
-### Hot reload (Windows)
-
-File watching over bind mounts can be flaky on Windows. Polling is supported but **disabled by default**.
-
-1. Start with polling enabled:
-   - `CHOKIDAR_USEPOLLING=true docker compose up -d --build --wait`
-
-   - (Alternative) `WATCHPACK_POLLING=true docker compose up -d --build --wait`
-
-2. In another terminal, touch files on the host (this is the real signal path we care about):
-   - API reload: `touch backend/src/routes/health.ts` then `docker compose logs -f --tail=50 api`
-   - Web reload: `touch frontend/src/App.tsx` then `docker compose logs -f --tail=50 web`
-
-If you need observable Vite HMR debug output in logs (without adding custom app logging), run:
-
-    - `CHOKIDAR_USEPOLLING=true DEBUG=vite:hmr docker compose up -d --build --wait`
-
-## Stop
-
-- `docker compose down`
-
-## Reset DB
-
-This removes the Postgres volume (data loss):
-
-- `docker compose down -v`
-
-## URLs
-
-- Web: http://localhost:${WEB_PORT:-5173}
-- API: http://localhost:${API_PORT:-4000}
-
-## DB access (local dev)
-
-Postgres is **not** an HTTP service, so opening `http://localhost:5432` in a browser will fail.
-
-Connect using `psql` or a GUI (pgAdmin/DBeaver) with:
-
-- Host: `localhost`
-- Port: `5432`
-- Database: `POSTGRES_DB` (default `crbad`)
-- User: `POSTGRES_USER` (default `postgres`)
-- Password: `POSTGRES_PASSWORD` (default `postgres`)
-
-## Troubleshooting
-
-- **Port conflicts**: change `API_PORT`, `WEB_PORT`, or the `5432:5432` mapping in `docker-compose.yml`.
-- **Login returns `DB_NOT_READY`**: run `docker compose exec api npm run db:init`.
-- **Windows file watching**: if hot reload doesn’t trigger on bind mounts, rerun with polling:
-  - `CHOKIDAR_USEPOLLING=true docker compose up -d --build --wait`
-- **Rebuild images**: `docker compose build --no-cache` then `docker compose up`.
-
-## Production images
-
-- Web production stage uses **nginx** to serve the Vite `dist/` folder (see `frontend/Dockerfile` + `frontend/nginx.conf`).
-
-## AWS deploy (Terraform)
-
-See `infra/terraform/README.md` for the Terraform deployment.
+Config lives in `frontend/.prettierrc` and `backend/.prettierrc`. Ignore rules are in the matching `.prettierignore` files.
