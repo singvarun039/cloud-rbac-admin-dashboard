@@ -1,8 +1,8 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "../../lib/utils";
-import { Card, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Skeleton } from "../ui/skeleton";
+import { cn } from '../../lib/utils';
+import { Card, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Skeleton } from '../ui/skeleton';
 
 // Displays a single KPI value with an optional loading state.
 export function StatsCard(props: {
@@ -14,7 +14,7 @@ export function StatsCard(props: {
   const { title, value, loading = false, className } = props;
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn('w-full', className)}>
       <CardHeader className="space-y-1">
         <CardDescription>{title}</CardDescription>
         <CardTitle className="text-2xl font-semibold tracking-tight">

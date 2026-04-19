@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { ListQuerySchema } from "./list.schema";
+import { ListQuerySchema } from './list.schema';
 
-export const UserStatusSchema = z.enum(["ACTIVE", "INACTIVE"]);
+export const UserStatusSchema = z.enum(['ACTIVE', 'INACTIVE']);
 
 export const CreateUserBodySchema = z.object({
   email: z
@@ -12,7 +12,7 @@ export const CreateUserBodySchema = z.object({
     .transform((v) => v.toLowerCase()),
   password: z.string().min(8),
   name: z.string().trim().min(1),
-  status: UserStatusSchema.optional().default("ACTIVE"),
+  status: UserStatusSchema.optional().default('ACTIVE'),
   roleId: z.string().trim().min(1).optional(),
 });
 
@@ -34,7 +34,7 @@ export const UpdateUserBodySchema = z
     password: z.string().min(8).optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
-    message: "At least one field must be provided",
+    message: 'At least one field must be provided',
   });
 
 export const UsersListQuerySchema = ListQuerySchema.extend({

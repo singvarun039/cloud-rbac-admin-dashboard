@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
-import { env } from "../config/env";
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
+import { env } from '../config/env';
 
 // ---------------------------------------------------------------------------
 // SSL configuration for pg.Pool (used by runtime queries and prisma db seed)
@@ -24,8 +24,8 @@ function buildPoolConfig(databaseUrl: string) {
   let cleanUrl = databaseUrl;
   try {
     const u = new URL(databaseUrl);
-    u.searchParams.delete("sslmode");
-    u.searchParams.delete("ssl");
+    u.searchParams.delete('sslmode');
+    u.searchParams.delete('ssl');
     cleanUrl = u.toString();
   } catch {
     // Not a valid URL — pass through as-is and let pg handle it
@@ -35,15 +35,11 @@ function buildPoolConfig(databaseUrl: string) {
     connectionString: cleanUrl,
     // In production (AWS RDS), require SSL but accept the AWS intermediate
     // certificate chain which is not in Node.js's default CA bundle.
-    ssl:
-      env.NODE_ENV === "production"
-        ? { rejectUnauthorized: false }
-        : undefined,
+    ssl: env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
   };
 }
 
 const pool = new Pool(buildPoolConfig(env.DATABASE_URL));
-
 
 const adapter = new PrismaPg(pool);
 

@@ -1,15 +1,15 @@
-import type { NextFunction, Request, Response } from "express";
-import { ZodError } from "zod";
-import { Prisma } from "@prisma/client";
-import { AppError } from "../errors/AppError";
-import { fail } from "../utils/apiResponse";
-import { logWithReq } from "../lib/logger";
+import type { NextFunction, Request, Response } from 'express';
+import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
+import { AppError } from '../errors/AppError';
+import { fail } from '../utils/apiResponse';
+import { logWithReq } from '../lib/logger';
 
 // Converts a Zod error into structured validation details.
 function zodDetails(error: ZodError) {
   return {
     issues: error.issues.map((issue) => ({
-      path: issue.path.join("."),
+      path: issue.path.join('.'),
       message: issue.message,
       code: issue.code,
     })),
@@ -19,17 +19,12 @@ function zodDetails(error: ZodError) {
 }
 
 // Maps application and infrastructure errors into API responses.
-export function errorHandler(
-  err: unknown,
-  req: Request,
-  res: Response,
-  _next: NextFunction,
-) {
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (res.headersSent) return;
 
   // 0) Prisma initialization errors (connection/config issues)
   if (err instanceof Prisma.PrismaClientInitializationError) {
-    logWithReq(req, "error", "prisma_init_error", {
+    logWithReq(req, 'error', 'prisma_init_error', {
       message: err.message,
     });
 
@@ -37,41 +32,34 @@ export function errorHandler(
       res,
       req,
       500,
-      "DB_NOT_READY",
-      "Database is not ready. Apply migrations and seed data.",
+      'DB_NOT_READY',
+      'Database is not ready. Apply migrations and seed data.'
     );
   }
 
   // 0) Prisma validation errors (bad inputs / bad selects)
   if (err instanceof Prisma.PrismaClientValidationError) {
-    logWithReq(req, "warn", "prisma_validation_error", {
+    logWithReq(req, 'warn', 'prisma_validation_error', {
       message: err.message,
     });
-    return fail(res, req, 400, "BAD_REQUEST", "Bad request");
+    return fail(res, req, 400, 'BAD_REQUEST', 'Bad request');
   }
 
   // 1) Zod validation errors
   if (err instanceof ZodError) {
-    return fail(
-      res,
-      req,
-      400,
-      "VALIDATION_ERROR",
-      "Validation failed",
-      zodDetails(err),
-    );
+    return fail(res, req, 400, 'VALIDATION_ERROR', 'Validation failed', zodDetails(err));
   }
 
   // 2) Our explicit application errors
   if (err instanceof AppError) {
     if (err.status >= 500) {
-      logWithReq(req, "error", "request_error", {
+      logWithReq(req, 'error', 'request_error', {
         code: err.code,
         message: err.message,
         details: err.details,
       });
     } else {
-      logWithReq(req, "warn", "request_error", {
+      logWithReq(req, 'warn', 'request_error', {
         code: err.code,
         message: err.message,
         details: err.details,
@@ -84,8 +72,8 @@ export function errorHandler(
   // 3) Prisma known errors
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     // Missing tables/columns are usually a sign migrations haven't been applied.
-    if (err.code === "P2021") {
-      logWithReq(req, "error", "prisma_error", {
+    if (err.code === 'P2021') {
+      logWithReq(req, 'error', 'prisma_error', {
         code: err.code,
         meta: err.meta,
       });
@@ -94,44 +82,44 @@ export function errorHandler(
         res,
         req,
         500,
-        "DB_NOT_READY",
-        "Database schema is not ready. Run migrations and seed.",
+        'DB_NOT_READY',
+        'Database schema is not ready. Run migrations and seed.'
       );
     }
 
-    if (err.code === "P2002") {
-      logWithReq(req, "warn", "prisma_error", {
+    if (err.code === 'P2002') {
+      logWithReq(req, 'warn', 'prisma_error', {
         code: err.code,
         meta: err.meta,
       });
-      return fail(res, req, 409, "CONFLICT", "Conflict", {
+      return fail(res, req, 409, 'CONFLICT', 'Conflict', {
         target: (err.meta as any)?.target,
       });
     }
 
-    if (err.code === "P2025") {
-      logWithReq(req, "warn", "prisma_error", {
+    if (err.code === 'P2025') {
+      logWithReq(req, 'warn', 'prisma_error', {
         code: err.code,
         meta: err.meta,
       });
-      return fail(res, req, 404, "NOT_FOUND", "Not found");
+      return fail(res, req, 404, 'NOT_FOUND', 'Not found');
     }
 
-    if (err.code === "P2003") {
-      logWithReq(req, "warn", "prisma_error", {
+    if (err.code === 'P2003') {
+      logWithReq(req, 'warn', 'prisma_error', {
         code: err.code,
         meta: err.meta,
       });
-      return fail(res, req, 409, "CONFLICT", "Conflict", {
+      return fail(res, req, 409, 'CONFLICT', 'Conflict', {
         fieldName: (err.meta as any)?.field_name,
       });
     }
 
-    logWithReq(req, "error", "prisma_error", {
+    logWithReq(req, 'error', 'prisma_error', {
       code: err.code,
       meta: err.meta,
     });
-    return fail(res, req, 500, "INTERNAL", "Internal server error");
+    return fail(res, req, 500, 'INTERNAL', 'Internal server error');
   }
 
   // 4) Unknown/unexpected
@@ -141,11 +129,11 @@ export function errorHandler(
     name?: string;
   };
 
-  logWithReq(req, "error", "request_error", {
+  logWithReq(req, 'error', 'request_error', {
     errorName: unknownError?.name,
     errorMessage: unknownError?.message,
     stack: unknownError?.stack,
   });
 
-  return fail(res, req, 500, "INTERNAL", "Internal server error");
+  return fail(res, req, 500, 'INTERNAL', 'Internal server error');
 }

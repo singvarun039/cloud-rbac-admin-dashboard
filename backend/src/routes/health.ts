@@ -1,11 +1,11 @@
-import { Router } from "express";
-import { ok } from "../utils/apiResponse";
+import { Router } from 'express';
+import { ok } from '../utils/apiResponse';
 
 const router = Router();
 
-router.get("/health", (req, res) => {
+router.get('/health', (req, res) => {
   return ok(res, req, {
-    service: "backend",
+    service: 'backend',
     ts: new Date().toISOString(),
   });
 });

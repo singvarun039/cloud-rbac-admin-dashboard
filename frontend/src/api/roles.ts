@@ -1,5 +1,5 @@
-import { api } from "./client";
-import { unwrapData, type ApiEnvelope } from "../types/api";
+import { api } from './client';
+import { unwrapData, type ApiEnvelope } from '../types/api';
 
 export type RolePermissionRef = {
   id: string;
@@ -34,9 +34,7 @@ export type GetRolesParams = {
 
 // Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : null;
+  return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
 // Normalizes backend role list responses into the frontend shape.
@@ -44,7 +42,7 @@ function unwrapRolesList(payload: unknown): RolesResponse {
   // Backend: ok envelope { ok: true, data: { roles, page, limit, total, totalPages } }
   const unwrapped = unwrapData<unknown>(payload) ?? payload;
   const record = asRecord(unwrapped);
-  if (!record) throw new Error("Unexpected roles list response format");
+  if (!record) throw new Error('Unexpected roles list response format');
 
   const roles = record.roles;
   const page = record.page;
@@ -52,17 +50,15 @@ function unwrapRolesList(payload: unknown): RolesResponse {
   const total = record.total;
   const totalPages = record.totalPages;
 
-  if (!Array.isArray(roles))
-    throw new Error("Unexpected roles list response format");
+  if (!Array.isArray(roles)) throw new Error('Unexpected roles list response format');
 
   return {
     data: roles as Role[],
     meta: {
-      page: typeof page === "number" ? page : Number(page),
-      limit: typeof limit === "number" ? limit : Number(limit),
-      total: typeof total === "number" ? total : Number(total),
-      totalPages:
-        typeof totalPages === "number" ? totalPages : Number(totalPages),
+      page: typeof page === 'number' ? page : Number(page),
+      limit: typeof limit === 'number' ? limit : Number(limit),
+      total: typeof total === 'number' ? total : Number(total),
+      totalPages: typeof totalPages === 'number' ? totalPages : Number(totalPages),
     },
   };
 }
@@ -70,17 +66,17 @@ function unwrapRolesList(payload: unknown): RolesResponse {
 // Loads a paginated list of roles.
 export async function getRoles(
   params?: GetRolesParams,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal }
 ): Promise<RolesResponse> {
   const query: Record<string, unknown> = {};
 
-  if (typeof params?.page === "number") query.page = params.page;
-  if (typeof params?.limit === "number") query.limit = params.limit;
+  if (typeof params?.page === 'number') query.page = params.page;
+  if (typeof params?.limit === 'number') query.limit = params.limit;
 
-  const trimmedSearch = (params?.search ?? "").trim();
+  const trimmedSearch = (params?.search ?? '').trim();
   if (trimmedSearch) query.search = trimmedSearch;
 
-  const res = await api.get("/api/roles", {
+  const res = await api.get('/api/roles', {
     params: Object.keys(query).length > 0 ? query : undefined,
     signal: options?.signal,
   });
@@ -95,7 +91,7 @@ export type CreateRoleRequest = {
 
 // Creates a new role through the API.
 export async function createRole(payload: CreateRoleRequest): Promise<Role> {
-  const res = await api.post("/api/roles", payload);
+  const res = await api.post('/api/roles', payload);
   const body = res.data as unknown;
 
   // backend: { ok: true, data: { role } }
@@ -106,7 +102,7 @@ export async function createRole(payload: CreateRoleRequest): Promise<Role> {
 
   // tolerate { data: role } / plain role
   const envelopeRecord = asRecord(body);
-  if (envelopeRecord && "data" in envelopeRecord) {
+  if (envelopeRecord && 'data' in envelopeRecord) {
     return (body as ApiEnvelope<Role>).data as Role;
   }
 
@@ -119,10 +115,7 @@ export type UpdateRoleRequest = {
 };
 
 // Updates an existing role through the API.
-export async function updateRole(
-  id: string,
-  payload: UpdateRoleRequest,
-): Promise<Role> {
+export async function updateRole(id: string, payload: UpdateRoleRequest): Promise<Role> {
   const res = await api.patch(`/api/roles/${id}`, payload);
   const body = res.data as unknown;
 
@@ -132,7 +125,7 @@ export async function updateRole(
   if (role) return role as Role;
 
   const envelopeRecord = asRecord(body);
-  if (envelopeRecord && "data" in envelopeRecord) {
+  if (envelopeRecord && 'data' in envelopeRecord) {
     return (body as ApiEnvelope<Role>).data as Role;
   }
 
@@ -142,7 +135,7 @@ export async function updateRole(
 // Replaces the permissions assigned to a role through the API.
 export async function replaceRolePermissions(
   id: string,
-  payload: { permissionIds: string[] },
+  payload: { permissionIds: string[] }
 ): Promise<{ role: Role } & Record<string, unknown>> {
   const res = await api.post(`/api/roles/${id}/permissions`, payload);
   const body = res.data as unknown;

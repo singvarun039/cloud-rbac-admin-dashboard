@@ -1,8 +1,8 @@
-import rateLimit from "express-rate-limit";
-import type { Request } from "express";
-import { env } from "../config/env";
-import { fail } from "../utils/apiResponse";
-import { writeAuditLog } from "./auditLog.service";
+import rateLimit from 'express-rate-limit';
+import type { Request } from 'express';
+import { env } from '../config/env';
+import { fail } from '../utils/apiResponse';
+import { writeAuditLog } from './auditLog.service';
 
 export type AiDataSource = {
   key: string;
@@ -12,39 +12,39 @@ export type AiDataSource = {
 
 export const AI_DATA_SOURCES = {
   dashboardSummary: {
-    key: "dashboard.summary",
-    label: "Dashboard summary",
-    description: "KPI totals, audit trend, and recent audit activity.",
+    key: 'dashboard.summary',
+    label: 'Dashboard summary',
+    description: 'KPI totals, audit trend, and recent audit activity.',
   },
   signedInUserPermissions: {
-    key: "auth.user_permissions",
-    label: "Signed-in user permissions",
-    description: "Effective permissions of the current authenticated user.",
+    key: 'auth.user_permissions',
+    label: 'Signed-in user permissions',
+    description: 'Effective permissions of the current authenticated user.',
   },
   auditAggregates: {
-    key: "audit.aggregates",
-    label: "Audit aggregates",
-    description: "Aggregated audit counts, top actions, actors, and failures.",
+    key: 'audit.aggregates',
+    label: 'Audit aggregates',
+    description: 'Aggregated audit counts, top actions, actors, and failures.',
   },
   roleMatrix: {
-    key: "roles.matrix",
-    label: "Role matrix",
-    description: "Current roles and their assigned permissions.",
+    key: 'roles.matrix',
+    label: 'Role matrix',
+    description: 'Current roles and their assigned permissions.',
   },
   roleAuditSignals: {
-    key: "roles.audit_signals",
-    label: "Role audit signals",
-    description: "Recent audit activity related to roles and permission changes.",
+    key: 'roles.audit_signals',
+    label: 'Role audit signals',
+    description: 'Recent audit activity related to roles and permission changes.',
   },
   policySurfaceMap: {
-    key: "policy.surface_map",
-    label: "Policy surface map",
-    description: "Modeled pages and API capabilities tied to permission requirements.",
+    key: 'policy.surface_map',
+    label: 'Policy surface map',
+    description: 'Modeled pages and API capabilities tied to permission requirements.',
   },
   proposedPermissionDraft: {
-    key: "policy.proposed_permissions",
-    label: "Proposed permission draft",
-    description: "The unsaved permission set being simulated.",
+    key: 'policy.proposed_permissions',
+    label: 'Proposed permission draft',
+    description: 'The unsaved permission set being simulated.',
   },
 } satisfies Record<string, AiDataSource>;
 
@@ -54,8 +54,8 @@ export const aiRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {
-    const userId = req.user?.id ?? "";
-    const ip = req.ip ?? "";
+    const userId = req.user?.id ?? '';
+    const ip = req.ip ?? '';
     return userId ? `${ip}|${userId}` : ip;
   },
   handler: (req, res) =>
@@ -63,8 +63,8 @@ export const aiRateLimiter = rateLimit({
       res,
       req,
       429,
-      "AI_RATE_LIMITED",
-      "Too many AI requests. Please try again in a few minutes.",
+      'AI_RATE_LIMITED',
+      'Too many AI requests. Please try again in a few minutes.'
     ),
 });
 
@@ -79,8 +79,8 @@ export async function writeAiUsageAuditLog(input: {
 }): Promise<void> {
   await writeAuditLog({
     req: input.req,
-    action: "AI_FEATURE_USED",
-    entityType: "AI_FEATURE",
+    action: 'AI_FEATURE_USED',
+    entityType: 'AI_FEATURE',
     entityId: input.entityId ?? input.feature,
     meta: {
       feature: input.feature,

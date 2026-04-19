@@ -1,4 +1,4 @@
-import { prisma } from "../db/prisma";
+import { prisma } from '../db/prisma';
 
 type DashboardPermissionSet = {
   canUsers: boolean;
@@ -35,10 +35,10 @@ export async function getDashboardSummaryForPermissions(input: {
 }): Promise<DashboardSummaryResult> {
   const perms = new Set(input.permissions);
   const access: DashboardPermissionSet = {
-    canUsers: perms.has("users.read"),
-    canRoles: perms.has("roles.read"),
-    canProjects: perms.has("projects.read"),
-    canAudit: perms.has("audit.read"),
+    canUsers: perms.has('users.read'),
+    canRoles: perms.has('roles.read'),
+    canProjects: perms.has('projects.read'),
+    canAudit: perms.has('audit.read'),
   };
 
   const [usersTotal, rolesTotal, projectsTotal] = await Promise.all([
@@ -51,7 +51,7 @@ export async function getDashboardSummaryForPermissions(input: {
 
   let auditTotalWindow: number | null = null;
   let auditTrend: Array<{ date: string; count: number }> = [];
-  let recentAudit: DashboardSummaryResult["recentAudit"] = [];
+  let recentAudit: DashboardSummaryResult['recentAudit'] = [];
 
   if (access.canAudit) {
     const [auditTotal, trendRows, recent] = await Promise.all([
@@ -73,7 +73,7 @@ export async function getDashboardSummaryForPermissions(input: {
         ORDER BY 1 ASC
       `,
       prisma.auditLog.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
           id: true,

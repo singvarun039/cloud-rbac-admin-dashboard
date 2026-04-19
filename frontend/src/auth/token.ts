@@ -1,4 +1,4 @@
-const ACCESS_TOKEN_KEY = "cr_rbac_access_token";
+const ACCESS_TOKEN_KEY = 'cr_rbac_access_token';
 
 // Day 11: simplest approach is localStorage.
 // We'll improve this later (Day 12+) with a safer strategy.

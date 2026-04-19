@@ -1,11 +1,11 @@
-import { Router } from "express";
-import { prisma } from "../../db/prisma";
-import { authenticate } from "../../middlewares/authenticate";
-import { requirePermission } from "../../middlewares/requirePermission";
-import { ok } from "../../utils/apiResponse";
-import { asyncHandler } from "../../middlewares/asyncHandler";
-import { validateQuery } from "../../middlewares/validate";
-import { AuditLogsListQuerySchema } from "../../validation/auditLogs.schema";
+import { Router } from 'express';
+import { prisma } from '../../db/prisma';
+import { authenticate } from '../../middlewares/authenticate';
+import { requirePermission } from '../../middlewares/requirePermission';
+import { ok } from '../../utils/apiResponse';
+import { asyncHandler } from '../../middlewares/asyncHandler';
+import { validateQuery } from '../../middlewares/validate';
+import { AuditLogsListQuerySchema } from '../../validation/auditLogs.schema';
 
 export const auditLogsRouter = Router();
 
@@ -34,8 +34,7 @@ function actorToApi(actor: {
   firstName: string | null;
   lastName: string | null;
 }) {
-  const name =
-    [actor.firstName, actor.lastName].filter(Boolean).join(" ") || null;
+  const name = [actor.firstName, actor.lastName].filter(Boolean).join(' ') || null;
   return {
     id: actor.id,
     email: actor.email,
@@ -44,9 +43,9 @@ function actorToApi(actor: {
 }
 
 auditLogsRouter.get(
-  "/",
+  '/',
   authenticate,
-  requirePermission("audit.read"),
+  requirePermission('audit.read'),
   validateQuery(AuditLogsListQuerySchema),
   asyncHandler(async (req, res) => {
     const {
@@ -73,7 +72,7 @@ auditLogsRouter.get(
       where.actor = {
         email: {
           equals: String(actorEmail),
-          mode: "insensitive",
+          mode: 'insensitive',
         },
       };
     }
@@ -105,7 +104,7 @@ auditLogsRouter.get(
       prisma.auditLog.count({ where }),
       prisma.auditLog.findMany({
         where,
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         skip,
         take: limit,
         select: {
@@ -146,11 +145,6 @@ auditLogsRouter.get(
       userAgent: row.userAgent,
     }));
 
-    return ok(
-      res,
-      req,
-      { items: mapped, meta: { page, limit, total, hasNext } },
-      200
-    );
+    return ok(res, req, { items: mapped, meta: { page, limit, total, hasNext } }, 200);
   })
 );

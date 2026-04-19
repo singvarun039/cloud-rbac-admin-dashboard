@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
+const ACCESS_TOKEN_KEY = 'accessToken';
+const REFRESH_TOKEN_KEY = 'refreshToken';
 
 let inMemoryAccessToken: string | null = null;
 let inMemoryRefreshToken: string | null = null;
@@ -96,7 +96,7 @@ export async function logout(): Promise<void> {
   }
 
   clearTokens();
-  if (window.location.pathname !== "/login") {
-    window.location.href = "/login";
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
   }
 }

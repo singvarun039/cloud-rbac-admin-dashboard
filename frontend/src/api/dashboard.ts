@@ -1,5 +1,5 @@
-import { api, getApiErrorMessage } from "./client";
-import { unwrapData } from "../types/api";
+import { api, getApiErrorMessage } from './client';
+import { unwrapData } from '../types/api';
 
 export type DashboardSummary = {
   kpis: {
@@ -25,10 +25,10 @@ export type DashboardSummary = {
 // Loads the dashboard summary metrics and activity feed.
 export async function getDashboardSummary(
   windowDays = 14,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal }
 ): Promise<DashboardSummary> {
   try {
-    const res = await api.get("/api/dashboard/summary", {
+    const res = await api.get('/api/dashboard/summary', {
       params: { windowDays },
       signal: options?.signal,
     });
@@ -37,12 +37,12 @@ export async function getDashboardSummary(
     if (unwrapped) return unwrapped;
 
     const record = res.data as unknown as { data?: unknown };
-    if (record && typeof record === "object" && record.data) {
+    if (record && typeof record === 'object' && record.data) {
       return record.data as DashboardSummary;
     }
 
     return res.data as DashboardSummary;
   } catch (err) {
-    throw new Error(getApiErrorMessage(err, "Failed to load dashboard."));
+    throw new Error(getApiErrorMessage(err, 'Failed to load dashboard.'));
   }
 }

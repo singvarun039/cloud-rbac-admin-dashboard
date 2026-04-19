@@ -1,13 +1,13 @@
-import type { NextFunction, Request, RequestHandler, Response } from "express";
-import type { ZodTypeAny } from "zod";
-import { ZodError } from "zod";
-import { AppError } from "../errors/AppError";
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
+import type { ZodTypeAny } from 'zod';
+import { ZodError } from 'zod';
+import { AppError } from '../errors/AppError';
 
 // Converts a Zod error into a client-friendly validation payload.
 function zodDetails(error: ZodError) {
   return {
     issues: error.issues.map((issue) => ({
-      path: issue.path.join("."),
+      path: issue.path.join('.'),
       message: issue.message,
       code: issue.code,
     })),
@@ -17,10 +17,7 @@ function zodDetails(error: ZodError) {
 }
 
 // Validates a request section and replaces it with parsed data.
-function validatePart(
-  part: "body" | "query" | "params",
-  schema: ZodTypeAny,
-): RequestHandler {
+function validatePart(part: 'body' | 'query' | 'params', schema: ZodTypeAny): RequestHandler {
   return (req: Request, _res: Response, next: NextFunction) => {
     const parsed = schema.safeParse(req[part]);
     if (!parsed.success) {
@@ -29,17 +26,17 @@ function validatePart(
 
     // Replace with parsed (typed) data for downstream handlers.
     // Express 5 exposes `req.query` as a getter-only property, so avoid reassigning it.
-    if (part === "query") {
+    if (part === 'query') {
       // Prefer overriding the accessor with a concrete value so downstream code sees coerced numbers.
       // If Express' `req.query` is non-configurable, fall back to mutating the returned object.
       try {
-        Object.defineProperty(req, "query", {
+        Object.defineProperty(req, 'query', {
           value: parsed.data,
           writable: true,
           configurable: true,
         });
       } catch {
-        if (req.query && typeof req.query === "object") {
+        if (req.query && typeof req.query === 'object') {
           Object.assign(req.query as Record<string, unknown>, parsed.data);
         }
       }
@@ -52,15 +49,15 @@ function validatePart(
 
 // Validates and parses the request body.
 export function validateBody(schema: ZodTypeAny) {
-  return validatePart("body", schema);
+  return validatePart('body', schema);
 }
 
 // Validates and parses the request query string.
 export function validateQuery(schema: ZodTypeAny) {
-  return validatePart("query", schema);
+  return validatePart('query', schema);
 }
 
 // Validates and parses the request route params.
 export function validateParams(schema: ZodTypeAny) {
-  return validatePart("params", schema);
+  return validatePart('params', schema);
 }

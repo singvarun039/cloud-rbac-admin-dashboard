@@ -1,5 +1,5 @@
-import { api, getApiErrorMessage } from "./client";
-import { unwrapData } from "../types/api";
+import { api, getApiErrorMessage } from './client';
+import { unwrapData } from '../types/api';
 
 export type AuditInsightsResponse = {
   windowDays: number;
@@ -31,10 +31,10 @@ export type AuditInsightsResponse = {
 // Loads AI-generated audit anomaly insights for the dashboard.
 export async function getAuditInsights(
   windowDays = 14,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal }
 ): Promise<AuditInsightsResponse> {
   try {
-    const res = await api.get("/api/ai/audit-insights", {
+    const res = await api.get('/api/ai/audit-insights', {
       params: { windowDays },
       signal: options?.signal,
     });
@@ -43,8 +43,6 @@ export async function getAuditInsights(
     if (unwrapped) return unwrapped;
     return res.data as AuditInsightsResponse;
   } catch (err) {
-    throw new Error(
-      getApiErrorMessage(err, "Failed to load audit anomaly insights."),
-    );
+    throw new Error(getApiErrorMessage(err, 'Failed to load audit anomaly insights.'));
   }
 }

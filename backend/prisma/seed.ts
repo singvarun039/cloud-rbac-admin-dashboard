@@ -1,47 +1,47 @@
-import { prisma } from "../src/db/prisma";
-import { hashPassword } from "../src/utils/password";
+import { prisma } from '../src/db/prisma';
+import { hashPassword } from '../src/utils/password';
 
 const PERMISSION_KEYS = [
-  "users.read",
-  "users.write",
-  "users.edit",
-  "roles.read",
-  "roles.write",
-  "roles.edit",
-  "permissions.read",
-  "projects.read",
-  "projects.write",
-  "projects.edit",
-  "audit.read",
+  'users.read',
+  'users.write',
+  'users.edit',
+  'roles.read',
+  'roles.write',
+  'roles.edit',
+  'permissions.read',
+  'projects.read',
+  'projects.write',
+  'projects.edit',
+  'audit.read',
 ] as const;
 
 const VIEWER_PERMISSION_KEYS = [
-  "users.read",
-  "projects.read",
-  "audit.read",
-  "roles.read",
-  "permissions.read",
+  'users.read',
+  'projects.read',
+  'audit.read',
+  'roles.read',
+  'permissions.read',
 ] as const;
 
 const EDITOR_PERMISSION_KEYS = [
-  "users.read",
-  "users.edit",
-  "projects.read",
-  "projects.edit",
-  "audit.read",
-  "roles.read",
-  "permissions.read",
+  'users.read',
+  'users.edit',
+  'projects.read',
+  'projects.edit',
+  'audit.read',
+  'roles.read',
+  'permissions.read',
 ] as const;
 
 async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL ?? "rbac_admin@rbac.local";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "rbac@1234";
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'rbac_admin@rbac.local';
+  const password = process.env.SEED_ADMIN_PASSWORD ?? 'rbac@1234';
 
-  const viewerEmail = process.env.SEED_VIEWER_EMAIL ?? "rbac_viewer@rbac.local";
-  const viewerPassword = process.env.SEED_VIEWER_PASSWORD ?? "rbac@1234";
+  const viewerEmail = process.env.SEED_VIEWER_EMAIL ?? 'rbac_viewer@rbac.local';
+  const viewerPassword = process.env.SEED_VIEWER_PASSWORD ?? 'rbac@1234';
 
-  const editorEmail = process.env.SEED_EDITOR_EMAIL ?? "rbac_editor@rbac.local";
-  const editorPassword = process.env.SEED_EDITOR_PASSWORD ?? "rbac@1234";
+  const editorEmail = process.env.SEED_EDITOR_EMAIL ?? 'rbac_editor@rbac.local';
+  const editorPassword = process.env.SEED_EDITOR_PASSWORD ?? 'rbac@1234';
 
   const passwordHash = await hashPassword(password);
   const viewerPasswordHash = await hashPassword(viewerPassword);
@@ -52,13 +52,13 @@ async function main() {
     update: {
       passwordHash,
       isActive: true,
-      firstName: "Admin",
+      firstName: 'Admin',
     },
     create: {
       email,
       passwordHash,
       isActive: true,
-      firstName: "Admin",
+      firstName: 'Admin',
     },
     select: {
       id: true,
@@ -74,13 +74,13 @@ async function main() {
     update: {
       passwordHash: viewerPasswordHash,
       isActive: true,
-      firstName: "Viewer",
+      firstName: 'Viewer',
     },
     create: {
       email: viewerEmail,
       passwordHash: viewerPasswordHash,
       isActive: true,
-      firstName: "Viewer",
+      firstName: 'Viewer',
     },
     select: {
       id: true,
@@ -96,13 +96,13 @@ async function main() {
     update: {
       passwordHash: editorPasswordHash,
       isActive: true,
-      firstName: "Editor",
+      firstName: 'Editor',
     },
     create: {
       email: editorEmail,
       passwordHash: editorPasswordHash,
       isActive: true,
-      firstName: "Editor",
+      firstName: 'Editor',
     },
     select: {
       id: true,
@@ -115,21 +115,21 @@ async function main() {
 
   const [adminRole, viewerRole, editorRole] = await Promise.all([
     prisma.role.upsert({
-      where: { name: "ADMIN" },
-      update: { description: "Full system access" },
-      create: { name: "ADMIN", description: "Full system access" },
+      where: { name: 'ADMIN' },
+      update: { description: 'Full system access' },
+      create: { name: 'ADMIN', description: 'Full system access' },
       select: { id: true, name: true },
     }),
     prisma.role.upsert({
-      where: { name: "VIEWER" },
-      update: { description: "Read-only access" },
-      create: { name: "VIEWER", description: "Read-only access" },
+      where: { name: 'VIEWER' },
+      update: { description: 'Read-only access' },
+      create: { name: 'VIEWER', description: 'Read-only access' },
       select: { id: true, name: true },
     }),
     prisma.role.upsert({
-      where: { name: "EDITOR" },
-      update: { description: "Limited write access" },
-      create: { name: "EDITOR", description: "Limited write access" },
+      where: { name: 'EDITOR' },
+      update: { description: 'Limited write access' },
+      create: { name: 'EDITOR', description: 'Limited write access' },
       select: { id: true, name: true },
     }),
   ]);
@@ -143,8 +143,8 @@ async function main() {
         update: {},
         create: { key, description: key },
         select: { id: true, key: true },
-      }),
-    ),
+      })
+    )
   );
 
   await prisma.rolePermission.createMany({
@@ -184,21 +184,17 @@ async function main() {
     skipDuplicates: true,
   });
 
-  console.log("Seeded admin user:", user);
-  console.log("Seeded viewer user:", viewerUser);
-  console.log("Seeded editor user:", editorUser);
-  console.log("Seeded roles:", [
-    adminRole.name,
-    viewerRole.name,
-    editorRole.name,
-  ]);
+  console.log('Seeded admin user:', user);
+  console.log('Seeded viewer user:', viewerUser);
+  console.log('Seeded editor user:', editorUser);
+  console.log('Seeded roles:', [adminRole.name, viewerRole.name, editorRole.name]);
   console.log(
-    "Seeded permissions:",
-    permissions.map((p) => p.key),
+    'Seeded permissions:',
+    permissions.map((p) => p.key)
   );
-  console.log("Assigned ADMIN role to:", user.email);
-  console.log("Assigned VIEWER role to:", viewerUser.email);
-  console.log("Assigned EDITOR role to:", editorUser.email);
+  console.log('Assigned ADMIN role to:', user.email);
+  console.log('Assigned VIEWER role to:', viewerUser.email);
+  console.log('Assigned EDITOR role to:', editorUser.email);
 
   // Demo projects — give reviewers something to see in the Projects page.
   // Guard: skip if already seeded (idempotent re-runs).
@@ -206,23 +202,25 @@ async function main() {
   if (existingProjectCount === 0) {
     await prisma.project.createMany({
       data: [
-        { name: "Platform Core", ownerId: user.id, isArchived: false },
-        { name: "Marketing Website", ownerId: editorUser.id, isArchived: false },
-        { name: "Internal Tooling", ownerId: user.id, isArchived: false },
-        { name: "Legacy API", ownerId: user.id, isArchived: true },
+        { name: 'Platform Core', ownerId: user.id, isArchived: false },
+        { name: 'Marketing Website', ownerId: editorUser.id, isArchived: false },
+        { name: 'Internal Tooling', ownerId: user.id, isArchived: false },
+        { name: 'Legacy API', ownerId: user.id, isArchived: true },
       ],
     });
-    console.log("Seeded 4 demo projects (Platform Core, Marketing Website, Internal Tooling, Legacy API)");
+    console.log(
+      'Seeded 4 demo projects (Platform Core, Marketing Website, Internal Tooling, Legacy API)'
+    );
   } else {
     console.log(`Skipped project seed — ${existingProjectCount} project(s) already exist`);
   }
 
-  console.log("Admin login:", { email, password });
-  console.log("Viewer login:", {
+  console.log('Admin login:', { email, password });
+  console.log('Viewer login:', {
     email: viewerEmail,
     password: viewerPassword,
   });
-  console.log("Editor login:", {
+  console.log('Editor login:', {
     email: editorEmail,
     password: editorPassword,
   });

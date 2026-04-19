@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import type { ReactNode } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 // Renders a reusable modal shell for forms and confirmations.
 export default function Modal(props: {

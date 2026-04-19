@@ -1,5 +1,5 @@
-import type { ApiEnvelope } from "./api";
-import type { MeUser } from "./user";
+import type { ApiEnvelope } from './api';
+import type { MeUser } from './user';
 
 export type LoginRequest = {
   email: string;
@@ -12,9 +12,6 @@ export type LoginData = {
   user?: Partial<MeUser>;
 };
 
-export type LoginResponse =
-  | ApiEnvelope<LoginData>
-  | LoginData
-  | Record<string, unknown>;
+export type LoginResponse = ApiEnvelope<LoginData> | LoginData | Record<string, unknown>;
 
 export type MeResponse = ApiEnvelope<MeUser> | MeUser | Record<string, unknown>;

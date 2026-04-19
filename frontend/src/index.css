@@ -8,38 +8,181 @@
     height: 100%;
   }
 
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply m-0 bg-slate-50 text-slate-900 antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
   }
 }
 
-:root {
-  font-family:
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #0f172a;
-  background-color: #f8fafc;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@layer components {
+  /* ─── Page containers ──────────────────────────────────────────── */
 
-* {
-  box-sizing: border-box;
-}
+  /* Standard page root wrapper */
+  .page-root {
+    @apply w-full space-y-4;
+  }
 
-body {
-  margin: 0;
-}
+  /* ─── Filters row / actions bar ────────────────────────────────── */
 
-a {
-  color: inherit;
-  text-decoration: none;
+  /* Outer row: stacks vertically on mobile, horizontal on lg+ */
+  .filters-row {
+    @apply flex flex-col gap-3 lg:flex-row lg:items-end;
+  }
+
+  /* Input grid inside filters row (1 → 2 → 4 columns) */
+  .filters-inputs-grid {
+    @apply grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1;
+  }
+
+  /* Action buttons group at end of filter row */
+  .filters-actions {
+    @apply flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto;
+  }
+
+  /* A single action button that is full-width on mobile, auto on sm+ */
+  .filter-btn {
+    @apply h-10 w-full sm:w-auto;
+  }
+
+  /* ─── Tables ────────────────────────────────────────────────────── */
+
+  /* Scrollable table wrapper for small screens */
+  .table-wrap {
+    @apply w-full overflow-x-auto;
+  }
+
+  /* ─── Typography helpers ─────────────────────────────────────────── */
+
+  /* Uppercase section label (used in cards, audit insights, etc.) */
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-[0.22em] text-slate-500;
+  }
+
+  /* ─── Content boxes ─────────────────────────────────────────────── */
+
+  /* General content / answer box */
+  .content-box {
+    @apply rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700;
+  }
+
+  /* Small list item row (anomalies, recommendations) */
+  .content-item {
+    @apply rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700;
+  }
+
+  /* ─── Detail sheet rows ─────────────────────────────────────────── */
+
+  /* Label + value pair in view sheets */
+  .detail-row {
+    @apply space-y-1;
+  }
+
+  /* ─── Sidebar navigation ────────────────────────────────────────── */
+
+  /* Desktop sidebar navigation item */
+  .nav-item {
+    @apply flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium
+           text-slate-200 transition-colors
+           hover:bg-white/10 hover:text-white
+           focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-white/30 focus-visible:ring-offset-2
+           focus-visible:ring-offset-slate-950;
+  }
+
+  /* Active state for nav item */
+  .nav-item-active {
+    @apply bg-white/10 text-white;
+  }
+
+  /* Sidebar brand / logo block */
+  .sidebar-brand {
+    @apply flex items-center gap-2;
+  }
+
+  .sidebar-brand-icon {
+    @apply grid h-8 w-8 place-items-center rounded-md border border-white/10 bg-white/5;
+  }
+
+  /* ─── Responsive layout shell ───────────────────────────────────── */
+
+  /* App shell: sidebar + main area on lg+, full-width stack on mobile */
+  .app-shell {
+    @apply min-h-screen w-full bg-slate-50 text-slate-900;
+  }
+
+  .app-shell-inner {
+    @apply min-h-screen w-full lg:grid lg:grid-cols-[240px_1fr];
+  }
+
+  /* Desktop sidebar */
+  .app-sidebar {
+    @apply hidden border-r border-slate-800 bg-slate-950 text-slate-100
+           lg:flex lg:flex-col;
+  }
+
+  /* Top header bar */
+  .app-header {
+    @apply sticky top-0 z-10 flex h-14 items-center justify-between gap-3
+           border-b border-slate-200 bg-white/80 px-4
+           backdrop-blur supports-[backdrop-filter]:bg-white/70
+           sm:px-6 lg:px-8;
+  }
+
+  /* Main content area */
+  .app-main {
+    @apply flex-1 min-w-0 w-full px-4 py-4 sm:px-6 lg:px-8;
+  }
+
+  /* ─── Login page ─────────────────────────────────────────────────── */
+
+  /* Login background with decorative blobs */
+  .login-bg {
+    @apply relative min-h-screen overflow-hidden
+           bg-gradient-to-b from-slate-50 via-white to-slate-100;
+  }
+
+  .login-blob-tl {
+    @apply absolute -left-24 -top-24 h-72 w-72 rounded-full bg-sky-200/35 blur-3xl;
+  }
+
+  .login-blob-br {
+    @apply absolute -bottom-28 -right-28 h-80 w-80 rounded-full bg-indigo-200/30 blur-3xl;
+  }
+
+  .login-blob-center {
+    @apply absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2
+           rounded-full bg-slate-900/5 blur-3xl;
+  }
+
+  .login-container {
+    @apply relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12;
+  }
+
+  .login-logo {
+    @apply mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full
+           border border-slate-200/70 bg-white/80 shadow-sm backdrop-blur;
+  }
 }

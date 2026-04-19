@@ -1,5 +1,5 @@
-import { api, getApiErrorMessage } from "./client";
-import { unwrapData } from "../types/api";
+import { api, getApiErrorMessage } from './client';
+import { unwrapData } from '../types/api';
 
 export type PolicySimulationResponse = {
   role: {
@@ -18,21 +18,21 @@ export type PolicySimulationResponse = {
   removedPermissionKeys: string[];
   impacts: {
     losingAccess: Array<{
-      kind: "page" | "api";
+      kind: 'page' | 'api';
       key: string;
       label: string;
       description: string;
       requiredAnyOf: string[];
     }>;
     gainingAccess: Array<{
-      kind: "page" | "api";
+      kind: 'page' | 'api';
       key: string;
       label: string;
       description: string;
       requiredAnyOf: string[];
     }>;
     unchangedAccessible: Array<{
-      kind: "page" | "api";
+      kind: 'page' | 'api';
       key: string;
       label: string;
       description: string;
@@ -48,13 +48,11 @@ export async function simulateRolePolicyChange(input: {
   permissionIds: string[];
 }): Promise<PolicySimulationResponse> {
   try {
-    const res = await api.post("/api/ai/policy-simulation", input);
+    const res = await api.post('/api/ai/policy-simulation', input);
     const unwrapped = unwrapData<PolicySimulationResponse>(res.data);
     if (unwrapped) return unwrapped;
     return res.data as PolicySimulationResponse;
   } catch (err) {
-    throw new Error(
-      getApiErrorMessage(err, "Failed to simulate policy impact."),
-    );
+    throw new Error(getApiErrorMessage(err, 'Failed to simulate policy impact.'));
   }
 }

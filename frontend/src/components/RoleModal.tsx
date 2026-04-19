@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import Modal from "./Modal";
-import { createRole, updateRole, type Role } from "../api/roles";
-import { getApiErrorMessage } from "../api/client";
-import { Alert, AlertDescription } from "./ui/alert";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { useCallback, useEffect, useState } from 'react';
+import Modal from './Modal';
+import { createRole, updateRole, type Role } from '../api/roles';
+import { getApiErrorMessage } from '../api/client';
+import { Alert, AlertDescription } from './ui/alert';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 // Detects whether an API failure is a conflict response.
 function isConflictError(err: unknown): boolean {
@@ -22,7 +22,7 @@ function isNotFoundError(err: unknown): boolean {
 // Renders the create and edit role modal workflow.
 export default function RoleModal(props: {
   open: boolean;
-  mode: "create" | "edit";
+  mode: 'create' | 'edit';
   initialRole?: Role | null;
   canCreate: boolean;
   canEdit: boolean;
@@ -30,21 +30,12 @@ export default function RoleModal(props: {
   onSuccess: () => Promise<void> | void;
   onError: (msg: string) => void;
 }) {
-  const {
-    open,
-    mode,
-    initialRole,
-    canCreate,
-    canEdit,
-    onClose,
-    onSuccess,
-    onError,
-  } = props;
+  const { open, mode, initialRole, canCreate, canEdit, onClose, onSuccess, onError } = props;
 
-  const canSubmit = mode === "create" ? canCreate : canEdit;
+  const canSubmit = mode === 'create' ? canCreate : canEdit;
 
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -53,12 +44,12 @@ export default function RoleModal(props: {
   useEffect(() => {
     if (!open) return;
 
-    if (mode === "edit" && initialRole) {
-      setName(initialRole.name ?? "");
-      setDescription(initialRole.description ?? "");
+    if (mode === 'edit' && initialRole) {
+      setName(initialRole.name ?? '');
+      setDescription(initialRole.description ?? '');
     } else {
-      setName("");
-      setDescription("");
+      setName('');
+      setDescription('');
     }
 
     setSubmitting(false);
@@ -78,24 +69,24 @@ export default function RoleModal(props: {
     const trimmedDescription = description.trim();
 
     if (!trimmedName) {
-      setFieldError("Role name is required.");
+      setFieldError('Role name is required.');
       return;
     }
     if (trimmedName.length < 2) {
-      setFieldError("Role name must be at least 2 characters.");
+      setFieldError('Role name must be at least 2 characters.');
       return;
     }
 
     setSubmitting(true);
     try {
-      if (mode === "create") {
+      if (mode === 'create') {
         await createRole({
           name: trimmedName,
           ...(trimmedDescription ? { description: trimmedDescription } : {}),
         });
       } else {
         if (!initialRole) {
-          setFieldError("No role selected.");
+          setFieldError('No role selected.');
           return;
         }
 
@@ -108,47 +99,34 @@ export default function RoleModal(props: {
       await onSuccess();
     } catch (err) {
       if (isConflictError(err)) {
-        setConflictError("Role name already exists.");
-      } else if (mode === "edit" && isNotFoundError(err)) {
-        setNotFoundError("Role not found.");
+        setConflictError('Role name already exists.');
+      } else if (mode === 'edit' && isNotFoundError(err)) {
+        setNotFoundError('Role not found.');
       } else {
         onError(
           getApiErrorMessage(
             err,
-            mode === "create"
-              ? "Failed to create role."
-              : "Failed to update role.",
-          ),
+            mode === 'create' ? 'Failed to create role.' : 'Failed to update role.'
+          )
         );
       }
     } finally {
       setSubmitting(false);
     }
-  }, [
-    canSubmit,
-    description,
-    initialRole,
-    mode,
-    name,
-    onError,
-    onSuccess,
-    submitting,
-  ]);
+  }, [canSubmit, description, initialRole, mode, name, onError, onSuccess, submitting]);
 
-  const title = mode === "create" ? "Create role" : "Edit role";
+  const title = mode === 'create' ? 'Create role' : 'Edit role';
 
   return (
     <Modal title={title} isOpen={open} onClose={onClose}>
-      {!canSubmit || (mode === "edit" && !initialRole) ? (
+      {!canSubmit || (mode === 'edit' && !initialRole) ? (
         <div className="space-y-1 text-sm text-slate-500">
           {!canSubmit ? (
             <p>
-              {mode === "create"
-                ? "Requires roles.write."
-                : "Requires roles.write or roles.edit."}
+              {mode === 'create' ? 'Requires roles.write.' : 'Requires roles.write or roles.edit.'}
             </p>
           ) : null}
-          {mode === "edit" && !initialRole ? <p>No role selected.</p> : null}
+          {mode === 'edit' && !initialRole ? <p>No role selected.</p> : null}
         </div>
       ) : null}
 
@@ -159,9 +137,7 @@ export default function RoleModal(props: {
             value={name}
             onChange={(e) => setName(e.target.value)}
             type="text"
-            disabled={
-              !canSubmit || submitting || (mode === "edit" && !initialRole)
-            }
+            disabled={!canSubmit || submitting || (mode === 'edit' && !initialRole)}
             placeholder="e.g. ADMIN"
             className="h-10"
           />
@@ -173,9 +149,7 @@ export default function RoleModal(props: {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             type="text"
-            disabled={
-              !canSubmit || submitting || (mode === "edit" && !initialRole)
-            }
+            disabled={!canSubmit || submitting || (mode === 'edit' && !initialRole)}
             placeholder="Optional"
             className="h-10"
           />
@@ -209,17 +183,15 @@ export default function RoleModal(props: {
         <Button
           type="button"
           onClick={() => void onSubmit()}
-          disabled={
-            !canSubmit || submitting || (mode === "edit" && !initialRole)
-          }
+          disabled={!canSubmit || submitting || (mode === 'edit' && !initialRole)}
         >
           {submitting
-            ? mode === "create"
-              ? "Creating…"
-              : "Saving…"
-            : mode === "create"
-              ? "Create"
-              : "Save"}
+            ? mode === 'create'
+              ? 'Creating…'
+              : 'Saving…'
+            : mode === 'create'
+              ? 'Create'
+              : 'Save'}
         </Button>
       </div>
     </Modal>

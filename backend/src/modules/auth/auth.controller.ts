@@ -1,43 +1,40 @@
-import type { Request, Response } from "express";
-import { AuthService } from "./auth.service";
-import { ok } from "../../utils/apiResponse";
-import { writeAuditLog } from "../../services/auditLog.service";
-import { AppError } from "../../errors/AppError";
+import type { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+import { ok } from '../../utils/apiResponse';
+import { writeAuditLog } from '../../services/auditLog.service';
+import { AppError } from '../../errors/AppError';
 
 export class AuthController {
   // Authenticates a user and returns new access and refresh tokens.
   static async login(req: Request, res: Response) {
     const { email, password } = req.body as { email: string; password: string };
 
-    const userAgent = req.get("user-agent") ?? null;
+    const userAgent = req.get('user-agent') ?? null;
     const ipAddress = req.ip ?? null;
 
-    const result = await AuthService.login(
-      { email, password },
-      { userAgent, ipAddress },
-    );
+    const result = await AuthService.login({ email, password }, { userAgent, ipAddress });
 
     if (!result) {
       // Optional: login failure audit (no actor)
       await writeAuditLog({
         req,
-        action: "LOGIN_FAILURE",
-        entityType: "Auth",
+        action: 'LOGIN_FAILURE',
+        entityType: 'Auth',
         entityId: null,
         actorUserId: null,
         meta: {
-          email: String(email ?? "")
+          email: String(email ?? '')
             .trim()
             .toLowerCase(),
         },
       });
-      throw new AppError(401, "AUTH_INVALID_CREDENTIALS", "Invalid email or password");
+      throw new AppError(401, 'AUTH_INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
     await writeAuditLog({
       req,
-      action: "LOGIN_SUCCESS",
-      entityType: "User",
+      action: 'LOGIN_SUCCESS',
+      entityType: 'User',
       entityId: result.user.id,
       actorUserId: result.user.id,
       meta: { email: result.user.email },
@@ -50,7 +47,7 @@ export class AuthController {
   static async refresh(req: Request, res: Response) {
     const { refreshToken } = req.body as { refreshToken: string };
 
-    const userAgent = req.get("user-agent") ?? null;
+    const userAgent = req.get('user-agent') ?? null;
     const ipAddress = req.ip ?? null;
 
     const result = await AuthService.refresh(refreshToken, {
@@ -59,7 +56,7 @@ export class AuthController {
     });
 
     if (!result) {
-      throw AppError.unauthorized("Invalid refresh token");
+      throw AppError.unauthorized('Invalid refresh token');
     }
 
     return ok(res, req, result, 200);
