@@ -3,11 +3,7 @@ import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
 import { Button } from './ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-} from './ui/drawer';
+import { Drawer, DrawerClose, DrawerContent } from './ui/drawer';
 import { cn } from '../lib/utils';
 import {
   CircleUser,
@@ -59,9 +55,7 @@ function SidebarContent({
               to={item.to}
               end={item.to === '/'}
               onClick={onNavClick}
-              className={({ isActive }) =>
-                cn('nav-item group', isActive && 'nav-item-active')
-              }
+              className={({ isActive }) => cn('nav-item group', isActive && 'nav-item-active')}
             >
               <Icon
                 className="h-4 w-4 flex-none text-slate-400 transition-colors group-hover:text-slate-100"

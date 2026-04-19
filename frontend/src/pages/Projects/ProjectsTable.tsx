@@ -81,36 +81,36 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
         {tableHead}
         <TableBody>
           {projects.map((p) => (
-          <TableRow key={p.id}>
-            <TableCell className="font-medium">{p.name}</TableCell>
-            <TableCell className="text-slate-500">{p.ownerId ?? '-'}</TableCell>
-            <TableCell>{p.isArchived ? 'Yes' : 'No'}</TableCell>
-            <TableCell className="text-slate-500">{formatDate(p.createdAt)}</TableCell>
-            <TableCell className="text-slate-500">{formatDate(p.updatedAt)}</TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
-                    Action <ChevronDown className="ml-1 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem disabled>View</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => onRequestArchive(p)}
-                    className="text-red-600 focus:text-red-600"
-                    disabled
-                  >
-                    Archive
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            <TableRow key={p.id}>
+              <TableCell className="font-medium">{p.name}</TableCell>
+              <TableCell className="text-slate-500">{p.ownerId ?? '-'}</TableCell>
+              <TableCell>{p.isArchived ? 'Yes' : 'No'}</TableCell>
+              <TableCell className="text-slate-500">{formatDate(p.createdAt)}</TableCell>
+              <TableCell className="text-slate-500">{formatDate(p.updatedAt)}</TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
+                      Action <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled>View</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => onRequestArchive(p)}
+                      className="text-red-600 focus:text-red-600"
+                      disabled
+                    >
+                      Archive
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

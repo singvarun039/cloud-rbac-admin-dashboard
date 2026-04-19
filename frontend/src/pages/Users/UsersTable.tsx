@@ -110,69 +110,71 @@ export function UsersTable({
         {tableHead}
         <TableBody>
           {users.map((u) => (
-          <TableRow key={u.id}>
-            <TableCell className="font-medium">{u.name}</TableCell>
-            <TableCell>{u.email}</TableCell>
-            <TableCell>
-              {(() => {
-                const role = roleTextForUser(u);
-                return <span title={role.title}>{role.text}</span>;
-              })()}
-            </TableCell>
-            <TableCell>
-              <Badge variant={u.status === 'ACTIVE' ? 'success' : 'destructive'}>{u.status}</Badge>
-            </TableCell>
-            <TableCell>{formatDate(u.createdAt)}</TableCell>
-            <TableCell className="text-right">
-              {canReadUsers ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
-                      Action <ChevronDown className="ml-1 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => onRequestView(u)}>
-                      <Eye className="mr-2 h-4 w-4" /> View
-                    </DropdownMenuItem>
+            <TableRow key={u.id}>
+              <TableCell className="font-medium">{u.name}</TableCell>
+              <TableCell>{u.email}</TableCell>
+              <TableCell>
+                {(() => {
+                  const role = roleTextForUser(u);
+                  return <span title={role.title}>{role.text}</span>;
+                })()}
+              </TableCell>
+              <TableCell>
+                <Badge variant={u.status === 'ACTIVE' ? 'success' : 'destructive'}>
+                  {u.status}
+                </Badge>
+              </TableCell>
+              <TableCell>{formatDate(u.createdAt)}</TableCell>
+              <TableCell className="text-right">
+                {canReadUsers ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
+                        Action <ChevronDown className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => onRequestView(u)}>
+                        <Eye className="mr-2 h-4 w-4" /> View
+                      </DropdownMenuItem>
 
-                    {canEditUsers ? (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => onOpenEdit(u)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                      </>
-                    ) : null}
+                      {canEditUsers ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => onOpenEdit(u)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
 
-                    {canWriteUsers ? (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onSelect={() => onRequestDeactivate(u)}
-                          className="text-red-700 focus:bg-red-50 focus:text-red-700"
-                        >
-                          <UserX className="mr-2 h-4 w-4" /> Deactivate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => onRequestDelete(u)}
-                          disabled={Boolean(meId && meId === u.id)}
-                          className="text-red-700 focus:bg-red-50 focus:text-red-700"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </>
-                    ) : null}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <span className="text-sm text-slate-500">-</span>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                      {canWriteUsers ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() => onRequestDeactivate(u)}
+                            className="text-red-700 focus:bg-red-50 focus:text-red-700"
+                          >
+                            <UserX className="mr-2 h-4 w-4" /> Deactivate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onSelect={() => onRequestDelete(u)}
+                            disabled={Boolean(meId && meId === u.id)}
+                            className="text-red-700 focus:bg-red-50 focus:text-red-700"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span className="text-sm text-slate-500">-</span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

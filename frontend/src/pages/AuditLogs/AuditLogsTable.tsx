@@ -115,44 +115,44 @@ export function AuditLogsTable({
         {tableHead}
         <TableBody>
           {items.map((row) => (
-          <TableRow key={row.id}>
-            <TableCell>{formatDate(row.createdAt)}</TableCell>
-            <TableCell className="font-medium">{row.action}</TableCell>
-            <TableCell>{actorLabel(row)}</TableCell>
-            <TableCell>
-              {row.entityType}
-              {row.entityId ? `: ${row.entityId}` : ''}
-            </TableCell>
-            <TableCell>{row.requestId || '-'}</TableCell>
-            <TableCell>
-              <span className="block truncate text-slate-500">{metaPreview(row.meta)}</span>
-            </TableCell>
-            <TableCell className="text-right">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
-                    Action <ChevronDown className="ml-1 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => onOpenView(row)}>
-                    <Eye className="mr-2 h-4 w-4" /> View
-                  </DropdownMenuItem>
-                  {row.requestId ? (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onSelect={() => onCopyRequestId(row.requestId!)}>
-                        <Copy className="mr-2 h-4 w-4" /> Copy requestId
-                      </DropdownMenuItem>
-                    </>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            <TableRow key={row.id}>
+              <TableCell>{formatDate(row.createdAt)}</TableCell>
+              <TableCell className="font-medium">{row.action}</TableCell>
+              <TableCell>{actorLabel(row)}</TableCell>
+              <TableCell>
+                {row.entityType}
+                {row.entityId ? `: ${row.entityId}` : ''}
+              </TableCell>
+              <TableCell>{row.requestId || '-'}</TableCell>
+              <TableCell>
+                <span className="block truncate text-slate-500">{metaPreview(row.meta)}</span>
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
+                      Action <ChevronDown className="ml-1 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => onOpenView(row)}>
+                      <Eye className="mr-2 h-4 w-4" /> View
+                    </DropdownMenuItem>
+                    {row.requestId ? (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={() => onCopyRequestId(row.requestId!)}>
+                          <Copy className="mr-2 h-4 w-4" /> Copy requestId
+                        </DropdownMenuItem>
+                      </>
+                    ) : null}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

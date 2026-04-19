@@ -106,71 +106,71 @@ export function RolesTable({
         {tableHead}
         <TableBody>
           {roles.map((r) => (
-          <TableRow key={r.id}>
-            <TableCell className="font-medium">{r.name}</TableCell>
-            <TableCell>
-              {r.description ? r.description : <span className="text-sm text-slate-500">-</span>}
-            </TableCell>
-            <TableCell>{permissionCountLabel(r)}</TableCell>
-            <TableCell className="text-right">
-              {canReadRoles ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
-                      Action <ChevronDown className="ml-1 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => onRequestView(r)}>
-                      <Eye className="mr-2 h-4 w-4" /> View
-                    </DropdownMenuItem>
+            <TableRow key={r.id}>
+              <TableCell className="font-medium">{r.name}</TableCell>
+              <TableCell>
+                {r.description ? r.description : <span className="text-sm text-slate-500">-</span>}
+              </TableCell>
+              <TableCell>{permissionCountLabel(r)}</TableCell>
+              <TableCell className="text-right">
+                {canReadRoles ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" type="button" className="h-8 px-2">
+                        Action <ChevronDown className="ml-1 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => onRequestView(r)}>
+                        <Eye className="mr-2 h-4 w-4" /> View
+                      </DropdownMenuItem>
 
-                    {canEditRoles ? (
-                      <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
-                          <Pencil className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onSelect={() => onRequestAssign(r)}
-                          disabled={!canReadPermissions}
-                        >
-                          <Shield className="mr-2 h-4 w-4" /> Assign Permissions
-                        </DropdownMenuItem>
-                      </>
-                    ) : null}
+                      {canEditRoles ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => onOpenEdit(r)}>
+                            <Pencil className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={() => onRequestAssign(r)}
+                            disabled={!canReadPermissions}
+                          >
+                            <Shield className="mr-2 h-4 w-4" /> Assign Permissions
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
 
-                    {canWriteRoles ? (
-                      <>
-                        {(() => {
-                          const isProtected = PROTECTED_ROLE_NAMES.has(r.name);
-                          return (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={() => onRequestDelete(r)}
-                                disabled={isProtected}
-                                className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {isProtected ? 'Delete (system role)' : 'Delete'}
-                              </DropdownMenuItem>
-                            </>
-                          );
-                        })()}
-                      </>
-                    ) : null}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <span className="text-sm text-slate-500">-</span>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+                      {canWriteRoles ? (
+                        <>
+                          {(() => {
+                            const isProtected = PROTECTED_ROLE_NAMES.has(r.name);
+                            return (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() => onRequestDelete(r)}
+                                  disabled={isProtected}
+                                  className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  {isProtected ? 'Delete (system role)' : 'Delete'}
+                                </DropdownMenuItem>
+                              </>
+                            );
+                          })()}
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span className="text-sm text-slate-500">-</span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
