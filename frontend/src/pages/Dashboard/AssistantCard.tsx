@@ -9,6 +9,7 @@ import {
 } from '../../components/ui/card';
 import { Separator } from '../../components/ui/separator';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Textarea } from '../../components/ui/textarea';
 import { SourcesBadges } from '../../components/common/SourcesBadges';
 
 type SourceMeta = { key: string; label: string; description: string };
@@ -66,9 +67,9 @@ export function AssistantCard({
 
         <div className="space-y-3">
           <div className="text-sm font-medium text-slate-700">Your question</div>
-          <textarea
+          <Textarea
             id="assistant-prompt"
-            className="min-h-[144px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2"
+            className="min-h-[144px]"
             placeholder="Example: Explain whether our current roles look too broad for a production admin dashboard."
             value={assistantPrompt}
             onChange={(e) => setAssistantPrompt(e.target.value)}
@@ -98,10 +99,8 @@ export function AssistantCard({
         <Separator />
 
         <div className="space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Latest answer
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+          <div className="section-label">Latest answer</div>
+          <div className="content-box">
             {assistantLoading ? (
               <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
@@ -117,9 +116,7 @@ export function AssistantCard({
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Data sources
-          </div>
+          <div className="section-label">Data sources</div>
           <SourcesBadges sources={assistantSources} />
         </div>
       </CardContent>

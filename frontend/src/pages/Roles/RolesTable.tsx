@@ -1,4 +1,3 @@
-import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
   DropdownMenu,
@@ -102,10 +101,11 @@ export function RolesTable({
   }
 
   return (
-    <Table>
-      {tableHead}
-      <TableBody>
-        {roles.map((r) => (
+    <div className="table-wrap">
+      <Table>
+        {tableHead}
+        <TableBody>
+          {roles.map((r) => (
           <TableRow key={r.id}>
             <TableCell className="font-medium">{r.name}</TableCell>
             <TableCell>
@@ -171,5 +171,6 @@ export function RolesTable({
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

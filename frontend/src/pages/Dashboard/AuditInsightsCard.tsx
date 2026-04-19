@@ -30,16 +30,11 @@ function InsightSection({
 }) {
   return (
     <div className="space-y-3">
-      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-        {title}
-      </div>
+      <div className="section-label">{title}</div>
       {items.length ? (
         <div className="space-y-2">
           {items.map((item) => (
-            <div
-              key={`${title}-${item}`}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700"
-            >
+            <div key={`${title}-${item}`} className="content-item">
               {item}
             </div>
           ))}
@@ -115,10 +110,8 @@ export function AuditInsightsCard({
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Summary
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+          <div className="section-label">Summary</div>
+          <div className="content-box">
             {auditInsightsLoading && !auditInsights ? (
               <div className="space-y-2">
                 <Skeleton className="h-4 w-full" />
@@ -147,9 +140,7 @@ export function AuditInsightsCard({
         <Separator />
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Top actions
-          </div>
+          <div className="section-label">Top actions</div>
           <div className="flex flex-wrap gap-2">
             {(auditInsights?.analytics.topActions ?? []).slice(0, 4).map((item) => (
               <Badge key={item.action} variant="secondary">
@@ -163,9 +154,7 @@ export function AuditInsightsCard({
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Data sources
-          </div>
+          <div className="section-label">Data sources</div>
           <SourcesBadges sources={auditInsights?.sources} />
         </div>
       </CardContent>

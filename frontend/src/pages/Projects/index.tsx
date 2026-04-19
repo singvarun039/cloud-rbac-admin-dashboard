@@ -49,8 +49,8 @@ export default function ProjectsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
+          <div className="filters-row">
+            <div className="filters-inputs-grid">
               <Input
                 type="text"
                 placeholder="Search"
@@ -82,12 +82,12 @@ export default function ProjectsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+            <div className="filters-actions">
               <Button
                 type="button"
                 onClick={p.onApplyFilters}
                 disabled={p.loading}
-                className="h-10 w-full sm:w-auto"
+                className="filter-btn"
               >
                 Apply Filters
               </Button>
@@ -96,13 +96,13 @@ export default function ProjectsPage() {
                 variant="outline"
                 onClick={p.onResetFilters}
                 disabled={p.loading}
-                className="h-10 w-full sm:w-auto"
+                className="filter-btn"
               >
                 Reset Filters
               </Button>
               <Separator orientation="horizontal" className="sm:hidden" />
               <Separator orientation="vertical" className="hidden h-6 sm:block" />
-              <Button type="button" className="h-10 w-full sm:w-auto" disabled>
+              <Button type="button" className="filter-btn" disabled>
                 Create Project
               </Button>
             </div>

@@ -105,8 +105,8 @@ export function AuditLogsFilters({
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
+        <div className="filters-row">
+          <div className="filters-inputs-grid">
             <Select value={actionInput} onValueChange={setActionInput}>
               <SelectTrigger className="h-10 w-full" aria-label="Action">
                 <SelectValue />
@@ -146,12 +146,12 @@ export function AuditLogsFilters({
             />
           </div>
 
-          <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
+          <div className="filters-actions">
             <Button
               type="button"
               onClick={onApplyFilters}
               disabled={loading}
-              className="h-10 w-full sm:w-auto"
+              className="filter-btn"
             >
               Apply Filters
             </Button>
@@ -160,7 +160,7 @@ export function AuditLogsFilters({
               type="button"
               onClick={onResetFilters}
               disabled={loading}
-              className="h-10 w-full sm:w-auto"
+              className="filter-btn"
             >
               Reset Filters
             </Button>
@@ -168,7 +168,7 @@ export function AuditLogsFilters({
 
             <Drawer open={advancedOpen} onOpenChange={setAdvancedOpen} direction="right">
               <DrawerTrigger asChild>
-                <Button type="button" className="h-10 w-full sm:w-auto">
+                <Button type="button" className="filter-btn">
                   Advanced Filters
                 </Button>
               </DrawerTrigger>

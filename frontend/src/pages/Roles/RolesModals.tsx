@@ -16,10 +16,11 @@ export function RolesModals({ s }: RolesModalsProps) {
     <>
       <RoleModal
         open={s.createOpen}
-        onOpenChange={(open) => {
-          if (!open) s.setCreateOpen(false);
-        }}
+        onClose={() => s.setCreateOpen(false)}
         mode="create"
+        canCreate={s.canWriteRoles}
+        canEdit={s.canEditRoles}
+        onError={(msg) => s.setError(msg)}
         onSuccess={() => {
           s.setCreateOpen(false);
           void s.fetchRoles();
@@ -29,14 +30,15 @@ export function RolesModals({ s }: RolesModalsProps) {
       />
       <RoleModal
         open={s.editOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            s.setEditOpen(false);
-            s.setEditingRole(null);
-          }
+        onClose={() => {
+          s.setEditOpen(false);
+          s.setEditingRole(null);
         }}
         mode="edit"
-        role={s.editingRole}
+        initialRole={s.editingRole}
+        canCreate={s.canWriteRoles}
+        canEdit={s.canEditRoles}
+        onError={(msg) => s.setError(msg)}
         onSuccess={() => {
           s.setEditOpen(false);
           s.setEditingRole(null);

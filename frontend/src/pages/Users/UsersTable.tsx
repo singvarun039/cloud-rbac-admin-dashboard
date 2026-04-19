@@ -105,10 +105,11 @@ export function UsersTable({
   }
 
   return (
-    <Table>
-      {tableHead}
-      <TableBody>
-        {users.map((u) => (
+    <div className="table-wrap">
+      <Table>
+        {tableHead}
+        <TableBody>
+          {users.map((u) => (
           <TableRow key={u.id}>
             <TableCell className="font-medium">{u.name}</TableCell>
             <TableCell>{u.email}</TableCell>
@@ -172,5 +173,6 @@ export function UsersTable({
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

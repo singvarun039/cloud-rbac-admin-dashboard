@@ -52,7 +52,7 @@ export default function RolesPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div className="filters-row">
             <Input
               value={s.searchInput}
               onChange={(e) => s.setSearchInput(e.target.value)}
@@ -61,12 +61,12 @@ export default function RolesPage() {
               type="text"
               className="h-10 w-full placeholder:text-slate-400"
             />
-            <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <div className="filters-actions">
               <Button
                 type="button"
                 onClick={s.onApplyFilters}
                 disabled={s.loading}
-                className="h-10"
+                className="filter-btn"
               >
                 Apply Filters
               </Button>
@@ -75,7 +75,7 @@ export default function RolesPage() {
                 variant="outline"
                 onClick={s.onResetFilters}
                 disabled={s.loading}
-                className="h-10"
+                className="filter-btn"
               >
                 Reset
               </Button>
@@ -84,7 +84,7 @@ export default function RolesPage() {
                 type="button"
                 variant="outline"
                 onClick={() => s.setShowRecommendations(true)}
-                className="h-10"
+                className="filter-btn"
               >
                 AI Recommendations
               </Button>
@@ -94,7 +94,7 @@ export default function RolesPage() {
                   s.setSuccess(null);
                   s.setCreateOpen(true);
                 }}
-                className="h-10"
+                className="filter-btn"
                 disabled={!s.canWriteRoles}
               >
                 Create Role

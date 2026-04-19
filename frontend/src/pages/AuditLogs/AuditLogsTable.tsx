@@ -110,10 +110,11 @@ export function AuditLogsTable({
   }
 
   return (
-    <Table>
-      {tableHead}
-      <TableBody>
-        {items.map((row) => (
+    <div className="table-wrap">
+      <Table>
+        {tableHead}
+        <TableBody>
+          {items.map((row) => (
           <TableRow key={row.id}>
             <TableCell>{formatDate(row.createdAt)}</TableCell>
             <TableCell className="font-medium">{row.action}</TableCell>
@@ -152,5 +153,6 @@ export function AuditLogsTable({
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

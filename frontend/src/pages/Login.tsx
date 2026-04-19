@@ -58,18 +58,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-slate-50 via-white to-slate-100">
+    <div className="login-bg">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-sky-200/35 blur-3xl" />
-        <div className="absolute -bottom-28 -right-28 h-80 w-80 rounded-full bg-indigo-200/30 blur-3xl" />
-        <div className="absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-900/5 blur-3xl" />
+        <div className="login-blob-tl" />
+        <div className="login-blob-br" />
+        <div className="login-blob-center" />
         <div className="absolute inset-0 bg-[radial-gradient(closest-side_at_50%_50%,rgba(2,6,23,0.08),transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.06)_1px,transparent_0)] [background-size:24px_24px] opacity-40" />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-12">
+      <div className="login-container">
         <div className="mb-5 text-center">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-slate-200/70 bg-white/80 shadow-sm backdrop-blur">
+          <div className="login-logo">
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"

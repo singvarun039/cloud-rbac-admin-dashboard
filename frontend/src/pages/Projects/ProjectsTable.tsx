@@ -76,10 +76,11 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
   }
 
   return (
-    <Table>
-      {tableHead}
-      <TableBody>
-        {projects.map((p) => (
+    <div className="table-wrap">
+      <Table>
+        {tableHead}
+        <TableBody>
+          {projects.map((p) => (
           <TableRow key={p.id}>
             <TableCell className="font-medium">{p.name}</TableCell>
             <TableCell className="text-slate-500">{p.ownerId ?? '-'}</TableCell>
@@ -110,5 +111,6 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }

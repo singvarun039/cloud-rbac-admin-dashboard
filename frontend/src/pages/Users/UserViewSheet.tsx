@@ -25,15 +25,15 @@ export function UserViewSheet(props: {
         <div className="text-sm text-slate-500">No user selected.</div>
       ) : (
         <div className="space-y-4">
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Name</Label>
             <div className="text-sm">{viewUser.name || '—'}</div>
           </div>
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Email</Label>
             <div className="text-sm">{viewUser.email}</div>
           </div>
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Status</Label>
             <div>
               <Badge variant={viewUser.status === 'ACTIVE' ? 'success' : 'destructive'}>
@@ -41,7 +41,7 @@ export function UserViewSheet(props: {
               </Badge>
             </div>
           </div>
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Role(s)</Label>
             {(() => {
               const r = roleTextForUser(viewUser);
@@ -53,11 +53,11 @@ export function UserViewSheet(props: {
             })()}
           </div>
           <Separator />
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Created</Label>
             <div className="text-sm">{formatDate(viewUser.createdAt)}</div>
           </div>
-          <div className="space-y-1">
+          <div className="detail-row">
             <Label>Updated</Label>
             <div className="text-sm">{formatDate(viewUser.updatedAt)}</div>
           </div>
