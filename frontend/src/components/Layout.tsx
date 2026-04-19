@@ -1,9 +1,9 @@
-import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { useMemo, useState } from "react";
-import { useAuth } from "../auth/useAuth";
-import { Button } from "./ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { cn } from "../lib/utils";
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useAuth } from '../auth/useAuth';
+import { Button } from './ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { cn } from '../lib/utils';
 import {
   CircleUser,
   FolderKanban,
@@ -11,14 +11,14 @@ import {
   ScrollText,
   ShieldCheck,
   Users2,
-} from "lucide-react";
+} from 'lucide-react';
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/users", label: "Users", icon: Users2 },
-  { to: "/roles", label: "Roles", icon: ShieldCheck },
-  { to: "/projects", label: "Projects", icon: FolderKanban },
-  { to: "/audit-logs", label: "Audit Logs", icon: ScrollText },
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/users', label: 'Users', icon: Users2 },
+  { to: '/roles', label: 'Roles', icon: ShieldCheck },
+  { to: '/projects', label: 'Projects', icon: FolderKanban },
+  { to: '/audit-logs', label: 'Audit Logs', icon: ScrollText },
 ];
 
 // Renders the main authenticated application shell.
@@ -29,29 +29,29 @@ export default function Layout() {
   const location = useLocation();
 
   const pageTitle = useMemo(() => {
-    const path = location.pathname.replace(/\/+$/, "") || "/";
+    const path = location.pathname.replace(/\/+$/, '') || '/';
     const titles: Record<string, string> = {
-      "/": "Dashboard",
-      "/users": "Users",
-      "/roles": "Roles",
-      "/projects": "Projects",
-      "/audit-logs": "Audit Logs",
+      '/': 'Dashboard',
+      '/users': 'Users',
+      '/roles': 'Roles',
+      '/projects': 'Projects',
+      '/audit-logs': 'Audit Logs',
     };
 
-    return titles[path] ?? "";
+    return titles[path] ?? '';
   }, [location.pathname]);
 
-  const canReadUsers = permissions.includes("users.read");
-  const canReadRoles = permissions.includes("roles.read");
-  const canReadProjects = permissions.includes("projects.read");
-  const canReadAuditLogs = permissions.includes("audit.read");
+  const canReadUsers = permissions.includes('users.read');
+  const canReadRoles = permissions.includes('roles.read');
+  const canReadProjects = permissions.includes('projects.read');
+  const canReadAuditLogs = permissions.includes('audit.read');
 
   const visibleNavItems = useMemo(() => {
     return navItems.filter((item) => {
-      if (item.to === "/users") return canReadUsers;
-      if (item.to === "/roles") return canReadRoles;
-      if (item.to === "/projects") return canReadProjects;
-      if (item.to === "/audit-logs") return canReadAuditLogs;
+      if (item.to === '/users') return canReadUsers;
+      if (item.to === '/roles') return canReadRoles;
+      if (item.to === '/projects') return canReadProjects;
+      if (item.to === '/audit-logs') return canReadAuditLogs;
       return true;
     });
   }, [canReadAuditLogs, canReadProjects, canReadRoles, canReadUsers]);
@@ -73,10 +73,7 @@ export default function Layout() {
           <div className="px-4 pb-3 pt-4">
             <div className="flex items-center gap-2">
               <div className="grid h-8 w-8 place-items-center rounded-md border border-white/10 bg-white/5">
-                <ShieldCheck
-                  className="h-4 w-4 text-slate-100"
-                  aria-hidden="true"
-                />
+                <ShieldCheck className="h-4 w-4 text-slate-100" aria-hidden="true" />
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold tracking-tight text-slate-100">
@@ -94,13 +91,13 @@ export default function Layout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/"}
+                  end={item.to === '/'}
                   className={({ isActive }) =>
                     cn(
-                      "group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-200 transition-colors",
-                      "hover:bg-white/10 hover:text-white",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950",
-                      isActive && "bg-white/10 text-white",
+                      'group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-200 transition-colors',
+                      'hover:bg-white/10 hover:text-white',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+                      isActive && 'bg-white/10 text-white'
                     )
                   }
                 >
@@ -130,20 +127,17 @@ export default function Layout() {
                   disabled={loggingOut}
                   className="rounded-full border border-slate-200 bg-white/60 hover:bg-slate-50"
                 >
-                  <CircleUser
-                    className="h-5 w-5 text-slate-700"
-                    aria-hidden="true"
-                  />
+                  <CircleUser className="h-5 w-5 text-slate-700" aria-hidden="true" />
                 </Button>
               </PopoverTrigger>
 
               <PopoverContent align="end" className="w-64 p-3">
                 <div className="space-y-1">
                   <div className="text-sm font-semibold text-slate-900">
-                    {user?.name || "Signed in"}
+                    {user?.name || 'Signed in'}
                   </div>
                   <div className="break-all text-xs text-muted-foreground">
-                    {user?.email || "—"}
+                    {user?.email || '—'}
                   </div>
                 </div>
 

@@ -1,13 +1,7 @@
-import React, {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useNavigate } from "react-router-dom";
-import * as authApi from "../api/auth";
-import type { MeUser } from "../types/user";
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import * as authApi from '../api/auth';
+import type { MeUser } from '../types/user';
 import {
   clearTokens,
   getAccessToken,
@@ -16,9 +10,14 @@ import {
   registerRefreshHandler,
   setAccessToken,
   setRefreshToken,
-} from "./tokenStore";
-import { extractAccessToken, extractErrorMessage, extractRefreshToken, unwrapMeResponse } from "./authHelpers";
-import { useAuthBoot } from "./useAuthBoot";
+} from './tokenStore';
+import {
+  extractAccessToken,
+  extractErrorMessage,
+  extractRefreshToken,
+  unwrapMeResponse,
+} from './authHelpers';
+import { useAuthBoot } from './useAuthBoot';
 
 export type AuthContextValue = {
   user: MeUser | null;
@@ -73,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessTokenState(null);
       setUser(null);
       setPermissionsState([]);
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     }
   }, [navigate]);
 
@@ -83,7 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = extractAccessToken(res);
       const refreshToken = extractRefreshToken(res);
       if (!token || !refreshToken) {
-        return { ok: false as const, error: "Login succeeded but access/refresh tokens were not returned." };
+        return {
+          ok: false as const,
+          error: 'Login succeeded but access/refresh tokens were not returned.',
+        };
       }
       setAccessToken(token);
       setRefreshToken(refreshToken);
@@ -103,17 +105,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  useAuthBoot({ user, isLoading, accessTokenState, setUser, setPermissionsState, setAccessTokenState, setIsLoading });
+  useAuthBoot({
+    user,
+    isLoading,
+    accessTokenState,
+    setUser,
+    setPermissionsState,
+    setAccessTokenState,
+    setIsLoading,
+  });
 
   useEffect(() => {
     registerRefreshHandler(refresh);
     registerLogoutHandler(logout);
-    return () => { registerRefreshHandler(null); registerLogoutHandler(null); };
+    return () => {
+      registerRefreshHandler(null);
+      registerLogoutHandler(null);
+    };
   }, [logout, refresh]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, permissions: permissionsState, accessToken: accessTokenState, isAuthenticated, isLoading, login, logout, refresh }),
-    [accessTokenState, isAuthenticated, isLoading, login, logout, permissionsState, refresh, user],
+    () => ({
+      user,
+      permissions: permissionsState,
+      accessToken: accessTokenState,
+      isAuthenticated,
+      isLoading,
+      login,
+      logout,
+      refresh,
+    }),
+    [accessTokenState, isAuthenticated, isLoading, login, logout, permissionsState, refresh, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

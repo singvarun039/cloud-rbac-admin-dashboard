@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
-import * as authApi from "../api/auth";
-import type { MeUser } from "../types/user";
-import { clearTokens, getAccessToken } from "./tokenStore";
-import { unwrapMeResponse } from "./authHelpers";
+import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import * as authApi from '../api/auth';
+import type { MeUser } from '../types/user';
+import { clearTokens, getAccessToken } from './tokenStore';
+import { unwrapMeResponse } from './authHelpers';
 
 // Encapsulates all boot-time auth logic: initial user rehydration, retry on error, and focus-based re-auth.
 export function useAuthBoot(opts: {
@@ -14,7 +14,15 @@ export function useAuthBoot(opts: {
   setAccessTokenState: Dispatch<SetStateAction<string | null>>;
   setIsLoading: Dispatch<SetStateAction<boolean>>;
 }) {
-  const { user, isLoading, accessTokenState, setUser, setPermissionsState, setAccessTokenState, setIsLoading } = opts;
+  const {
+    user,
+    isLoading,
+    accessTokenState,
+    setUser,
+    setPermissionsState,
+    setAccessTokenState,
+    setIsLoading,
+  } = opts;
 
   const userRef = useRef<MeUser | null>(user);
   const isLoadingRef = useRef<boolean>(isLoading);
@@ -22,8 +30,12 @@ export function useAuthBoot(opts: {
   const bootRetryScheduledRef = useRef(false);
   const focusRetryAttemptedRef = useRef(false);
 
-  useEffect(() => { userRef.current = user; }, [user]);
-  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   useEffect(() => {
     focusRetryAttemptedRef.current = false;
@@ -67,20 +79,38 @@ export function useAuthBoot(opts: {
       const token = getAccessToken();
       setAccessTokenState(token);
       if (!token) {
-        if (!cancelled) { setUser(null); setIsLoading(false); userRef.current = null; isLoadingRef.current = false; }
+        if (!cancelled) {
+          setUser(null);
+          setIsLoading(false);
+          userRef.current = null;
+          isLoadingRef.current = false;
+        }
         return;
       }
       try {
         const meRes = await authApi.me();
         const me = unwrapMeResponse(meRes);
-        if (!cancelled) { setUser(me.user); setPermissionsState(me.permissions); userRef.current = me.user; }
+        if (!cancelled) {
+          setUser(me.user);
+          setPermissionsState(me.permissions);
+          userRef.current = me.user;
+        }
       } catch (err) {
         const status = (err as { response?: { status?: number } })?.response?.status;
         if (status === 401) {
           clearTokens();
-          if (!cancelled) { setAccessTokenState(null); setUser(null); setPermissionsState([]); userRef.current = null; }
+          if (!cancelled) {
+            setAccessTokenState(null);
+            setUser(null);
+            setPermissionsState([]);
+            userRef.current = null;
+          }
         } else {
-          if (!cancelled) { setUser(null); setPermissionsState([]); userRef.current = null; }
+          if (!cancelled) {
+            setUser(null);
+            setPermissionsState([]);
+            userRef.current = null;
+          }
           if (!bootRetryScheduledRef.current) {
             bootRetryScheduledRef.current = true;
             bootRetryTimeout = window.setTimeout(() => {
@@ -90,21 +120,33 @@ export function useAuthBoot(opts: {
           }
         }
       } finally {
-        if (!cancelled) { setIsLoading(false); isLoadingRef.current = false; }
+        if (!cancelled) {
+          setIsLoading(false);
+          isLoadingRef.current = false;
+        }
       }
     }
 
     void boot();
-    return () => { cancelled = true; if (bootRetryTimeout !== null) window.clearTimeout(bootRetryTimeout); };
+    return () => {
+      cancelled = true;
+      if (bootRetryTimeout !== null) window.clearTimeout(bootRetryTimeout);
+    };
   }, [rehydrateUser, setAccessTokenState, setIsLoading, setPermissionsState, setUser]);
 
   useEffect(() => {
     function onFocus() {
-      if (!getAccessToken() || isLoadingRef.current || userRef.current || focusRetryAttemptedRef.current) return;
+      if (
+        !getAccessToken() ||
+        isLoadingRef.current ||
+        userRef.current ||
+        focusRetryAttemptedRef.current
+      )
+        return;
       focusRetryAttemptedRef.current = true;
       void rehydrateUser();
     }
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [rehydrateUser]);
 }

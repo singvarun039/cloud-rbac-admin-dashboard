@@ -1,12 +1,12 @@
-import * as React from "react";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
-import type { DateRange } from "react-day-picker";
+import * as React from 'react';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import type { DateRange } from 'react-day-picker';
 
-import { cn } from "../../lib/utils";
-import { Button } from "./button";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
-import { Calendar } from "./calendar";
+import { cn } from '../../lib/utils';
+import { Button } from './button';
+import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Calendar } from './calendar';
 
 export type DatePickerRangeProps = {
   value?: DateRange;
@@ -20,17 +20,17 @@ export type DatePickerRangeProps = {
 function rangeLabel(range: DateRange | undefined, placeholder: string): string {
   if (!range?.from) return placeholder;
 
-  const from = format(range.from, "LLL dd, y");
+  const from = format(range.from, 'LLL dd, y');
   if (!range.to) return `${from} - ...`;
 
-  return `${from} - ${format(range.to, "LLL dd, y")}`;
+  return `${from} - ${format(range.to, 'LLL dd, y')}`;
 }
 
 // Renders the shared date-range picker control.
 function DatePickerRange({
   value,
   onChange,
-  placeholder = "Pick a date range",
+  placeholder = 'Pick a date range',
   disabled,
   className,
 }: DatePickerRangeProps) {
@@ -41,7 +41,7 @@ function DatePickerRange({
       onChange(range);
       if (range?.from && range?.to) setOpen(false);
     },
-    [onChange],
+    [onChange]
   );
 
   const label = rangeLabel(value, placeholder);
@@ -54,9 +54,9 @@ function DatePickerRange({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "h-10 w-full justify-start text-left font-normal px-2.5",
-            !value?.from && "text-slate-500",
-            className,
+            'h-10 w-full justify-start text-left font-normal px-2.5',
+            !value?.from && 'text-slate-500',
+            className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -78,7 +78,7 @@ function DatePickerRange({
   );
 }
 
-DatePickerRange.displayName = "DatePickerRange";
+DatePickerRange.displayName = 'DatePickerRange';
 
 export { DatePickerRange };
 export type { DateRange };

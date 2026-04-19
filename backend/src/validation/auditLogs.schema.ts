@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const DateStringSchema = z
   .string()
   .trim()
   .min(1)
   .refine((value) => !Number.isNaN(Date.parse(value)), {
-    message: "Invalid date",
+    message: 'Invalid date',
   });
 
 export const AuditLogsListQuerySchema = z.object({

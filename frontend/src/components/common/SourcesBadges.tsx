@@ -1,4 +1,4 @@
-import { Badge } from "../ui/badge";
+import { Badge } from '../ui/badge';
 
 type SourceItem = { key: string; label: string; description: string };
 
@@ -7,10 +7,7 @@ interface SourcesBadgesProps {
   emptyText?: string;
 }
 
-export function SourcesBadges({
-  sources,
-  emptyText = "No source metadata.",
-}: SourcesBadgesProps) {
+export function SourcesBadges({ sources, emptyText = 'No source metadata.' }: SourcesBadgesProps) {
   if (!sources?.length) {
     return <div className="text-sm text-slate-500">{emptyText}</div>;
   }

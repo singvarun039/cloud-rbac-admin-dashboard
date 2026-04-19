@@ -1,4 +1,4 @@
-import { Label } from "../ui/label";
+import { Label } from '../ui/label';
 import {
   Pagination,
   PaginationContent,
@@ -7,15 +7,9 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "../ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { buildPaginationItems } from "../../utils/pagination";
+} from '../ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { buildPaginationItems } from '../../utils/pagination';
 
 interface TablePaginationProps {
   page: number;
@@ -63,16 +57,12 @@ export function TablePagination({
                   if (loading || page <= 1) return;
                   onPageChange(Math.max(1, page - 1));
                 }}
-                className={
-                  loading || page <= 1
-                    ? "pointer-events-none opacity-50"
-                    : undefined
-                }
+                className={loading || page <= 1 ? 'pointer-events-none opacity-50' : undefined}
               />
             </PaginationItem>
 
             {paginationItems.map((item, idx) =>
-              item === "ellipsis" ? (
+              item === 'ellipsis' ? (
                 <PaginationItem key={`e-${idx}`}>
                   <PaginationEllipsis />
                 </PaginationItem>
@@ -86,12 +76,12 @@ export function TablePagination({
                       if (loading) return;
                       onPageChange(item);
                     }}
-                    className={loading ? "pointer-events-none" : undefined}
+                    className={loading ? 'pointer-events-none' : undefined}
                   >
                     {item}
                   </PaginationLink>
                 </PaginationItem>
-              ),
+              )
             )}
 
             <PaginationItem>
@@ -102,11 +92,7 @@ export function TablePagination({
                   if (loading || !hasNext) return;
                   onPageChange(page + 1);
                 }}
-                className={
-                  loading || !hasNext
-                    ? "pointer-events-none opacity-50"
-                    : undefined
-                }
+                className={loading || !hasNext ? 'pointer-events-none opacity-50' : undefined}
               />
             </PaginationItem>
           </PaginationContent>

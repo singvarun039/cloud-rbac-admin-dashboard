@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Prisma generated files
+backend/src/generated/
+
+# Coverage
+coverage/
+**/coverage/
+
+# Terraform
+infra/
+
+# Lock files
+package-lock.json
+**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Public assets
+frontend/public/
+
+# Vite / tsbuildinfo
+*.tsbuildinfo
+
+# Env files
+.env*

@@ -1,14 +1,14 @@
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Skeleton } from "../ui/skeleton";
-import type { Permission } from "../../api/permissions";
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Skeleton } from '../ui/skeleton';
+import type { Permission } from '../../api/permissions';
 
 function getPermissionFamily(key: string): string {
-  const [family] = key.split(".");
-  return family || "other";
+  const [family] = key.split('.');
+  return family || 'other';
 }
 
 interface PermissionCatalogProps {
@@ -52,7 +52,9 @@ export function PermissionCatalog({
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-base">Permission catalog</CardTitle>
-            <div className="mt-1 text-sm text-slate-500">Filter and toggle permissions for this role.</div>
+            <div className="mt-1 text-sm text-slate-500">
+              Filter and toggle permissions for this role.
+            </div>
           </div>
           {hydratedFromKeys ? <Badge variant="secondary">Hydrated from keys</Badge> : null}
         </div>
@@ -69,8 +71,24 @@ export function PermissionCatalog({
             />
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <Button variant="outline" type="button" onClick={onSelectAllFiltered} disabled={loading || filtered.length === 0} className="h-10">Select visible</Button>
-            <Button variant="outline" type="button" onClick={onClearFiltered} disabled={loading || filtered.length === 0} className="h-10">Clear visible</Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={onSelectAllFiltered}
+              disabled={loading || filtered.length === 0}
+              className="h-10"
+            >
+              Select visible
+            </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={onClearFiltered}
+              disabled={loading || filtered.length === 0}
+              className="h-10"
+            >
+              Clear visible
+            </Button>
           </div>
         </div>
       </CardHeader>
@@ -91,7 +109,9 @@ export function PermissionCatalog({
           ) : catalog.length === 0 ? (
             <div className="py-10 text-center text-sm text-slate-500">No permissions found.</div>
           ) : filtered.length === 0 ? (
-            <div className="py-10 text-center text-sm text-slate-500">No permissions match your search.</div>
+            <div className="py-10 text-center text-sm text-slate-500">
+              No permissions match your search.
+            </div>
           ) : (
             <div className="grid gap-2">
               {filtered.map((p) => {
@@ -99,7 +119,7 @@ export function PermissionCatalog({
                 return (
                   <label
                     key={p.id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${checked ? "border-slate-900 bg-slate-50" : "border-slate-200 bg-white hover:bg-slate-50"}`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm transition-colors ${checked ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
                   >
                     <input
                       type="checkbox"
@@ -111,9 +131,13 @@ export function PermissionCatalog({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="font-medium text-slate-900">{p.key}</div>
-                        <Badge variant="secondary" className="text-[11px]">{getPermissionFamily(p.key)}</Badge>
+                        <Badge variant="secondary" className="text-[11px]">
+                          {getPermissionFamily(p.key)}
+                        </Badge>
                       </div>
-                      {p.description ? <div className="mt-1 text-sm text-slate-600">{p.description}</div> : null}
+                      {p.description ? (
+                        <div className="mt-1 text-sm text-slate-600">{p.description}</div>
+                      ) : null}
                     </div>
                   </label>
                 );

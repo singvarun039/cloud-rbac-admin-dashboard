@@ -1,4 +1,4 @@
-import { prisma } from "../db/prisma";
+import { prisma } from '../db/prisma';
 
 // Loads a user together with roles and nested permissions.
 export async function fetchUserWithRolesAndPermissions(params: {
@@ -8,9 +8,7 @@ export async function fetchUserWithRolesAndPermissions(params: {
   const { userId, email } = params;
 
   if (!userId && !email) {
-    throw new Error(
-      "fetchUserWithRolesAndPermissions requires userId or email",
-    );
+    throw new Error('fetchUserWithRolesAndPermissions requires userId or email');
   }
 
   return prisma.user.findFirst({

@@ -1,11 +1,17 @@
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
-import { Skeleton } from "../../components/ui/skeleton";
-import { SourcesBadges } from "../../components/common/SourcesBadges";
-import type { AuditInsightsResponse } from "../../api/auditInsights";
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import { Separator } from '../../components/ui/separator';
+import { Skeleton } from '../../components/ui/skeleton';
+import { SourcesBadges } from '../../components/common/SourcesBadges';
+import type { AuditInsightsResponse } from '../../api/auditInsights';
 
 interface InsightBlock {
   summary: string | null;
@@ -13,14 +19,27 @@ interface InsightBlock {
   recommendations: string[];
 }
 
-function InsightSection({ title, items, emptyText }: { title: string; items: string[]; emptyText: string }) {
+function InsightSection({
+  title,
+  items,
+  emptyText,
+}: {
+  title: string;
+  items: string[];
+  emptyText: string;
+}) {
   return (
     <div className="space-y-3">
-      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{title}</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+        {title}
+      </div>
       {items.length ? (
         <div className="space-y-2">
           {items.map((item) => (
-            <div key={`${title}-${item}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
+            <div
+              key={`${title}-${item}`}
+              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700"
+            >
               {item}
             </div>
           ))}
@@ -54,8 +73,14 @@ export function AuditInsightsCard({
           <CardTitle className="text-lg text-slate-950">Audit anomaly insights</CardTitle>
           <CardDescription>Concise AI review of recent audit behavior.</CardDescription>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={onRefresh} disabled={auditInsightsLoading}>
-          {auditInsightsLoading ? "Refreshing..." : "Refresh"}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onRefresh}
+          disabled={auditInsightsLoading}
+        >
+          {auditInsightsLoading ? 'Refreshing...' : 'Refresh'}
         </Button>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -68,21 +93,31 @@ export function AuditInsightsCard({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Total events</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Total events
+            </div>
             <div className="mt-2 text-3xl font-semibold text-slate-950">
-              {auditInsightsLoading && !auditInsights ? "..." : (auditInsights?.analytics.totalEvents ?? "—")}
+              {auditInsightsLoading && !auditInsights
+                ? '...'
+                : (auditInsights?.analytics.totalEvents ?? '—')}
             </div>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Failures</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Failures
+            </div>
             <div className="mt-2 text-3xl font-semibold text-slate-950">
-              {auditInsightsLoading && !auditInsights ? "..." : (auditInsights?.analytics.totalFailures ?? "—")}
+              {auditInsightsLoading && !auditInsights
+                ? '...'
+                : (auditInsights?.analytics.totalFailures ?? '—')}
             </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Summary</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Summary
+          </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
             {auditInsightsLoading && !auditInsights ? (
               <div className="space-y-2">
@@ -90,20 +125,36 @@ export function AuditInsightsCard({
                 <Skeleton className="h-4 w-11/12" />
                 <Skeleton className="h-4 w-4/5" />
               </div>
-            ) : parsedInsights.summary ? parsedInsights.summary : "No summary available yet."}
+            ) : parsedInsights.summary ? (
+              parsedInsights.summary
+            ) : (
+              'No summary available yet.'
+            )}
           </div>
         </div>
 
-        <InsightSection title="Anomalies" items={parsedInsights.anomalies} emptyText="No clear anomaly beyond normal variation." />
-        <InsightSection title="Recommendations" items={parsedInsights.recommendations} emptyText="No follow-up recommendations yet." />
+        <InsightSection
+          title="Anomalies"
+          items={parsedInsights.anomalies}
+          emptyText="No clear anomaly beyond normal variation."
+        />
+        <InsightSection
+          title="Recommendations"
+          items={parsedInsights.recommendations}
+          emptyText="No follow-up recommendations yet."
+        />
 
         <Separator />
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Top actions</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Top actions
+          </div>
           <div className="flex flex-wrap gap-2">
             {(auditInsights?.analytics.topActions ?? []).slice(0, 4).map((item) => (
-              <Badge key={item.action} variant="secondary">{item.action}: {item.count}</Badge>
+              <Badge key={item.action} variant="secondary">
+                {item.action}: {item.count}
+              </Badge>
             ))}
             {!auditInsights?.analytics.topActions?.length && !auditInsightsLoading ? (
               <span className="text-sm text-slate-500">Not available.</span>
@@ -112,7 +163,9 @@ export function AuditInsightsCard({
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Data sources</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Data sources
+          </div>
           <SourcesBadges sources={auditInsights?.sources} />
         </div>
       </CardContent>

@@ -1,7 +1,7 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "../../lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { cn } from '../../lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
 // Wraps filter controls and page actions inside a shared card layout.
 export function FiltersCard(props: {
@@ -10,10 +10,10 @@ export function FiltersCard(props: {
   actions?: React.ReactNode;
   className?: string;
 }) {
-  const { title = "Filters", filters, actions, className } = props;
+  const { title = 'Filters', filters, actions, className } = props;
 
   return (
-    <Card className={cn("w-full", className)}>
+    <Card className={cn('w-full', className)}>
       <CardHeader className="py-3">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>

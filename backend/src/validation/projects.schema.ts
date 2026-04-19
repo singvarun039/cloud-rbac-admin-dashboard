@@ -1,6 +1,6 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-import { ListQuerySchema } from "./list.schema";
+import { ListQuerySchema } from './list.schema';
 
 export const ProjectIdParamSchema = z.object({
   id: z.string().trim().min(1),
@@ -22,5 +22,5 @@ export const PatchProjectBodySchema = z
     ownerId: z.union([z.string().trim().min(1), z.null()]).optional(),
   })
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
-    message: "At least one field must be provided",
+    message: 'At least one field must be provided',
   });

@@ -1,23 +1,23 @@
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
-  return value !== null && typeof value === "object";
+  return value !== null && typeof value === 'object';
 }
 
 function readTextValue(value: unknown): string | null {
-  if (typeof value === "string" && value.trim()) {
+  if (typeof value === 'string' && value.trim()) {
     return value.trim();
   }
 
   if (!isRecord(value)) return null;
 
   const nestedValue = value.value;
-  if (typeof nestedValue === "string" && nestedValue.trim()) {
+  if (typeof nestedValue === 'string' && nestedValue.trim()) {
     return nestedValue.trim();
   }
 
   const nestedText = value.text;
-  if (typeof nestedText === "string" && nestedText.trim()) {
+  if (typeof nestedText === 'string' && nestedText.trim()) {
     return nestedText.trim();
   }
 
@@ -31,8 +31,8 @@ function collectMessageContentTexts(content: unknown): string[] {
   for (const item of content) {
     if (!isRecord(item)) continue;
 
-    const type = typeof item.type === "string" ? item.type : "";
-    if (type !== "output_text" && type !== "text" && type !== "refusal") {
+    const type = typeof item.type === 'string' ? item.type : '';
+    if (type !== 'output_text' && type !== 'text' && type !== 'refusal') {
       continue;
     }
 
@@ -58,13 +58,13 @@ function collectOutputTexts(output: unknown): string[] {
   for (const item of output) {
     if (!isRecord(item)) continue;
 
-    const itemType = typeof item.type === "string" ? item.type : "";
-    if (itemType === "message") {
+    const itemType = typeof item.type === 'string' ? item.type : '';
+    if (itemType === 'message') {
       texts.push(...collectMessageContentTexts(item.content));
       continue;
     }
 
-    if (itemType === "refusal") {
+    if (itemType === 'refusal') {
       const refusal = readTextValue(item.refusal) ?? readTextValue(item);
       if (refusal) texts.push(refusal);
     }
@@ -85,34 +85,34 @@ function dedupeNonEmpty(values: string[]): string[] {
 
 // Extracts readable assistant text from the OpenAI Responses API payload.
 export function extractOpenAiResponseText(payload: unknown): string {
-  if (!isRecord(payload)) return "";
+  if (!isRecord(payload)) return '';
 
   const fromTopLevel = readTextValue(payload.output_text);
   if (fromTopLevel) return fromTopLevel;
 
   const outputTexts = collectOutputTexts(payload.output);
   if (outputTexts.length) {
-    return dedupeNonEmpty(outputTexts).join("\n\n").trim();
+    return dedupeNonEmpty(outputTexts).join('\n\n').trim();
   }
 
   const contentTexts = collectMessageContentTexts(payload.content);
   if (contentTexts.length) {
-    return dedupeNonEmpty(contentTexts).join("\n\n").trim();
+    return dedupeNonEmpty(contentTexts).join('\n\n').trim();
   }
 
   const refusal = readTextValue(payload.refusal);
   if (refusal) return refusal;
 
-  return "";
+  return '';
 }
 
 // Produces a compact debug string when upstream returned no visible text.
 export function summarizeOpenAiPayload(payload: unknown): string {
   try {
     const text = JSON.stringify(payload);
-    if (!text) return "empty-json";
+    if (!text) return 'empty-json';
     return text.length > 1500 ? `${text.slice(0, 1500)}...` : text;
   } catch {
-    return "unserializable-payload";
+    return 'unserializable-payload';
   }
 }

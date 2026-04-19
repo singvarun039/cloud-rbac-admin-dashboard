@@ -1,12 +1,12 @@
-import { Button } from "../../components/ui/button";
+import { Button } from '../../components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Skeleton } from "../../components/ui/skeleton";
+} from '../../components/ui/dropdown-menu';
+import { Skeleton } from '../../components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -14,21 +14,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { ChevronDown, Copy, Eye } from "lucide-react";
-import { formatDate } from "../../utils/format";
-import type { AuditLogRow } from "../../api/auditLogs";
+} from '../../components/ui/table';
+import { ChevronDown, Copy, Eye } from 'lucide-react';
+import { formatDate } from '../../utils/format';
+import type { AuditLogRow } from '../../api/auditLogs';
 
 function metaPreview(value: unknown): string {
-  if (value === null || typeof value === "undefined") return "-";
-  if (typeof value === "string")
-    return value.length > 60 ? `${value.slice(0, 60)}...` : value;
-  if (typeof value === "object") {
+  if (value === null || typeof value === 'undefined') return '-';
+  if (typeof value === 'string') return value.length > 60 ? `${value.slice(0, 60)}...` : value;
+  if (typeof value === 'object') {
     try {
       const s = JSON.stringify(value);
-      if (!s) return "-";
+      if (!s) return '-';
       return s.length > 60 ? `${s.slice(0, 60)}...` : s;
-    } catch { return "View"; }
+    } catch {
+      return 'View';
+    }
   }
   return String(value);
 }
@@ -37,7 +38,7 @@ export function actorLabel(row: AuditLogRow): string {
   if (row.actor?.email) {
     return row.actor.name ? `${row.actor.email} (${row.actor.name})` : row.actor.email;
   }
-  return row.actorUserId || "-";
+  return row.actorUserId || '-';
 }
 
 interface AuditLogsTableProps {
@@ -47,7 +48,12 @@ interface AuditLogsTableProps {
   onCopyRequestId: (requestId: string) => void;
 }
 
-export function AuditLogsTable({ items, loading, onOpenView, onCopyRequestId }: AuditLogsTableProps) {
+export function AuditLogsTable({
+  items,
+  loading,
+  onOpenView,
+  onCopyRequestId,
+}: AuditLogsTableProps) {
   const tableHead = (
     <TableHeader>
       <TableRow>
@@ -69,13 +75,29 @@ export function AuditLogsTable({ items, loading, onOpenView, onCopyRequestId }: 
         <TableBody>
           {Array.from({ length: 8 }).map((_, idx) => (
             <TableRow key={idx}>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-56" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-44" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-44" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-              <TableCell><div className="flex justify-end"><Skeleton className="h-8 w-16" /></div></TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-56" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-44" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-44" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-40" />
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end">
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -96,9 +118,14 @@ export function AuditLogsTable({ items, loading, onOpenView, onCopyRequestId }: 
             <TableCell>{formatDate(row.createdAt)}</TableCell>
             <TableCell className="font-medium">{row.action}</TableCell>
             <TableCell>{actorLabel(row)}</TableCell>
-            <TableCell>{row.entityType}{row.entityId ? `: ${row.entityId}` : ""}</TableCell>
-            <TableCell>{row.requestId || "-"}</TableCell>
-            <TableCell><span className="block truncate text-slate-500">{metaPreview(row.meta)}</span></TableCell>
+            <TableCell>
+              {row.entityType}
+              {row.entityId ? `: ${row.entityId}` : ''}
+            </TableCell>
+            <TableCell>{row.requestId || '-'}</TableCell>
+            <TableCell>
+              <span className="block truncate text-slate-500">{metaPreview(row.meta)}</span>
+            </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

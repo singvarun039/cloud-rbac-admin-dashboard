@@ -1,5 +1,5 @@
-import { api, getApiErrorMessage } from "./client";
-import { unwrapData } from "../types/api";
+import { api, getApiErrorMessage } from './client';
+import { unwrapData } from '../types/api';
 
 export type RoleRecommendationsResponse = {
   windowDays: number;
@@ -28,10 +28,10 @@ export type RoleRecommendationsResponse = {
 // Loads AI-backed role and permission recommendations for the Roles page.
 export async function getRoleRecommendations(
   windowDays = 30,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal }
 ): Promise<RoleRecommendationsResponse> {
   try {
-    const res = await api.get("/api/ai/role-recommendations", {
+    const res = await api.get('/api/ai/role-recommendations', {
       params: { windowDays },
       signal: options?.signal,
     });
@@ -40,8 +40,6 @@ export async function getRoleRecommendations(
     if (unwrapped) return unwrapped;
     return res.data as RoleRecommendationsResponse;
   } catch (err) {
-    throw new Error(
-      getApiErrorMessage(err, "Failed to load role recommendations."),
-    );
+    throw new Error(getApiErrorMessage(err, 'Failed to load role recommendations.'));
   }
 }

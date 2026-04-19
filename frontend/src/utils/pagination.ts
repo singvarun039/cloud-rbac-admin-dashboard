@@ -1,9 +1,6 @@
 // Builds the array of pagination items (page numbers + ellipsis markers)
 // for a bounded paginator with up to 7 visible items.
-export function buildPaginationItems(
-  page: number,
-  totalPages: number,
-): Array<number | "ellipsis"> {
+export function buildPaginationItems(page: number, totalPages: number): Array<number | 'ellipsis'> {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, idx) => idx + 1);
   }
@@ -23,10 +20,10 @@ export function buildPaginationItems(
   start = Math.max(2, start);
   end = Math.min(totalPages - 1, end);
 
-  const items: Array<number | "ellipsis"> = [1];
-  if (start > 2) items.push("ellipsis");
+  const items: Array<number | 'ellipsis'> = [1];
+  if (start > 2) items.push('ellipsis');
   for (let p = start; p <= end; p++) items.push(p);
-  if (end < totalPages - 1) items.push("ellipsis");
+  if (end < totalPages - 1) items.push('ellipsis');
   items.push(totalPages);
   return items;
 }

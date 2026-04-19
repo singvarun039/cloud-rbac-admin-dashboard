@@ -1,8 +1,21 @@
-import { Badge } from "../../components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Skeleton } from "../../components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
-import { formatDate } from "../../utils/format";
+import { Badge } from '../../components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import { Skeleton } from '../../components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { formatDate } from '../../utils/format';
 
 interface RecentAuditRow {
   id: string;
@@ -33,7 +46,9 @@ export function RecentActivityCard({ loading, recent }: RecentActivityCardProps)
             <Skeleton className="h-4 w-full" />
           </div>
         ) : recent === null ? (
-          <div className="py-10 text-center text-sm text-slate-500">Recent activity is not available.</div>
+          <div className="py-10 text-center text-sm text-slate-500">
+            Recent activity is not available.
+          </div>
         ) : recent.length === 0 ? (
           <div className="py-10 text-center text-sm text-slate-500">No recent activity.</div>
         ) : (
@@ -49,9 +64,15 @@ export function RecentActivityCard({ loading, recent }: RecentActivityCardProps)
               <TableBody>
                 {recent.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell><Badge variant="secondary">{row.action}</Badge></TableCell>
-                    <TableCell className="text-slate-600">{row.actorEmail || row.actorUserId || "—"}</TableCell>
-                    <TableCell className="text-right text-slate-600">{formatDate(row.createdAt)}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{row.action}</Badge>
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {row.actorEmail || row.actorUserId || '—'}
+                    </TableCell>
+                    <TableCell className="text-right text-slate-600">
+                      {formatDate(row.createdAt)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

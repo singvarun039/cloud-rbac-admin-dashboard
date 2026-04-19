@@ -1,4 +1,4 @@
-import type { Request, Response } from "express";
+import type { Request, Response } from 'express';
 
 export type ApiSuccessEnvelope<T> = {
   ok: true;
@@ -25,13 +25,12 @@ export function ok<T>(
   req: Request,
   data: T,
   statusOrMeta?: number | Meta,
-  meta?: Meta,
+  meta?: Meta
 ) {
-  const requestId = req.requestId ?? "unknown";
+  const requestId = req.requestId ?? 'unknown';
 
-  const status = typeof statusOrMeta === "number" ? statusOrMeta : 200;
-  const resolvedMeta =
-    typeof statusOrMeta === "object" && statusOrMeta ? statusOrMeta : meta;
+  const status = typeof statusOrMeta === 'number' ? statusOrMeta : 200;
+  const resolvedMeta = typeof statusOrMeta === 'object' && statusOrMeta ? statusOrMeta : meta;
 
   const payload: ApiSuccessEnvelope<T> = {
     ok: true,
@@ -50,16 +49,16 @@ export function fail(
   status: number,
   code: string,
   message: string,
-  details?: unknown,
+  details?: unknown
 ) {
-  const requestId = req.requestId ?? "unknown";
+  const requestId = req.requestId ?? 'unknown';
 
   const payload: ApiErrorEnvelope = {
     ok: false,
     error: {
       code,
       message,
-      ...(typeof details === "undefined" ? {} : { details }),
+      ...(typeof details === 'undefined' ? {} : { details }),
     },
     requestId,
   };

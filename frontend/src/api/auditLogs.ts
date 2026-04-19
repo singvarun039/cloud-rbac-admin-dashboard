@@ -1,5 +1,5 @@
-import { api } from "./client";
-import { unwrapData } from "../types/api";
+import { api } from './client';
+import { unwrapData } from '../types/api';
 
 export type AuditActor = {
   id: string;
@@ -46,9 +46,7 @@ export type GetAuditLogsParams = {
 
 // Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : null;
+  return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
 // Checks whether a value matches the backend's audit log list payload.
@@ -56,8 +54,8 @@ function isAuditLogsData(value: unknown): value is {
   items: AuditLogRow[];
   meta: { page: number; limit: number; total: number; hasNext: boolean };
 } {
-  if (!value || typeof value !== "object") return false;
-  return "items" in value && "meta" in value;
+  if (!value || typeof value !== 'object') return false;
+  return 'items' in value && 'meta' in value;
 }
 
 // Normalizes backend audit log list responses into the frontend shape.
@@ -74,48 +72,48 @@ function unwrapAuditLogsResponse(payload: unknown): AuditLogsResponse {
   if (record && Array.isArray(record.items) && record.meta) {
     return {
       data: record.items as AuditLogRow[],
-      meta: record.meta as AuditLogsResponse["meta"],
+      meta: record.meta as AuditLogsResponse['meta'],
     };
   }
 
-  throw new Error("Unexpected audit logs response format");
+  throw new Error('Unexpected audit logs response format');
 }
 
 // Loads a paginated list of audit logs.
 export async function getAuditLogs(
   params: GetAuditLogsParams,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal }
 ): Promise<AuditLogsResponse> {
   const query: Record<string, unknown> = {
     page: params.page,
     limit: params.limit,
   };
 
-  const trimmedAction = (params.action ?? "").trim();
-  if (trimmedAction && trimmedAction !== "ALL") query.action = trimmedAction;
+  const trimmedAction = (params.action ?? '').trim();
+  if (trimmedAction && trimmedAction !== 'ALL') query.action = trimmedAction;
 
-  const actorUserId = (params.actorUserId ?? "").trim();
+  const actorUserId = (params.actorUserId ?? '').trim();
   if (actorUserId) query.actorUserId = actorUserId;
 
-  const actorEmail = (params.actorEmail ?? "").trim();
+  const actorEmail = (params.actorEmail ?? '').trim();
   if (actorEmail) query.actorEmail = actorEmail;
 
-  const entityType = (params.entityType ?? "").trim();
+  const entityType = (params.entityType ?? '').trim();
   if (entityType) query.entityType = entityType;
 
-  const entityId = (params.entityId ?? "").trim();
+  const entityId = (params.entityId ?? '').trim();
   if (entityId) query.entityId = entityId;
 
-  const requestId = (params.requestId ?? "").trim();
+  const requestId = (params.requestId ?? '').trim();
   if (requestId) query.requestId = requestId;
 
-  const dateFrom = (params.dateFrom ?? "").trim();
+  const dateFrom = (params.dateFrom ?? '').trim();
   if (dateFrom) query.dateFrom = dateFrom;
 
-  const dateTo = (params.dateTo ?? "").trim();
+  const dateTo = (params.dateTo ?? '').trim();
   if (dateTo) query.dateTo = dateTo;
 
-  const res = await api.get("/api/audit-logs", {
+  const res = await api.get('/api/audit-logs', {
     params: query,
     signal: options?.signal,
   });

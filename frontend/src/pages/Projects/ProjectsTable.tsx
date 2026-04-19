@@ -1,12 +1,12 @@
-import { Button } from "../../components/ui/button";
+import { Button } from '../../components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Skeleton } from "../../components/ui/skeleton";
+} from '../../components/ui/dropdown-menu';
+import { Skeleton } from '../../components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -14,10 +14,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { ChevronDown } from "lucide-react";
-import { formatDate } from "../../utils/format";
-import type { Project } from "../../api/projects";
+} from '../../components/ui/table';
+import { ChevronDown } from 'lucide-react';
+import { formatDate } from '../../utils/format';
+import type { Project } from '../../api/projects';
 
 interface ProjectsTableProps {
   projects: Project[];
@@ -46,12 +46,24 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
         <TableBody>
           {Array.from({ length: 6 }).map((_, idx) => (
             <TableRow key={idx}>
-              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell className="text-right"><Skeleton className="ml-auto h-8 w-10" /></TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-40" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-16" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="ml-auto h-8 w-10" />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -70,8 +82,8 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
         {projects.map((p) => (
           <TableRow key={p.id}>
             <TableCell className="font-medium">{p.name}</TableCell>
-            <TableCell className="text-slate-500">{p.ownerId ?? "-"}</TableCell>
-            <TableCell>{p.isArchived ? "Yes" : "No"}</TableCell>
+            <TableCell className="text-slate-500">{p.ownerId ?? '-'}</TableCell>
+            <TableCell>{p.isArchived ? 'Yes' : 'No'}</TableCell>
             <TableCell className="text-slate-500">{formatDate(p.createdAt)}</TableCell>
             <TableCell className="text-slate-500">{formatDate(p.updatedAt)}</TableCell>
             <TableCell className="text-right">
@@ -84,7 +96,13 @@ export function ProjectsTable({ projects, loading, onRequestArchive }: ProjectsT
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem disabled>View</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => onRequestArchive(p)} className="text-red-600 focus:text-red-600" disabled>Archive</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => onRequestArchive(p)}
+                    className="text-red-600 focus:text-red-600"
+                    disabled
+                  >
+                    Archive
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </TableCell>

@@ -1,9 +1,15 @@
-import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
-import { Button } from "../../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Separator } from "../../components/ui/separator";
-import { Skeleton } from "../../components/ui/skeleton";
-import { SourcesBadges } from "../../components/common/SourcesBadges";
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Button } from '../../components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import { Separator } from '../../components/ui/separator';
+import { Skeleton } from '../../components/ui/skeleton';
+import { SourcesBadges } from '../../components/common/SourcesBadges';
 
 type SourceMeta = { key: string; label: string; description: string };
 
@@ -34,7 +40,9 @@ export function AssistantCard({
     <Card className="border-slate-200/80 shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg text-slate-950">RBAC AI Assistant</CardTitle>
-        <CardDescription>Ask grounded questions about access health, risks, and next steps.</CardDescription>
+        <CardDescription>
+          Ask grounded questions about access health, risks, and next steps.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap gap-2">
@@ -45,7 +53,10 @@ export function AssistantCard({
               variant="outline"
               size="sm"
               className="h-auto whitespace-normal text-left"
-              onClick={() => { setAssistantPrompt(prompt); onSubmit(prompt); }}
+              onClick={() => {
+                setAssistantPrompt(prompt);
+                onSubmit(prompt);
+              }}
               disabled={assistantLoading}
             >
               {prompt}
@@ -64,10 +75,16 @@ export function AssistantCard({
             disabled={assistantLoading}
           />
           <div className="flex items-center gap-2">
-            <Button type="button" onClick={() => onSubmit(assistantPrompt)} disabled={assistantLoading}>
-              {assistantLoading ? "Thinking..." : "Ask assistant"}
+            <Button
+              type="button"
+              onClick={() => onSubmit(assistantPrompt)}
+              disabled={assistantLoading}
+            >
+              {assistantLoading ? 'Thinking...' : 'Ask assistant'}
             </Button>
-            <Button type="button" variant="ghost" onClick={onClear} disabled={assistantLoading}>Clear</Button>
+            <Button type="button" variant="ghost" onClick={onClear} disabled={assistantLoading}>
+              Clear
+            </Button>
           </div>
         </div>
 
@@ -81,7 +98,9 @@ export function AssistantCard({
         <Separator />
 
         <div className="space-y-3">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Latest answer</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Latest answer
+          </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
             {assistantLoading ? (
               <div className="space-y-2">
@@ -92,13 +111,15 @@ export function AssistantCard({
             ) : assistantAnswer ? (
               <div className="whitespace-pre-wrap">{assistantAnswer}</div>
             ) : (
-              "No answer yet. Try a starter prompt or ask a custom question."
+              'No answer yet. Try a starter prompt or ask a custom question.'
             )}
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Data sources</div>
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+            Data sources
+          </div>
           <SourcesBadges sources={assistantSources} />
         </div>
       </CardContent>

@@ -1,13 +1,13 @@
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Skeleton } from "../../components/ui/skeleton";
+} from '../../components/ui/dropdown-menu';
+import { Skeleton } from '../../components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -15,18 +15,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { ChevronDown, Eye, Pencil, Shield, Trash2 } from "lucide-react";
-import type { Role } from "../../api/roles";
+} from '../../components/ui/table';
+import { ChevronDown, Eye, Pencil, Shield, Trash2 } from 'lucide-react';
+import type { Role } from '../../api/roles';
 
-const PROTECTED_ROLE_NAMES = new Set(["ADMIN", "EDITOR", "USER", "VIEWER"]);
+const PROTECTED_ROLE_NAMES = new Set(['ADMIN', 'EDITOR', 'USER', 'VIEWER']);
 
 function permissionCountLabel(role: Role): string {
   const countFromArray = Array.isArray(role.permissions) ? role.permissions.length : null;
   const count =
-    typeof countFromArray === "number"
+    typeof countFromArray === 'number'
       ? countFromArray
-      : typeof role.permissionCount === "number"
+      : typeof role.permissionCount === 'number'
         ? role.permissionCount
         : 0;
   return `${count} permissions`;
@@ -75,9 +75,15 @@ export function RolesTable({
         <TableBody>
           {Array.from({ length: 6 }).map((_, idx) => (
             <TableRow key={idx}>
-              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-56" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-56" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Skeleton className="h-9 w-20" />
@@ -126,7 +132,10 @@ export function RolesTable({
                           <Pencil className="mr-2 h-4 w-4" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => onRequestAssign(r)} disabled={!canReadPermissions}>
+                        <DropdownMenuItem
+                          onSelect={() => onRequestAssign(r)}
+                          disabled={!canReadPermissions}
+                        >
                           <Shield className="mr-2 h-4 w-4" /> Assign Permissions
                         </DropdownMenuItem>
                       </>
@@ -145,7 +154,7 @@ export function RolesTable({
                                 className="text-red-700 focus:bg-red-50 focus:text-red-700 data-[disabled]:text-red-700/50"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                {isProtected ? "Delete (system role)" : "Delete"}
+                                {isProtected ? 'Delete (system role)' : 'Delete'}
                               </DropdownMenuItem>
                             </>
                           );

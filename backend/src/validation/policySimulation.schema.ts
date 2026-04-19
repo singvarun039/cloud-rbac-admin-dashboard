@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const UniqueStringArray = (label: string) =>
   z
@@ -11,10 +11,10 @@ const UniqueStringArray = (label: string) =>
 export const PolicySimulationBodySchema = z
   .object({
     roleId: z.string().trim().min(1),
-    permissionKeys: UniqueStringArray("permission keys")
+    permissionKeys: UniqueStringArray('permission keys')
       .transform((keys) => keys.map((k) => k.trim()))
       .optional(),
-    permissionIds: UniqueStringArray("permission ids").optional(),
+    permissionIds: UniqueStringArray('permission ids').optional(),
   })
   .strict()
   .refine(
@@ -22,6 +22,6 @@ export const PolicySimulationBodySchema = z
       (Array.isArray(v.permissionKeys) && !Array.isArray(v.permissionIds)) ||
       (!Array.isArray(v.permissionKeys) && Array.isArray(v.permissionIds)),
     {
-      message: "Provide exactly one of permissionKeys or permissionIds",
-    },
+      message: 'Provide exactly one of permissionKeys or permissionIds',
+    }
   );

@@ -1,13 +1,13 @@
-import { Badge } from "../../components/ui/badge";
-import { Button } from "../../components/ui/button";
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Skeleton } from "../../components/ui/skeleton";
+} from '../../components/ui/dropdown-menu';
+import { Skeleton } from '../../components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -15,10 +15,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../components/ui/table";
-import { ChevronDown, Eye, Pencil, Trash2, UserX } from "lucide-react";
-import { formatDate } from "../../utils/format";
-import type { User } from "../../api/users";
+} from '../../components/ui/table';
+import { ChevronDown, Eye, Pencil, Trash2, UserX } from 'lucide-react';
+import { formatDate } from '../../utils/format';
+import type { User } from '../../api/users';
 
 interface RoleText {
   text: string;
@@ -72,11 +72,21 @@ export function UsersTable({
         <TableBody>
           {Array.from({ length: 6 }).map((_, idx) => (
             <TableRow key={idx}>
-              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-44" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-              <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-28" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-44" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-20" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-32" />
+              </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Skeleton className="h-9 w-20" />
@@ -109,9 +119,7 @@ export function UsersTable({
               })()}
             </TableCell>
             <TableCell>
-              <Badge variant={u.status === "ACTIVE" ? "success" : "destructive"}>
-                {u.status}
-              </Badge>
+              <Badge variant={u.status === 'ACTIVE' ? 'success' : 'destructive'}>{u.status}</Badge>
             </TableCell>
             <TableCell>{formatDate(u.createdAt)}</TableCell>
             <TableCell className="text-right">

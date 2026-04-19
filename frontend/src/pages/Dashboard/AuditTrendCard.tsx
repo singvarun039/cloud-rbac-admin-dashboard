@@ -6,9 +6,15 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { Skeleton } from "../../components/ui/skeleton";
+} from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/card';
+import { Skeleton } from '../../components/ui/skeleton';
 
 interface ChartPoint {
   date: string;
@@ -36,9 +42,13 @@ export function AuditTrendCard({ loading, chartData, windowDays }: AuditTrendCar
             <Skeleton className="h-[320px] w-full rounded-xl" />
           </div>
         ) : chartData === null ? (
-          <div className="py-14 text-center text-sm text-slate-500">Audit trend is not available.</div>
+          <div className="py-14 text-center text-sm text-slate-500">
+            Audit trend is not available.
+          </div>
         ) : chartData.length === 0 ? (
-          <div className="py-14 text-center text-sm text-slate-500">No audit data in this window.</div>
+          <div className="py-14 text-center text-sm text-slate-500">
+            No audit data in this window.
+          </div>
         ) : (
           <div className="h-[320px] rounded-xl border border-slate-200 bg-slate-50 p-3">
             <ResponsiveContainer width="100%" height="100%">
@@ -53,7 +63,13 @@ export function AuditTrendCard({ loading, chartData, windowDays }: AuditTrendCar
                 <XAxis dataKey="label" interval={1} tickLine={false} axisLine={false} />
                 <YAxis width={28} tickLine={false} axisLine={false} allowDecimals={false} />
                 <Tooltip />
-                <Area type="monotone" dataKey="count" stroke="#0f172a" fill="url(#audit-fill)" strokeWidth={2.25} />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#0f172a"
+                  fill="url(#audit-fill)"
+                  strokeWidth={2.25}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>

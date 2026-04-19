@@ -1,14 +1,14 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "../auth/AuthContext";
-import Layout from "../components/Layout";
-import ProtectedRoute from "../components/ProtectedRoute";
-import RequirePermissionRoute from "../components/RequirePermissionRoute";
-import AuditLogsPage from "../pages/AuditLogs";
-import DashboardPage from "../pages/Dashboard";
-import LoginPage from "../pages/Login";
-import ProjectsPage from "../pages/Projects";
-import RolesPage from "../pages/Roles";
-import UsersPage from "../pages/Users";
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from '../auth/AuthContext';
+import Layout from '../components/Layout';
+import ProtectedRoute from '../components/ProtectedRoute';
+import RequirePermissionRoute from '../components/RequirePermissionRoute';
+import AuditLogsPage from '../pages/AuditLogs';
+import DashboardPage from '../pages/Dashboard';
+import LoginPage from '../pages/Login';
+import ProjectsPage from '../pages/Projects';
+import RolesPage from '../pages/Roles';
+import UsersPage from '../pages/Users';
 
 // Declares the application's authenticated and public routes.
 export default function AppRouter() {
