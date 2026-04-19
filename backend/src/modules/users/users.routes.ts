@@ -9,13 +9,8 @@ import {
   UserIdParamSchema,
   UsersListQuerySchema,
 } from '../../validation/users.schema';
-import {
-  listUsers,
-  createUser,
-  updateUser,
-  permanentDeleteUser,
-  deactivateUser,
-} from './users.controller';
+import { listUsers, createUser, updateUser } from './users.controller';
+import { permanentDeleteUser, deactivateUser } from './users.delete';
 
 export const usersRouter = Router();
 

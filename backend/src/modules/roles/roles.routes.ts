@@ -12,14 +12,8 @@ import {
   RoleIdOrIdParamSchema,
   ReplaceRolePermissionsBodySchema,
 } from '../../validation/roles.schema';
-import {
-  listRoles,
-  createRole,
-  updateRole,
-  assignRole,
-  replaceRolePermissions,
-  deleteRolePermanent,
-} from './roles.controller';
+import { listRoles, createRole, updateRole, assignRole } from './roles.controller';
+import { replaceRolePermissions, deleteRolePermanent } from './roles.permissions';
 
 export const rolesRouter = Router();
 

@@ -1,15 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../auth/useAuth';
 import { getApiErrorMessage } from '../../api/client';
-import {
-  deleteUser,
-  getUsers,
-  permanentlyDeleteUser,
-  type User,
-  type UserStatus,
-} from '../../api/users';
+import { getUsers, type User, type UserStatus } from '../../api/users';
 import { isCanceledError } from '../../utils/errors';
-import { toast } from '../../components/ui/use-toast';
+import { useUserActions } from './useUserActions';
 
 export type StatusFilter = 'ALL' | UserStatus;
 
@@ -26,21 +20,14 @@ export function useUsersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [statusInput, setStatusInput] = useState<StatusFilter>('ALL');
 
-  const [deactivateOpen, setDeactivateOpen] = useState(false);
-  const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewUser, setViewUser] = useState<User | null>(null);
-
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -158,56 +145,15 @@ export function useUsersPage() {
     return { text: `${roleNames[0]} +${roleNames.length - 1}`, title: roleNames.join(', ') };
   }, []);
 
-  const onDeactivateUser = useCallback(
-    async (u: User) => {
-      if (!canWriteUsers) return;
-      setSuccess(null);
-      try {
-        await deleteUser(u.id);
-        if (users.length === 1 && page > 1) {
-          setPage((p) => Math.max(1, p - 1));
-        } else {
-          void fetchUsers();
-        }
-        setSuccess('User deactivated.');
-        toast.success('User deactivated');
-      } catch (err) {
-        const msg = getApiErrorMessage(err, 'Failed to deactivate user.');
-        setError(msg);
-        toast.error('Action failed', { description: msg });
-      }
-    },
-    [canWriteUsers, fetchUsers, page, users.length]
-  );
-
-  const onConfirmDeactivate = useCallback(() => {
-    if (!deactivateTarget) return;
-    setDeactivateOpen(false);
-    void onDeactivateUser(deactivateTarget);
-  }, [deactivateTarget, onDeactivateUser]);
-
-  const onConfirmDelete = useCallback(async () => {
-    if (!deleteTarget || !canWriteUsers) return;
-    if (deleteConfirmText.trim() !== deleteTarget.email) {
-      setError(`Type ${deleteTarget.email} to confirm deletion.`);
-      toast.error('Delete blocked', { description: 'Confirmation did not match.' });
-      return;
-    }
-    try {
-      await permanentlyDeleteUser(deleteTarget.id);
-      setDeleteOpen(false);
-      setDeleteTarget(null);
-      setDeleteConfirmText('');
-      setPage(1);
-      await fetchUsers({ page: 1 });
-      setSuccess('User deleted permanently.');
-      toast.success('User deleted');
-    } catch (err) {
-      const msg = getApiErrorMessage(err, 'Failed to delete user.');
-      setError(msg);
-      toast.error('Action failed', { description: msg });
-    }
-  }, [canWriteUsers, deleteConfirmText, deleteTarget, fetchUsers]);
+  const actions = useUserActions({
+    canWriteUsers,
+    users,
+    page,
+    setPage,
+    fetchUsers,
+    setError,
+    setSuccess,
+  });
 
   return {
     me,
@@ -222,16 +168,6 @@ export function useUsersPage() {
     setSearchInput,
     statusInput,
     setStatusInput,
-    deactivateOpen,
-    setDeactivateOpen,
-    deactivateTarget,
-    setDeactivateTarget,
-    deleteOpen,
-    setDeleteOpen,
-    deleteTarget,
-    setDeleteTarget,
-    deleteConfirmText,
-    setDeleteConfirmText,
     viewOpen,
     setViewOpen,
     viewUser,
@@ -257,7 +193,7 @@ export function useUsersPage() {
     onApplyFilters,
     onResetFilters,
     roleTextForUser,
-    onConfirmDeactivate,
-    onConfirmDelete,
+    ...actions,
   };
 }
+
