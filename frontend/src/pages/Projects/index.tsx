@@ -51,8 +51,18 @@ export default function ProjectsPage() {
         <CardContent className="pt-6">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
             <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:flex-1">
-              <Input type="text" placeholder="Search" className="h-10 w-full placeholder:text-slate-400" disabled />
-              <Input type="text" placeholder="Owner ID" className="h-10 w-full placeholder:text-slate-400" disabled />
+              <Input
+                type="text"
+                placeholder="Search"
+                className="h-10 w-full placeholder:text-slate-400"
+                disabled
+              />
+              <Input
+                type="text"
+                placeholder="Owner ID"
+                className="h-10 w-full placeholder:text-slate-400"
+                disabled
+              />
               <Select disabled>
                 <SelectTrigger className="h-10 w-full" aria-label="Include archived">
                   <SelectValue placeholder="Include archived" />
@@ -73,10 +83,21 @@ export default function ProjectsPage() {
               </Select>
             </div>
             <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end lg:w-auto">
-              <Button type="button" onClick={p.onApplyFilters} disabled={p.loading} className="h-10 w-full sm:w-auto">
+              <Button
+                type="button"
+                onClick={p.onApplyFilters}
+                disabled={p.loading}
+                className="h-10 w-full sm:w-auto"
+              >
                 Apply Filters
               </Button>
-              <Button type="button" variant="outline" onClick={p.onResetFilters} disabled={p.loading} className="h-10 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={p.onResetFilters}
+                disabled={p.loading}
+                className="h-10 w-full sm:w-auto"
+              >
                 Reset Filters
               </Button>
               <Separator orientation="horizontal" className="sm:hidden" />
@@ -129,7 +150,9 @@ export default function ProjectsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Archive project?</AlertDialogTitle>
             <AlertDialogDescription>
-              {p.archiveProject ? `Archive project "${p.archiveProject.name}"?` : 'Archive this project?'}
+              {p.archiveProject
+                ? `Archive project "${p.archiveProject.name}"?`
+                : 'Archive this project?'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

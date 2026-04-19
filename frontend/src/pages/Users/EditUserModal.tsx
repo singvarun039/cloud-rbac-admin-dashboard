@@ -23,7 +23,14 @@ interface EditUserModalProps {
   user: User | null;
 }
 
-export function EditUserModal({ isOpen, onClose, onUpdated, onError, canEdit, user }: EditUserModalProps) {
+export function EditUserModal({
+  isOpen,
+  onClose,
+  onUpdated,
+  onError,
+  canEdit,
+  user,
+}: EditUserModalProps) {
   const f = useEditUserForm({ isOpen, user, canEdit, onUpdated, onError });
 
   return (

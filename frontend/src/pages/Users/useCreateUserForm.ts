@@ -11,7 +11,12 @@ interface UseCreateUserFormParams {
   onError: (msg: string) => void;
 }
 
-export function useCreateUserForm({ isOpen, canWrite, onCreated, onError }: UseCreateUserFormParams) {
+export function useCreateUserForm({
+  isOpen,
+  canWrite,
+  onCreated,
+  onError,
+}: UseCreateUserFormParams) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -106,15 +111,25 @@ export function useCreateUserForm({ isOpen, canWrite, onCreated, onError }: UseC
   }, [canWrite, email, name, onCreated, onError, password, roleId, status, submitting]);
 
   return {
-    name, setName,
-    email, setEmail,
-    password, setPassword,
-    status, setStatus,
-    roleId, setRoleId,
-    roles, rolesLoading, rolesError,
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    status,
+    setStatus,
+    roleId,
+    setRoleId,
+    roles,
+    rolesLoading,
+    rolesError,
     systemDefaultRoleName,
-    showPassword, setShowPassword,
-    submitting, fieldError, conflictError,
+    showPassword,
+    setShowPassword,
+    submitting,
+    fieldError,
+    conflictError,
     onSubmit,
   };
 }

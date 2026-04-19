@@ -80,12 +80,24 @@ export function useProjectsPage() {
   }, [fetchProjects]);
 
   return {
-    page, setPage,
-    limit, setLimit,
-    projects, total, hasNext, loading, error,
-    archiveOpen, setArchiveOpen,
-    archiveProject, setArchiveProject,
-    totalPages, showingFrom, showingTo,
-    fetchProjects, onApplyFilters, onResetFilters,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    projects,
+    total,
+    hasNext,
+    loading,
+    error,
+    archiveOpen,
+    setArchiveOpen,
+    archiveProject,
+    setArchiveProject,
+    totalPages,
+    showingFrom,
+    showingTo,
+    fetchProjects,
+    onApplyFilters,
+    onResetFilters,
   };
 }

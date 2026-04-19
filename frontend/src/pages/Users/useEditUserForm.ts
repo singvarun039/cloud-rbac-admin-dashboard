@@ -12,7 +12,13 @@ interface UseEditUserFormParams {
   onError: (msg: string) => void;
 }
 
-export function useEditUserForm({ isOpen, user, canEdit, onUpdated, onError }: UseEditUserFormParams) {
+export function useEditUserForm({
+  isOpen,
+  user,
+  canEdit,
+  onUpdated,
+  onError,
+}: UseEditUserFormParams) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<UserStatus>('ACTIVE');
@@ -103,14 +109,24 @@ export function useEditUserForm({ isOpen, user, canEdit, onUpdated, onError }: U
   }, [canEdit, email, name, onError, onUpdated, password, roleId, status, submitting, user]);
 
   return {
-    name, setName,
-    email, setEmail,
-    status, setStatus,
-    roleId, setRoleId,
-    roles, rolesLoading, rolesError,
-    password, setPassword,
-    showPassword, setShowPassword,
-    submitting, fieldError, conflictError,
+    name,
+    setName,
+    email,
+    setEmail,
+    status,
+    setStatus,
+    roleId,
+    setRoleId,
+    roles,
+    rolesLoading,
+    rolesError,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    submitting,
+    fieldError,
+    conflictError,
     onSubmit,
   };
 }

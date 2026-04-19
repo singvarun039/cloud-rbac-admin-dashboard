@@ -144,4 +144,3 @@ export async function assignRole(req: Request, res: Response) {
   });
   return ok(res, req, { success: true }, 200);
 }
-

@@ -223,5 +223,3 @@ export async function updateUser(req: Request, res: Response) {
 
   return ok(res, req, { user: userToApi(user) }, 200);
 }
-
-

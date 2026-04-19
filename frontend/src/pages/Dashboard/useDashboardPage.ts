@@ -127,7 +127,12 @@ export function useDashboardPage() {
       { key: 'users', label: 'Total Users', value: k?.usersTotal ?? null, loading },
       { key: 'projects', label: 'Total Projects', value: k?.projectsTotal ?? null, loading },
       { key: 'roles', label: 'Total Roles', value: k?.rolesTotal ?? null, loading },
-      { key: 'audit', label: `Audit Events (${windowDays}d)`, value: k?.auditTotalWindow ?? null, loading },
+      {
+        key: 'audit',
+        label: `Audit Events (${windowDays}d)`,
+        value: k?.auditTotalWindow ?? null,
+        loading,
+      },
     ];
   }, [loading, summary?.kpis, windowDays]);
 

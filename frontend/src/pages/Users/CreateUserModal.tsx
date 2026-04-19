@@ -22,7 +22,13 @@ interface CreateUserModalProps {
   canWrite: boolean;
 }
 
-export function CreateUserModal({ isOpen, onClose, onCreated, onError, canWrite }: CreateUserModalProps) {
+export function CreateUserModal({
+  isOpen,
+  onClose,
+  onCreated,
+  onError,
+  canWrite,
+}: CreateUserModalProps) {
   const f = useCreateUserForm({ isOpen, canWrite, onCreated, onError });
 
   return (
@@ -144,7 +150,11 @@ export function CreateUserModal({ isOpen, onClose, onCreated, onError, canWrite 
         <Button variant="outline" type="button" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="button" onClick={() => void f.onSubmit()} disabled={!canWrite || f.submitting}>
+        <Button
+          type="button"
+          onClick={() => void f.onSubmit()}
+          disabled={!canWrite || f.submitting}
+        >
           {f.submitting ? 'Creating...' : 'Create'}
         </Button>
       </div>
