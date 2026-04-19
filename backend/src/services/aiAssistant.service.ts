@@ -100,9 +100,15 @@ function buildDeterministicAssistantReply(context: AssistantContext): string {
     lines.push(
       '- Validate that sensitive actions are audited consistently so future AI insights can use richer signals.'
     );
-    lines.push(
-      '- If the current spike was test activity, separate testing from production-like admin usage where possible.'
-    );
+    if (kpis.auditTotalWindow != null) {
+      lines.push(
+        `- The ${kpis.auditTotalWindow}-event audit window is currently dominated by recent operational checks rather than broad day-to-day usage.`,
+      );
+    } else {
+      lines.push(
+        "- The audit event window is not visible for this request, so recent operational checks may be overrepresented in the available signals.",
+      );
+    }
 
     return lines.join('\n');
   }
