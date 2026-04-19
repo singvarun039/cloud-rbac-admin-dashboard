@@ -10,6 +10,15 @@ function isPollingEnabled() {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './test/setup.ts',
+    pool: 'threads',
+    fileParallelism: false,
+    maxWorkers: 1,
+    minWorkers: 1,
+  },
   server: {
     host: true,
     watch: isPollingEnabled()

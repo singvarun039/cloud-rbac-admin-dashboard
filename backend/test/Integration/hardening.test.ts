@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import request from 'supertest';
 import type { Express } from 'express';
-import { requirePermission } from '../src/middlewares/requirePermission';
-import { AppError } from '../src/errors/AppError';
+import { requirePermission } from '../../src/middlewares/requirePermission';
+import { AppError } from '../../src/errors/AppError';
 
 let app: Express;
 
@@ -12,7 +12,7 @@ test.before(async () => {
   process.env.AUTH_LOGIN_RATE_LIMIT_MAX = '0';
   process.env.AUTH_REFRESH_RATE_LIMIT_MAX = '0';
 
-  const mod = await import('../src/app');
+  const mod = await import('../../src/app');
   app = mod.createApp();
 });
 
