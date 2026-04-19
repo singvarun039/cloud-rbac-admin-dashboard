@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const RolesListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -20,7 +20,7 @@ const RoleNameSchema = z
   .trim()
   .min(2)
   .max(64)
-  .transform((v) => v.trim().replace(/\s+/g, " ").toUpperCase());
+  .transform((v) => v.trim().replace(/\s+/g, ' ').toUpperCase());
 
 export const CreateRoleBodySchema = z
   .object({
@@ -40,7 +40,7 @@ export const PatchRoleBodySchema = z
   })
   .strict()
   .refine((v) => Object.values(v).some((x) => x !== undefined), {
-    message: "At least one field must be provided",
+    message: 'At least one field must be provided',
   });
 
 // Builds a unique trimmed string-array validator for permission payloads.
@@ -54,16 +54,16 @@ const UniqueStringArray = (label: string) =>
 
 export const UpdateRolePermissionsBodySchema = z
   .object({
-    permissionKeys: UniqueStringArray("permission keys").default([]),
+    permissionKeys: UniqueStringArray('permission keys').default([]),
   })
   .strict();
 
 export const ReplaceRolePermissionsBodySchema = z
   .object({
-    permissionKeys: UniqueStringArray("permission keys")
+    permissionKeys: UniqueStringArray('permission keys')
       .transform((keys) => keys.map((k) => k.trim()))
       .optional(),
-    permissionIds: UniqueStringArray("permission ids").optional(),
+    permissionIds: UniqueStringArray('permission ids').optional(),
   })
   .strict()
   .refine(
@@ -71,8 +71,8 @@ export const ReplaceRolePermissionsBodySchema = z
       (Array.isArray(v.permissionKeys) && !Array.isArray(v.permissionIds)) ||
       (!Array.isArray(v.permissionKeys) && Array.isArray(v.permissionIds)),
     {
-      message: "Provide exactly one of permissionKeys or permissionIds",
-    },
+      message: 'Provide exactly one of permissionKeys or permissionIds',
+    }
   );
 
 export const AssignRoleBodySchema = z.object({

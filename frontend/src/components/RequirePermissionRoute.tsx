@@ -1,7 +1,7 @@
-import { Outlet } from "react-router-dom";
-import { useAuth } from "../auth/useAuth";
-import Forbidden from "./Forbidden";
-import { Skeleton } from "./ui/skeleton";
+import { Outlet } from 'react-router-dom';
+import { useAuth } from '../auth/useAuth';
+import Forbidden from './Forbidden';
+import { Skeleton } from './ui/skeleton';
 
 // Blocks route access unless the current user has the required permission.
 export default function RequirePermissionRoute(props: {
@@ -23,9 +23,7 @@ export default function RequirePermissionRoute(props: {
   }
 
   if (!permissions.includes(props.permission)) {
-    return (
-      <Forbidden pageTitle={props.pageTitle} description={props.description} />
-    );
+    return <Forbidden pageTitle={props.pageTitle} description={props.description} />;
   }
 
   return <Outlet />;

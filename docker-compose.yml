@@ -26,6 +26,11 @@ services:
       PORT: 4000
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-crbad}?schema=public}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:${WEB_PORT:-5173}}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-nano}
+      OPENAI_API_BASE_URL: ${OPENAI_API_BASE_URL:-https://api.openai.com/v1}
+      AI_RATE_LIMIT_WINDOW_MS: ${AI_RATE_LIMIT_WINDOW_MS:-300000}
+      AI_RATE_LIMIT_MAX: ${AI_RATE_LIMIT_MAX:-20}
       # If hot reload is flaky on Windows/WSL mounts, set this to true.
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-false}
     ports:

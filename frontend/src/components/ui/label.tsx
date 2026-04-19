@@ -1,7 +1,7 @@
-import * as React from "react";
-import * as LabelPrimitive from "@radix-ui/react-label";
+import * as React from 'react';
+import * as LabelPrimitive from '@radix-ui/react-label';
 
-import { cn } from "../../lib/utils";
+import { cn } from '../../lib/utils';
 
 // Renders the shared form label component.
 const Label = React.forwardRef<
@@ -11,8 +11,8 @@ const Label = React.forwardRef<
   <LabelPrimitive.Root
     ref={ref}
     className={cn(
-      "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-      className,
+      'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+      className
     )}
     {...props}
   />

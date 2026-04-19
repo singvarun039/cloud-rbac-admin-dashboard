@@ -5,7 +5,7 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-} from "./ui/drawer";
+} from './ui/drawer';
 
 // TODO: Reuse this for Roles/Projects/AuditLogs "View" drawers.
 // Renders a reusable right-side details drawer.
@@ -31,9 +31,7 @@ export function DetailsSheet(props: {
         <div className="flex h-full flex-col px-6 pb-6 pt-4">
           <DrawerHeader className="pr-10">
             <DrawerTitle>{title}</DrawerTitle>
-            {description ? (
-              <DrawerDescription>{description}</DrawerDescription>
-            ) : null}
+            {description ? <DrawerDescription>{description}</DrawerDescription> : null}
           </DrawerHeader>
           <div className="mt-4 space-y-4">{children}</div>
         </div>

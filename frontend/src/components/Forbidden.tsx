@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 type ForbiddenProps = {
   pageTitle?: string;
@@ -8,10 +8,9 @@ type ForbiddenProps = {
 
 // Renders a reusable forbidden-state panel.
 export default function Forbidden(props: ForbiddenProps) {
-  const pageTitle = props.pageTitle ?? "Forbidden";
-  const title = props.title ?? "Forbidden (403)";
-  const description =
-    props.description ?? "You don’t have permission to view this page.";
+  const pageTitle = props.pageTitle ?? 'Forbidden';
+  const title = props.title ?? 'Forbidden (403)';
+  const description = props.description ?? 'You don’t have permission to view this page.';
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import type { ReactNode } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 // Renders a reusable modal shell for forms and confirmations.
 export default function Modal(props: {
@@ -7,8 +7,9 @@ export default function Modal(props: {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
+  contentClassName?: string;
 }) {
-  const { title, isOpen, onClose, children } = props;
+  const { title, isOpen, onClose, children, contentClassName } = props;
 
   return (
     <Dialog
@@ -17,7 +18,7 @@ export default function Modal(props: {
         if (!open) onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent className={contentClassName}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

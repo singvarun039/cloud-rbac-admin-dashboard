@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
-import { AppError } from "../errors/AppError";
+import type { Request, Response, NextFunction } from 'express';
+import { AppError } from '../errors/AppError';
 
 // Ensures the authenticated user has at least one required permission.
 export function requirePermission(permissionKey: string | string[]) {
@@ -8,9 +8,7 @@ export function requirePermission(permissionKey: string | string[]) {
       throw AppError.unauthorized();
     }
 
-    const required = Array.isArray(permissionKey)
-      ? permissionKey
-      : [permissionKey];
+    const required = Array.isArray(permissionKey) ? permissionKey : [permissionKey];
     const userPermissions = req.user.permissions ?? [];
 
     const hasAny = required.some((key) => userPermissions.includes(key));

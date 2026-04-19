@@ -1,8 +1,8 @@
-import * as React from "react";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import * as React from 'react';
+import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
 
-import { cn } from "../../lib/utils";
-import { buttonVariants } from "./button-variants";
+import { cn } from '../../lib/utils';
+import { buttonVariants } from './button-variants';
 
 const AlertDialog = AlertDialogPrimitive.Root;
 
@@ -17,7 +17,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/50", className)}
+    className={cn('fixed inset-0 z-50 bg-black/50', className)}
     {...props}
   />
 ));
@@ -33,8 +33,8 @@ const AlertDialogContent = React.forwardRef<
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-slate-200 bg-white p-6 shadow-lg",
-        className,
+        'fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border border-slate-200 bg-white p-6 shadow-lg',
+        className
       )}
       {...props}
     />
@@ -43,34 +43,19 @@ const AlertDialogContent = React.forwardRef<
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 // Renders the alert dialog header layout.
-const AlertDialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-2 text-center sm:text-left",
-      className,
-    )}
-    {...props}
-  />
+const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('flex flex-col space-y-2 text-center sm:text-left', className)} {...props} />
 );
-AlertDialogHeader.displayName = "AlertDialogHeader";
+AlertDialogHeader.displayName = 'AlertDialogHeader';
 
 // Renders the alert dialog footer actions layout.
-const AlertDialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn(
-      "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-      className,
-    )}
+    className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
     {...props}
   />
 );
-AlertDialogFooter.displayName = "AlertDialogFooter";
+AlertDialogFooter.displayName = 'AlertDialogFooter';
 
 // Renders the alert dialog title text.
 const AlertDialogTitle = React.forwardRef<
@@ -79,7 +64,7 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("text-lg font-semibold", className)}
+    className={cn('text-lg font-semibold', className)}
     {...props}
   />
 ));
@@ -92,12 +77,11 @@ const AlertDialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-slate-500", className)}
+    className={cn('text-sm text-slate-500', className)}
     {...props}
   />
 ));
-AlertDialogDescription.displayName =
-  AlertDialogPrimitive.Description.displayName;
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
 
 // Renders the primary action button inside an alert dialog.
 const AlertDialogAction = React.forwardRef<
@@ -106,7 +90,7 @@ const AlertDialogAction = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Action
     ref={ref}
-    className={cn(buttonVariants({ variant: "default" }), className)}
+    className={cn(buttonVariants({ variant: 'default' }), className)}
     {...props}
   />
 ));
@@ -119,7 +103,7 @@ const AlertDialogCancel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Cancel
     ref={ref}
-    className={cn(buttonVariants({ variant: "outline" }), className)}
+    className={cn(buttonVariants({ variant: 'outline' }), className)}
     {...props}
   />
 ));

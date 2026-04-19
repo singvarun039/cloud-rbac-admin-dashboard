@@ -1,5 +1,5 @@
-import { api } from "./client";
-import { unwrapData } from "../types/api";
+import { api } from './client';
+import { unwrapData } from '../types/api';
 
 export type Permission = {
   id: string;
@@ -14,16 +14,14 @@ export type PermissionsResponse = {
 
 // Narrows unknown values into plain object records.
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : null;
+  return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
 // Loads the permission catalog from the backend.
 export async function getPermissions(options?: {
   signal?: AbortSignal;
 }): Promise<PermissionsResponse> {
-  const res = await api.get("/api/permissions", { signal: options?.signal });
+  const res = await api.get('/api/permissions', { signal: options?.signal });
   const body = res.data as unknown;
 
   // Backend: ok envelope { ok: true, data: { permissions } }
@@ -31,7 +29,7 @@ export async function getPermissions(options?: {
   const record = asRecord(unwrapped);
   const permissions = record?.permissions;
   if (!Array.isArray(permissions)) {
-    throw new Error("Unexpected permissions list response format");
+    throw new Error('Unexpected permissions list response format');
   }
 
   return { data: permissions as Permission[] };
