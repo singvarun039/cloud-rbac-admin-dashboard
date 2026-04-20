@@ -32,6 +32,7 @@ Monorepo:
 - `backend/` — Node.js + Express API (Prisma + PostgreSQL)
 - `frontend/` — React + Vite SPA
 - `infra/terraform/` — AWS EC2 + RDS provisioning via Terraform
+- `TESTING.md` — test folder layout, run commands, and current coverage matrix
 
 ---
 
