@@ -32,22 +32,6 @@ services:
       - key: OPENAI_API_KEY
         sync: false
 
-  - type: static
-    name: rbac-dashboard-frontend
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      # Public URL of the deployed backend (Render Web Service). Baked into
-      # the build at build time — changing it requires a rebuild/redeploy.
-      - key: VITE_API_BASE_URL
-        sync: false
-    routes:
-      # SPA fallback so React Router deep links (e.g. /users) don't 404 on refresh.
-      - type: rewrite
-        source: /*
-        destination: /index.html
-
 databases:
   - name: rbac-dashboard-db
     plan: free
