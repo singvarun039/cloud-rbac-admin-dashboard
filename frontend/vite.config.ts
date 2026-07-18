@@ -17,7 +17,6 @@ export default defineConfig({
     pool: 'threads',
     fileParallelism: false,
     maxWorkers: 1,
-    minWorkers: 1,
   },
   server: {
     host: true,
